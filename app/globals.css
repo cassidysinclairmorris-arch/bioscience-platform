@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+:root {
+  --bg:            #ffffff;
+  --bg-off:        #f8f7f5;
+  --surface:       #ffffff;
+  --surface-2:     #f4f3f1;
+  --border:        rgba(0,0,0,0.08);
+  --border-md:     rgba(0,0,0,0.13);
+  --border-strong: rgba(0,0,0,0.22);
+  --text:          #0f0f0d;
+  --text-2:        #6b6b68;
+  --text-3:        #b0aea9;
+  --accent:        #1a1a18;
+}
+
+* { box-sizing: border-box; }
+
+html { background: var(--bg); }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-weight: 300;
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-serif {
+  font-family: var(--font-serif), Georgia, "Times New Roman", serif;
+}
+
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 2px; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up              { animation: fadeUp 0.45s cubic-bezier(0.16,1,0.3,1) both; }
+.fade-up-delay-1      { animation-delay: 0.06s; }
+.fade-up-delay-2      { animation-delay: 0.12s; }
+.fade-up-delay-3      { animation-delay: 0.18s; }
+.fade-up-delay-4      { animation-delay: 0.24s; }
+
+.label {
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.rule { border: none; border-top: 1px solid var(--border); }

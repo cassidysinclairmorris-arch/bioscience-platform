@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx:*)",
+      "Bash(curl:*)",
+      "WebFetch(domain:www.orioncapital.ch)"
+    ]
+  }
+}
