@@ -1,118 +1,160 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { getBrandBlock, resolveFonts } from "@/lib/brand-context";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-// Per-company visual style guides
+// ── Master brief — applied as system prompt to every generation ───────────────
+const MASTER_BRIEF = `
+You are the world's foremost LinkedIn visual strategist — a CEO with 10+ years of platform expertise who has studied every algorithm update, scroll-stopping creative pattern, viral post format, and brand identity system that has performed at the highest level on LinkedIn from 2020–2026.
+
+LinkedIn in 2026 rewards: bold typographic hierarchy, clean negative space, brand credibility signals, and visuals that feel like they were made by a premium agency — not a template tool.
+
+QUALITY BAR — every visual must pass all four:
+1. Would a C-suite executive be proud to post this?
+2. Does it look like it belongs in a premium brand's feed — not a template library?
+3. Is the company's identity immediately recognizable within 1 second of scrolling?
+4. Does the typography alone carry the visual — even without any imagery?
+
+LINKEDIN ALGORITHM SIGNALS (2026):
+- First-frame stop-scroll: hook text must be bold, high contrast, immediately visible
+- Brand recognition: consistent fonts, palette, padding grid across every visual in the series
+- Emotional contrast: dark background + single white headline, or light field + bold dark type
+- No stock imagery: pure typography + color + geometric/abstract elements only — this is the 2026 LinkedIn premium signal
+- Seniority signals: restrained color (not rainbow), premium font choices, confident layout (not cluttered), subtle texture (not flat)
+
+LAYOUT RULES:
+- 1080×1080px square SVG
+- Minimum 48px padding on all sides — LinkedIn compresses visuals, generous margins protect content
+- Text hierarchy: LINE 1 = short punchy hook (5–8 words, largest text), LINE 2 = supporting statement, LINE 3 = optional CTA
+- Maximum 3 font sizes per visual
+- Not flat white — use gradient mesh, subtle grain, geometric pattern, dark luxury, or editorial texture
+- The overall impression = a $500/hour creative director made this
+
+FONT RULE: Font families are specified per-brand in the FONT DIRECTIVE section of each request. Always embed them via @import inside <defs><style>. Never use unlisted font families.
+`;
+
+// ── Per-company visual style guides ──────────────────────────────────────────
 const STYLE_GUIDES: Record<string, string> = {
   cpolar: `
-VISUAL IDENTITY — C-POLAR Technologies:
-Palette: Lime green #91BC07, Near-black #2B2B2B, Off-white #F0F0F0, Warm stone #DCD8CF, Grey #837F7A, White #FFFFFF
-Style: Quiet premium. Soft neutral stone and grey backgrounds (#DCD8CF, #F0F0F0). Wide open negative space. Clean geometric sans-serif type.
-Accent rule: #91BC07 used ONLY on 2–3 key words — never as a background fill. All other elements stay neutral.
-Mood: The most effective protection works quietly. Never alarming. Never loud. Warmly precise.`,
+BRAND INPUT — C-POLAR Technologies:
+Industry: Ambient protection / antimicrobial technology
+Brand Colors: Lime green #91BC07, Near-black #2B2B2B, Off-white #F0F0F0, Warm stone #DCD8CF, Grey #837F7A
+Tone: Premium / Authoritative / Quiet confidence
+Style direction: Soft neutral stone and grey backgrounds (#DCD8CF, #F0F0F0). Wide open negative space. Clean geometric sans-serif type. Editorial white — think Aesop or Patagonia brand aesthetic.
+Accent rule: #91BC07 used ONLY on 2–3 key words — never as background fill. Everything else stays neutral.
+The visual principle: The most effective protection works quietly. The design does the same.`,
 
   oxia: `
-VISUAL IDENTITY — Oxia Therapeutics:
-Palette: Teal #2BBFB0, Dark navy #1A3D4F, Coral/salmon #E8504A, Warm off-white #F5F2EE, White #FFFFFF, Deep teal #2A6B7C
-Style: Elegant scientific. Dark teal-to-navy gradient backgrounds. ALL TEXT MUST BE WHITE (#FFFFFF). Wide-tracked headline caps in white. Coral #E8504A on 2–3 power words only.
-TEXT COLOR RULE: Every word in this image must be white (#FFFFFF) — no dark text, no navy text, no grey text.
-Mood: Scientific confidence meets human warmth. Refined, never loud. Wide letter-spacing on headlines.`,
+BRAND INPUT — Oxia Therapeutics:
+Industry: Regenerative medicine / cellular repair
+Brand Colors: Signature navy #1A3D4F (PRIMARY BACKGROUND — always use this), Teal #2BBFB0 (accent only), Coral #E8504A (2–3 power words only), White #FFFFFF (all text)
+Tone: Bold / Premium / Scientific authority
+Style direction: ALWAYS use deep navy #1A3D4F as the primary background — this is Oxia's signature colour. Gradient from #1A3D4F to #0d2233 (darker navy) or #1A3D4F to #2A6B7C (teal-navy). Wide-tracked headline caps in white. Teal #2BBFB0 on borders, rule lines, and geometric accents. Coral #E8504A on 2–3 power words in the headline only.
+TEXT RULE: Every word must be white (#FFFFFF). No grey, off-white, or dark text anywhere.
+The visual principle: The authority of 30 years of Baylor science. Deep navy signals trust, precision, and seniority.`,
 
   coregen: `
-VISUAL IDENTITY — CoRegen:
-Palette: Red #E8181A, Near-black #0D0D1A, Deep navy #1A1A3E, White #FFFFFF, Off-white #F5F5F7, Dark navy #2A2A4A
-Style: Dark cinematic bold. Near-black #0D0D1A and deep navy #1A1A3E backgrounds dominate. ALL TEXT MUST BE WHITE (#FFFFFF). Bold condensed white sans-serif headlines at large scale.
-TEXT COLOR RULE: Every word in this image must be white (#FFFFFF). Red #E8181A on 2–3 key words only — never on body copy, never as background.
-Mood: Historic and urgent. The confidence of a company that knows it has something the world has been waiting for.`,
+BRAND INPUT — CoRegen:
+Industry: Oncology / cancer immunotherapy
+Brand Colors: Red #E8181A, Near-black #0D0D1A, Deep navy #1A1A3E, White #FFFFFF
+Tone: Bold / Disruptive / Historic urgency
+Style direction: Near-black #0D0D1A and deep navy #1A1A3E backgrounds dominate. ALL TEXT WHITE (#FFFFFF). Bold condensed sans-serif headlines at large scale. Think cinematic — dark, urgent, historic.
+Accent rule: Red #E8181A ONLY on the 2–3 most important words — never on body copy, never as background.
+TEXT RULE: Every word must be white (#FFFFFF).
+The visual principle: The confidence of a company that knows it has something the world has been waiting for.`,
 
   intrepro: `
-VISUAL IDENTITY — IntrePro / Klim-Loc:
-Palette: Teal #2BBFB0, Dark teal #1A3A38, White #FFFFFF, Light teal #EAF8F7, Deep teal #2A5A55, Bright teal #00A896
-Style: Clean medtech. Dark teal #1A3A38 to near-black gradient backgrounds. ALL TEXT MUST BE WHITE (#FFFFFF). Teal #2BBFB0 as accent on key words, borders, and icons.
-TEXT COLOR RULE: Every word in this image must be white (#FFFFFF) — no dark text on dark backgrounds.
-Mood: Clinical but accessible. Projects competence and innovation simultaneously. Precise, purposeful, never academic.`,
+BRAND INPUT — IntrePro / Klim-Loc:
+Industry: Medical devices / needleless technology
+Brand Colors: Teal #2BBFB0, Dark teal #1A3A38, White #FFFFFF, Light teal #EAF8F7
+Tone: Authoritative / Precise / Innovative
+Style direction: Dark teal #1A3A38 to near-black gradient backgrounds. ALL TEXT WHITE (#FFFFFF). Teal #2BBFB0 as accent on key words, rule lines, and geometric elements. Clinical but confident — think Boston Scientific meets Apple.
+TEXT RULE: Every word must be white (#FFFFFF).
+The visual principle: Competence and innovation projected simultaneously. Precise, purposeful, never academic.`,
 
   senvi: `
-VISUAL IDENTITY — Senvi:
-Palette: Teal #2BBFB3, Deep dark green #0A2A28, White #FFFFFF, Light teal #E0F9F7, Mid teal #1A8A84, Near-black #000D0C
-Style: Teal cinematic scientific. Either (A) dark near-black #0A2A28 to teal #2BBFB3 gradient backgrounds with huge display type and white headlines, OR (B) clean white backgrounds with teal #2BBFB3 headlines and black body copy. Molecular/cellular imagery in teal tones.
-Mood: Always elegant. Sits between a Nature paper and a TED talk. Technically precise, visually stunning.`,
+BRAND INPUT — Senvi:
+Industry: Longevity science / senescent cell clearance
+Brand Colors: Teal #2BBFB3, Deep dark green #0A2A28, White #FFFFFF, Mid teal #1A8A84
+Tone: Premium / Scientific / Forward-looking
+Style direction: Dark near-black #0A2A28 to teal #2BBFB3 gradient backgrounds. Huge display typography. White headlines. Molecular/cellular geometry in teal tones as decorative background elements. Think between a Nature paper and a TED talk.
+The visual principle: Always elegant. Technically precise, visually stunning.`,
 };
+
+// Build a Google Fonts @import URL for one or two font families
+function googleFontsImport(headline: string, body: string): string {
+  const encode = (f: string) => f.trim().replace(/ /g, "+");
+  const families: string[] = [];
+  families.push(`family=${encode(headline)}:wght@400;600;700;800;900`);
+  if (body && body.toLowerCase() !== headline.toLowerCase()) {
+    families.push(`family=${encode(body)}:wght@400;500;600`);
+  }
+  return `@import url('https://fonts.googleapis.com/css2?${families.join("&")}&display=swap');`;
+}
 
 export async function POST(req: NextRequest) {
   try {
     const { company, pillar, visualType, postContent } = await req.json();
 
-    const b = company.brand;
-    const excerpt = postContent?.slice(0, 150) || pillar.example.slice(0, 150);
-    const styleGuide = STYLE_GUIDES[company.id] || `BRAND: ${company.name}\nVisual style: ${b.visualMood}`;
+    const excerpt = postContent?.slice(0, 200) || pillar.example.slice(0, 200);
 
-    const noLogo = `CRITICAL: Do NOT include any logo, company name as a logo mark, wordmark, or logo text anywhere in the image. The logo will be overlaid separately as an HTML element.`;
+    // Shared brand context — stored brand_prompt > hardcoded style guide > dynamic context
+    // getBrandBlock uses the same source as the AI image route (lib/brand-context)
+    const brandBlock = getBrandBlock(company, STYLE_GUIDES[company.id]);
 
-    const baseStyle = `
-${styleGuide}
-Post type: ${pillar.type} — ${pillar.day}
-Content direction: ${excerpt}
-${noLogo}`;
+    // Resolve fonts — handles both camelCase (static) and snake_case (DB) naming
+    const { headlineFont, bodyFont } = resolveFonts(company);
+    const fontImport = googleFontsImport(headlineFont, bodyFont);
 
-    const prompts: Record<string, string> = {
-      quote: `Create a 1080x1080 SVG quote card for ${company.name} that perfectly matches their brand style.
-${baseStyle}
+    const fontDirective = `FONT DIRECTIVE — MANDATORY:
+Headline/display font: "${headlineFont}"
+Body/supporting font:  "${bodyFont}"
+Embed these fonts as the FIRST rule inside your <defs><style> block:
+  ${fontImport}
+Use font-family="${headlineFont}" on ALL headlines, hero text, and large typographic elements.
+Use font-family="${bodyFont}" on ALL body copy, sub-headings, captions, and supporting text.
+Do NOT use any other font families.`;
 
-Design requirements:
-- Background: use brand colors as specified in the style guide
-- Extract or derive a powerful short quote (max 18 words) from the content direction
-- Quote in large bold display text using brand palette
-- Large decorative quotation mark in accent color
-- 2–3 key words highlighted in accent color per brand rules
-- All typography and shapes use only the brand palette above
-- Feels like it belongs on their LinkedIn page — perfectly on-brand
-- SVG only, no external images, pure shapes and text`,
+    const noLogo = `CRITICAL: Do NOT include any logo, wordmark, or company name rendered as a logo anywhere in the SVG. The logo is overlaid as a separate HTML element and must not appear inside the generated image.`;
 
-      stat: `Create a 1080x1080 SVG data graphic for ${company.name} that matches their brand exactly.
-${baseStyle}
+    const typePrompts: Record<string, string> = {
+      quote: `Visual type: QUOTE CARD
+Extract the single most powerful quote or statement (max 18 words) from the content direction below and make it the hero typographic element. Large decorative quotation mark in accent color. Attribution line smaller below. 2–3 key words in accent color.`,
 
-Design requirements:
-- Feature one powerful statistic, number or fact from the content direction as the hero element
-- Huge bold number using accent color per brand palette
-- Descriptive label text below in brand colors
-- Secondary supporting context line
-- Simple data visualization element (circle, bar, or progress arc) in brand colors
-- Background in brand style as specified in the style guide
-- Clean, data-journalism feel — LinkedIn professionals should immediately trust it
-- SVG only, pure shapes and text`,
+      stat: `Visual type: DATA / STAT GRAPHIC
+Identify the single most powerful statistic, number, or fact from the content direction. Make it the hero — huge bold number or percentage in accent color. Short label beneath. One supporting context line. Include a minimal geometric data element (arc, bar, or circle) in brand colors.`,
 
-      brand: `Create a 1080x1080 SVG brand statement card for ${company.name}.
-${baseStyle}
+      brand: `Visual type: BRAND STATEMENT CARD
+Use the company tagline or a key brand phrase from the content direction as the hero typographic element. Large, dominant, unapologetic. Supporting line beneath. Feels like an official brand announcement — minimal, confident, premium.`,
 
-Design requirements:
-- Large display typography hero: company tagline or a key brand phrase from the content direction
-- Background and colors strictly from the brand palette above
-- 2–3 words in accent color as per brand accent rules
-- Minimal, confident, premium — no clutter
-- Feels like an official brand announcement card
-- SVG only, pure shapes and text`,
-
-      science: `Create a 1080x1080 SVG science explainer graphic for ${company.name}.
-${baseStyle}
-
-Design requirements:
-- Visual diagram explaining the science concept using abstract shapes, arrows, labels
-- All brand colors from palette above throughout — accent color on key elements
-- Clear visual hierarchy: headline concept, visual explanation, supporting detail
-- Scientific but accessible — a LinkedIn professional understands in 5 seconds
-- Geometric shapes represent biological/technical concepts (circles for cells, arrows for pathways, etc.)
-- Background in brand style as specified
-- SVG only, pure shapes, paths, and text`,
+      science: `Visual type: SCIENCE EXPLAINER
+Create a visual diagram explaining the core science concept using abstract geometric shapes, arrows, and labels. Circles for cells/molecules, arrows for pathways/mechanisms, labels for key terms. Scientific but accessible — a LinkedIn professional grasps it in 5 seconds. Clear hierarchy: headline concept → visual mechanism → key outcome.`,
     };
 
-    const prompt = (prompts[visualType] || prompts.brand) +
-      "\n\nReturn ONLY the raw SVG code starting with <svg and ending with </svg>. No markdown, no explanation.";
+    const prompt = `${MASTER_BRIEF}
+
+---
+
+${brandBlock}
+
+Post type: ${pillar.type} — ${pillar.day}
+Content direction: ${excerpt}
+
+${typePrompts[visualType] || typePrompts.brand}
+
+${fontDirective}
+
+${noLogo}
+
+Produce a single 1080×1080 SVG that passes all four quality criteria in the master brief. Use the brand palette exclusively. The font @import above MUST appear inside <defs><style> before any other CSS rules. Pure shapes, paths, and text — no external image references.
+
+Return ONLY the raw SVG code starting with <svg and ending with </svg>. No markdown, no explanation, no preamble.`;
 
     const message = await client.messages.create({
       model: "claude-sonnet-4-6",
       max_tokens: 4000,
+      system: "You are a world-class LinkedIn visual designer and brand strategist. You produce premium SVG visuals that look like they were made by a $500/hour creative director. You follow brand guidelines with precision and never compromise on visual quality.",
       messages: [{ role: "user", content: prompt }],
     });
 

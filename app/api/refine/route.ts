@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { getLinkedInTrends } from "@/lib/linkedin-trends";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 export async function POST(req: NextRequest) {
   try {
     const { company, pillar, currentPost, request } = await req.json();
+
+    const industry = (pillar?.type as string) || "biotech";
+    const audience = (company?.audience as string) || "Life science executives";
+    const timezone = (company?.timezone as string) || "EST";
+
+    const trends = await getLinkedInTrends(industry, audience, timezone);
 
     const message = await client.messages.create({
       model: "claude-sonnet-4-6",
@@ -22,6 +29,9 @@ TARGET AUDIENCE: ${company.audience}
 POST TYPE: ${pillar.type}
 KEY BRAND PHRASES: ${company.brand?.keyPhrases?.join(" / ") ?? ""}
 
+CURRENT LINKEDIN ALGORITHM CONTEXT (April 2026):
+${trends}
+
 EDIT REQUEST: ${request}
 
 Instructions:
@@ -30,6 +40,7 @@ Instructions:
 - Maintain 150-220 words unless the request specifically asks for a length change
 - Keep hashtags at the end (3-4)
 - Keep the strong hook in the first 2 lines
+- Apply current LinkedIn best practices where relevant
 - Write only the revised post text — no preamble, no explanation of changes`,
       }],
     });

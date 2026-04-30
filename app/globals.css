@@ -1,56 +1,183 @@
 @import "tailwindcss";
 
+/* ── Design tokens ─────────────────────────────────────────────────────── */
 :root {
-  --bg:            #ffffff;
-  --bg-off:        #f8f7f5;
-  --surface:       #ffffff;
-  --surface-2:     #f4f3f1;
-  --border:        rgba(0,0,0,0.08);
-  --border-md:     rgba(0,0,0,0.13);
-  --border-strong: rgba(0,0,0,0.22);
-  --text:          #0f0f0d;
-  --text-2:        #6b6b68;
-  --text-3:        #b0aea9;
-  --accent:        #1a1a18;
+  /* Backgrounds */
+  --bg:              #F5F2EE;
+  --surface:         #FFFFFF;
+  --surface-2:       #F0EDE8;
+  --surface-3:       #EAE7E2;
+
+  /* Borders */
+  --border:          rgba(26, 26, 26, 0.07);
+  --border-md:       rgba(26, 26, 26, 0.11);
+  --border-hover:    rgba(26, 26, 26, 0.18);
+
+  /* Text — warm charcoal, not pure black */
+  --text:            #1A1A1A;
+  --text-2:          rgba(26, 26, 26, 0.55);
+  --text-3:          rgba(26, 26, 26, 0.35);
+  --text-muted:      rgba(26, 26, 26, 0.20);
+
+  /* Accents */
+  --gold:            #C9A84C;
+  --gold-dim:        rgba(201, 168, 76, 0.15);
+  --teal:            #2BBFB0;
+  --teal-dim:        rgba(43, 191, 176, 0.10);
+  --blue:            #2255CC;
+  --blue-dim:        rgba(34, 85, 204, 0.10);
+  --danger:          #cc3333;
+  --success:         #2BBFB0;
+
+  /* Radii — restrained */
+  --radius-sm:   3px;
+  --radius-md:   5px;
+  --radius-lg:   8px;
+  --radius-xl:   10px;
+
+  /* Fonts */
+  --font-display: var(--font-playfair), var(--font-cormorant), "Playfair Display", "Cormorant Garamond", Georgia, serif;
+  --font-body:    var(--font-inter), system-ui, sans-serif;
+  --font-ui:      var(--font-jakarta), var(--font-inter), system-ui, sans-serif;
 }
 
-* { box-sizing: border-box; }
+/* ── Reset ──────────────────────────────────────────────────────────────── */
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-html { background: var(--bg); }
+html {
+  background: var(--bg);
+  color-scheme: light;
+}
 
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: var(--font-sans), system-ui, sans-serif;
-  font-weight: 300;
+  font-family: var(--font-body);
+  font-weight: 400;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-.font-serif {
-  font-family: var(--font-serif), Georgia, "Times New Roman", serif;
-}
-
-::-webkit-scrollbar { width: 4px; height: 4px; }
+/* ── Scrollbar ──────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 3px; height: 3px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 2px; }
+::-webkit-scrollbar-thumb { background: rgba(26,26,26,0.12); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(26,26,26,0.22); }
 
+/* ── Animations ─────────────────────────────────────────────────────────── */
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateY(22px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.fade-up              { animation: fadeUp 0.45s cubic-bezier(0.16,1,0.3,1) both; }
-.fade-up-delay-1      { animation-delay: 0.06s; }
-.fade-up-delay-2      { animation-delay: 0.12s; }
-.fade-up-delay-3      { animation-delay: 0.18s; }
-.fade-up-delay-4      { animation-delay: 0.24s; }
-
-.label {
-  font-family: var(--font-sans), system-ui, sans-serif;
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--text-3);
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position:  600px 0; }
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(16px) scale(0.96); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+@keyframes marqueeScroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }
 
-.rule { border: none; border-top: 1px solid var(--border); }
+/* ── Utility classes ────────────────────────────────────────────────────── */
+.fade-up   { animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.fade-up-1 { animation-delay: 0.05s; }
+.fade-up-2 { animation-delay: 0.10s; }
+.fade-up-3 { animation-delay: 0.15s; }
+.fade-up-4 { animation-delay: 0.20s; }
+
+/* Display / editorial headings */
+.display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  line-height: 1.1;
+}
+.display-italic {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-style: italic;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  line-height: 1.1;
+}
+
+/* Uppercase label */
+.label {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  font-family: var(--font-body);
+}
+
+/* Marquee */
+.marquee-track {
+  display: flex;
+  white-space: nowrap;
+  animation: marqueeScroll 40s linear infinite;
+  will-change: transform;
+}
+
+/* Skeleton loader */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(26,26,26,0.04) 25%,
+    rgba(26,26,26,0.08) 50%,
+    rgba(26,26,26,0.04) 75%
+  );
+  background-size: 600px 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+  border-radius: var(--radius-sm);
+}
+
+/* Focus rings */
+input:focus, textarea:focus, select:focus { outline: none; }
+
+/* Placeholders */
+input::placeholder, textarea::placeholder {
+  color: var(--text-muted);
+}
+
+/* ── Recharts overrides ─────────────────────────────────────────────────── */
+.recharts-tooltip-wrapper .recharts-default-tooltip {
+  background: var(--surface) !important;
+  border: 1px solid var(--border-md) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: 0 4px 24px rgba(26,26,26,0.08) !important;
+}
+.recharts-default-tooltip .recharts-tooltip-label {
+  color: var(--text-3) !important;
+  font-size: 10px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+}
+.recharts-default-tooltip .recharts-tooltip-item {
+  color: var(--text) !important;
+  font-size: 13px !important;
+}
+.recharts-cartesian-grid line {
+  stroke: rgba(26,26,26,0.05) !important;
+}
+
+/* Custom scrollbar for panels */
+.light-scroll::-webkit-scrollbar { width: 2px; }
+.light-scroll::-webkit-scrollbar-thumb { background: rgba(26,26,26,0.10); }

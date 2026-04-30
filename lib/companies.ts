@@ -234,5 +234,5 @@ export const companies = [
   },
 ];
 
-export type Company = (typeof companies)[0];
+export type Company = (typeof companies)[0] & { logo_file?: string };
 export type Pillar = (typeof companies)[0]["pillars"][0];
