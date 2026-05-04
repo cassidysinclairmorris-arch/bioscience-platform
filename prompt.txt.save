@@ -1,0 +1,26 @@
+I have a website with a main landing page, a client portal, and a user portal. Add a persistent nav bar to both portal pages that lets users navigate back to the main landing page.
+
+Requirements:
+- Fixed nav bar at top of both portals, height 64px
+- Linkwright logo (SVG L-bracket mark) top-left, clicking it goes to index.html or /
+- "Back to main site" text link on the right side of the nav
+- Style: background #F4F1EC at 95% opacity, backdrop blur, 0.5px bottom border rgba(26,24,20,0.1)
+- Font: DM Sans, charcoal #1A1814
+- Add padding-top: 64px to portal body so content clears the nav
+- Mobile friendly
+
+Logo SVG to use:
+<svg width="36" height="36" viewBox="0 0 36 36" fill="none"><rect x="8" y="6" width="2.2" height="22" fill="#1A1814"/><rect x="8" y="26" width="13" height="2.2" fill="#1A1814"/><rect x="17.5" y="13" width="1.6" height="8" fill="#1A1814"/><rect x="17.5" y="19.4" width="5.5" height="1.6" fill="#1A1814"/></svg>
+
+Here is my client portal code:
+[PASTE CODE]
+
+Here is my user portal code:
+[PASTE CODE]
+
+Update both files and return the full updated code for each.
+claude < prompt.txt
+claude "Add a fixed 64px nav bar to both my client portal and user portal files. Top-left: Linkwright logo linking to index.html. Top-right: Back to main site link. Style: background #F4F1EC 95% opacity, backdrop blur, 0.5px bottom border rgba(26,24,20,0.1), DM Sans font, charcoal #1A1814. Add padding-top 64px to body. Mobile friendly. Use the same L-bracket SVG logo from the main landing page."
+lsadd a fixed nav bar to client-portal.html and user-portal.html with the Linkwright logo top-left linking to index.html and a back to main site link top-right. Style: cream background #F4F1EC, DM Sans font, charcoal #1A1814, 64px height, backdrop blur. Add padding-top 64px to body on both files.
+
+claude --versio

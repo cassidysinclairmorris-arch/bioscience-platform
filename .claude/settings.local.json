@@ -14,7 +14,15 @@
       "Bash(lsof -ti:3000)",
       "Bash(grep -v \"^$\")",
       "Bash(lsof -iTCP -sTCP:LISTEN -n -P)",
-      "Bash(grep -r \"password\\\\|admin\\\\|gorlin\\\\|seed\" /Users/cassidymorris/Documents/bioscience-platform/lib/ --include=*.ts -l)"
+      "Bash(grep -r \"password\\\\|admin\\\\|gorlin\\\\|seed\" /Users/cassidymorris/Documents/bioscience-platform/lib/ --include=*.ts -l)",
+      "Bash(cp \"/Users/cassidymorris/Documents/bioscience-platform/Images for website /hero.png\" /Users/cassidymorris/Documents/bioscience-platform/public/images/hero.png)",
+      "Bash(cp \"/Users/cassidymorris/Documents/bioscience-platform/Images for website /about.png\" /Users/cassidymorris/Documents/bioscience-platform/public/images/about.png)",
+      "Bash(cp \"/Users/cassidymorris/Documents/bioscience-platform/Images for website /services.png\" /Users/cassidymorris/Documents/bioscience-platform/public/images/services.png)",
+      "Bash(cp \"/Users/cassidymorris/Documents/bioscience-platform/Images for website /login.png\" /Users/cassidymorris/Documents/bioscience-platform/public/images/login.png)",
+      "Bash(node *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)"
     ]
   }
 }
