@@ -39,7 +39,7 @@ export default function PortalLoginPage() {
     <div style={{ minHeight: "100vh", background: "#F5F2EE", display: "flex", alignItems: "stretch" }}>
 
       {/* Back to main site */}
-      <a href="/landing" style={{
+      <a href="/" style={{
         position: "fixed", top: "20px", left: "24px", zIndex: 100,
         fontSize: "12px", fontWeight: 500,
         color: "rgba(26,26,26,0.45)",

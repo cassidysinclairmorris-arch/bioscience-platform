@@ -6,16 +6,16 @@ export async function GET() {
 
   const clients = db.prepare(`
     SELECT * FROM clients WHERE active = 1 ORDER BY created_at ASC
-  `).all();
+  `).all() as Record<string, unknown>[];
 
-  const result = clients.map((client: Record<string, unknown>) => {
+  const result = clients.map((client) => {
     const kit = db.prepare(`
       SELECT * FROM brand_kits WHERE client_id = ?
     `).get(client.id);
 
     const pillars = db.prepare(`
       SELECT * FROM pillars WHERE client_id = ? ORDER BY sort_order ASC
-    `).all(client.id);
+    `).all(client.id) as Record<string, unknown>[];
 
     return {
       ...client,

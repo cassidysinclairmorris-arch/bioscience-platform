@@ -6,6 +6,7 @@ export function middleware(req: NextRequest) {
   // Always allow static assets, auth APIs, and the public landing page
   if (
     pathname === "/" ||
+    pathname === "/landing" ||
     pathname === "/login" ||
     pathname === "/portal/login" ||
     pathname.startsWith("/api/auth")
@@ -39,7 +40,7 @@ export function middleware(req: NextRequest) {
   }
 
   // Client users should only access /portal, not the agency studio
-  if (sessionRole === "client" && !pathname.startsWith("/portal") && !pathname.startsWith("/api")) {
+  if (sessionRole === "client" && !pathname.startsWith("/portal") && !pathname.startsWith("/api") && pathname !== "/" && pathname !== "/landing") {
     return NextResponse.redirect(new URL("/portal", req.url));
   }
 
