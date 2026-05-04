@@ -501,7 +501,7 @@ function ComposeTab({
                   <div style={{ position: "absolute", left: 0, top: "6px", bottom: "6px", width: "2px", borderRadius: "2px", background: p.color }} />
                 )}
                 <div style={{ fontSize: "12px", fontWeight: 400, color: ap.type === p.type ? T : T2, marginBottom: "2px", paddingLeft: ap.type === p.type ? "10px" : "0", transition: "padding 0.15s" }}>
-                  {p.day} — {p.type}
+                  {p.day} · {p.type}
                 </div>
                 <div style={{ fontSize: "11px", color: T3, lineHeight: 1.5, paddingLeft: ap.type === p.type ? "10px" : "0", transition: "padding 0.15s" }}>{p.example.slice(0, 72)}…</div>
               </button>
@@ -1089,7 +1089,7 @@ function CalendarTab({ ac, clients }: { ac: Company; clients: Company[] }) {
                       const posts = getPostingDays(c).includes(day);
                       return (
                         <td key={day} style={{ padding: "14px 20px", fontSize: "13px", color: times[day] ? "#1A1A1A" : posts ? "rgba(26,26,26,0.45)" : "rgba(26,26,26,0.20)", fontWeight: times[day] ? 500 : 400, whiteSpace: "nowrap" }}>
-                          {times[day] ?? (posts ? "✓" : "—")}
+                          {times[day] ?? (posts ? "✓" : "-")}
                         </td>
                       );
                     })}
@@ -1463,7 +1463,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
     } catch (e) {
       console.error("Logo processing failed:", e);
       setter(s => ({ ...s, processing: false }));
-      notify("Background removal failed — check your REMOVEBG_API_KEY", "error");
+      notify("Background removal failed. Check your REMOVEBG_API_KEY", "error");
     }
   };
 
@@ -2025,10 +2025,10 @@ function ClientsTab({ clients, notify, onClientAdded }: {
             }));
             notify("Brand kit + content pillars extracted!", "success");
           } else {
-            notify("Could not extract — fill in manually", "error");
+            notify("Could not extract. Fill in manually", "error");
           }
         } catch {
-          notify("Extraction failed — fill in manually", "error");
+          notify("Extraction failed. Fill in manually", "error");
         }
       }}
     >
@@ -2515,19 +2515,8 @@ function LandingPage() {
         borderBottom: "0.5px solid rgba(26,24,20,0.10)",
       }}>
         {/* Logo left */}
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <svg width="32" height="32" viewBox="0 0 36 36" fill="none">
-            <rect x="8" y="6" width="2.2" height="22" fill="#1A1A1A"/>
-            <rect x="8" y="26" width="13" height="2.2" fill="#1A1A1A"/>
-            <rect x="17.5" y="13" width="1.6" height="8" fill="#1A1A1A"/>
-            <rect x="17.5" y="19.4" width="5.5" height="1.6" fill="#1A1A1A"/>
-          </svg>
-          <span style={{
-            fontFamily: "var(--font-inter, system-ui, sans-serif)",
-            fontSize: "12px", fontWeight: 400, letterSpacing: "0.22em",
-            textTransform: "uppercase", color: "#1A1A1A",
-          }}>Linkwright</span>
-        </div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/linkwright-logo.png" alt="Linkwright" style={{ height: "170px", objectFit: "contain" }} />
 
         {/* Nav right */}
         <div style={{ display: "flex", alignItems: "center", gap: "32px" }}>
@@ -2634,13 +2623,10 @@ function LandingPage() {
           position: "relative", background: "#1A1814", overflow: "hidden",
           display: "flex", alignItems: "flex-end",
         }}>
-          {/* Large Linkwright mark watermark */}
-          <svg viewBox="0 0 400 500" style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: "260px", opacity: 0.08 }} fill="none">
-            <rect x="60" y="80" width="8" height="290" fill="#F5F2EE"/>
-            <rect x="60" y="350" width="200" height="8" fill="#F5F2EE"/>
-            <rect x="180" y="170" width="6" height="120" fill="#F5F2EE"/>
-            <rect x="180" y="260" width="90" height="6" fill="#F5F2EE"/>
-          </svg>
+          {/* Background image */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/images/hero.png" alt="" aria-hidden="true" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", filter: "brightness(0.52) contrast(1.2) saturate(0.85)" }} />
+          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(160deg, rgba(26,24,20,0.05) 0%, rgba(26,24,20,0.82) 100%)" }} />
 
           {/* Gold top accent */}
           <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: "linear-gradient(90deg, #C9A84C 0%, transparent 100%)" }} />
@@ -2655,8 +2641,9 @@ function LandingPage() {
             }}>
               "Your LinkedIn profile is your most valuable real estate in professional media."
             </p>
-            <div style={{ marginTop: "24px", fontSize: "11px", letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(244,241,236,0.25)" }}>
-              Linkwright Studios
+            <div style={{ marginTop: "24px" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/linkwright-logo.png" alt="Linkwright" style={{ height: "20px", objectFit: "contain", filter: "brightness(0) invert(1)", opacity: 0.35 }} />
             </div>
           </div>
         </div>
@@ -2707,9 +2694,9 @@ function LandingPage() {
           border: "0.5px solid rgba(26,26,26,0.10)",
         }}>
           {[
-            { n: "01", title: "Profile Architecture",    desc: "From headline to featured section — every element engineered to convert visitors into conversations." },
+            { n: "01", title: "Profile Architecture",    desc: "From headline to featured section. Every element engineered to convert visitors into conversations." },
             { n: "02", title: "Content Strategy",        desc: "A bespoke content blueprint built around your voice, your expertise, and the audience you're trying to reach." },
-            { n: "03", title: "Ghostwriting",            desc: "Premium posts, carousels, and thought-leadership pieces written in your voice — published at cadence." },
+            { n: "03", title: "Ghostwriting",            desc: "Premium posts, carousels, and thought-leadership pieces written in your voice, published at cadence." },
             { n: "04", title: "Growth Systems",          desc: "Engagement frameworks, network-building protocols, and outreach sequences that compound over time." },
             { n: "05", title: "Company Pages",           desc: "Full company page transformation: positioning, content pillars, employee advocacy, and follower growth." },
             { n: "06", title: "Analytics & Reporting",   desc: "Monthly intelligence reports tracking reach, engagement, inbound quality, and progress against KPIs." },
@@ -2727,7 +2714,7 @@ function LandingPage() {
           lineHeight: 1.1, color: "rgba(244,241,236,0.90)",
           maxWidth: "800px", margin: "0 auto 64px", textAlign: "center",
         }}>
-          "The best LinkedIn content doesn't feel like marketing — it feels like thinking out loud."
+          "The best LinkedIn content doesn't feel like marketing. It feels like thinking out loud."
         </h2>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "48px", maxWidth: "900px", margin: "0 auto" }}>
           {[
@@ -2820,14 +2807,9 @@ function LandingPage() {
       <footer style={{ background: "#1A1814", color: "#F5F2EE", padding: "64px 48px 40px" }}>
         <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: "48px", marginBottom: "48px" }}>
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px" }}>
-              <svg width="28" height="28" viewBox="0 0 36 36" fill="none">
-                <rect x="8" y="6" width="2.2" height="22" fill="#F5F2EE"/>
-                <rect x="8" y="26" width="13" height="2.2" fill="#F5F2EE"/>
-                <rect x="17.5" y="13" width="1.6" height="8" fill="#F5F2EE"/>
-                <rect x="17.5" y="19.4" width="5.5" height="1.6" fill="#F5F2EE"/>
-              </svg>
-              <span style={{ fontSize: "12px", fontWeight: 400, letterSpacing: "0.22em", textTransform: "uppercase" }}>Linkwright</span>
+            <div style={{ marginBottom: "20px" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/linkwright-logo.png" alt="Linkwright" style={{ height: "32px", objectFit: "contain", filter: "brightness(0) invert(1)" }} />
             </div>
             <p style={{
               fontFamily: "var(--font-cormorant, var(--font-playfair, Georgia, serif))",
@@ -2985,7 +2967,7 @@ useEffect(() => {
       const r = await fetch("/api/generate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ company: ac, pillar: ap }) });
       const d = await r.json();
       setPost(d.content || "Error generating.");
-    } catch { setPost("Error — please try again."); }
+    } catch { setPost("Error. Please try again."); }
     setIsGen(false);
   };
 
@@ -3018,7 +3000,7 @@ useEffect(() => {
       const r = await fetch("/api/refine", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ company: ac, pillar: ap, currentPost: post, request: refineRequest }) });
       const d = await r.json();
       if (d.content) { setPost(d.content); setRefineRequest(""); notify("Post refined", "success"); }
-    } catch { notify("Refine failed — try again", "error"); }
+    } catch { notify("Refine failed. Try again", "error"); }
     setIsRefining(false);
   };
 
@@ -3029,8 +3011,8 @@ useEffect(() => {
       const r = await fetch("/api/visual-refine", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ currentSvg: svg, editRequest: svgRefineRequest, company: ac }) });
       const d = await r.json();
       if (d.svg) { setSvg(d.svg); setSvgRefineRequest(""); notify("Image updated", "success"); }
-      else notify("Refine failed — try again", "error");
-    } catch { notify("Refine failed — try again", "error"); }
+      else notify("Refine failed. Try again", "error");
+    } catch { notify("Refine failed. Try again", "error"); }
     setIsVisualRefining(false);
   };
 
@@ -3054,7 +3036,8 @@ if (authRole === undefined) {
   return <div style={{ minHeight: "100vh", background: "#F5F2EE" }} />;
 }
 if (authRole === null) {
-  return <LandingPage />;
+  window.location.replace("/landing");
+  return <div style={{ minHeight: "100vh", background: "#F5F2EE" }} />;
 }
 if (loadingClients || !ac || !ap) {
   return (
@@ -3085,33 +3068,34 @@ if (loadingClients || !ac || !ap) {
   ];
 
   return (
-    <div style={{ minHeight: "100vh", background: "#F5F2EE", color: "#1A1A1A" }}>
+    <div style={{ minHeight: "100vh", background: "#F5F2EE", color: "#1A1A1A", paddingTop: "64px" }}>
 
       {/* Toast */}
       {note && <Toast message={note} type={noteType} />}
 
       {/* ── Nav ── */}
       <header style={{
-        position: "sticky", top: 0, zIndex: 50,
-        background: "#F5F2EE",
-        borderBottom: "1px solid rgba(26,26,26,0.08)",
+        position: "fixed", top: 0, left: 0, right: 0, zIndex: 50,
+        background: "rgba(244,241,236,0.92)",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
+        borderBottom: "0.5px solid rgba(26,24,20,0.10)",
       }}>
-        <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "0 32px", height: "60px", display: "flex", alignItems: "center", gap: "40px" }}>
+        <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "0 32px", height: "64px", display: "flex", alignItems: "center", gap: "40px" }}>
 
-          {/* Wordmark */}
-          <div style={{ flexShrink: 0 }}>
+          {/* Logo + tagline */}
+          <a href="/landing" style={{ flexShrink: 0, textDecoration: "none", display: "flex", alignItems: "center", gap: "20px" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/linkwright-logo.png" alt="Linkwright" style={{ height: "170px", objectFit: "contain" }} />
+            <div style={{ width: "0.5px", height: "28px", background: "rgba(26,24,20,0.15)" }} />
             <span style={{
-              fontFamily: "var(--font-cormorant, 'Cormorant Garamond', Georgia, serif)",
-              fontSize: "22px",
-              fontWeight: 300,
-              fontStyle: "italic",
-              letterSpacing: "-0.01em",
-              color: T,
-              lineHeight: 1,
+              fontFamily: "var(--font-cormorant, var(--font-playfair, Georgia, serif))",
+              fontSize: "13px", fontWeight: 300, fontStyle: "italic",
+              color: "rgba(26,24,20,0.45)", letterSpacing: "0.01em", whiteSpace: "nowrap",
             }}>
-              Gorlin
+              Engineered for LinkedIn. Optimised for 2026.
             </span>
-          </div>
+          </a>
 
           {/* Tabs */}
           <nav style={{ display: "flex", gap: "0px", flex: 1, justifyContent: "center" }}>
@@ -3142,9 +3126,25 @@ if (loadingClients || !ac || !ap) {
             ))}
           </nav>
 
-          {/* Company switcher + logout */}
+          {/* Company switcher + back to main site + logout */}
           <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
             <CompanySwitcher ac={ac} clients={clients} onChange={switchCompany} />
+            <a href="/landing" style={{
+              fontSize: "12px", fontWeight: 500,
+              color: T3,
+              textDecoration: "none",
+              padding: "6px 14px",
+              background: "transparent",
+              border: "1px solid rgba(26,26,26,0.12)",
+              borderRadius: "6px",
+              fontFamily: "var(--font-dm-sans, system-ui, sans-serif)",
+              transition: "all 0.15s ease",
+            }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(26,26,26,0.22)"; (e.currentTarget as HTMLElement).style.color = T2; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(26,26,26,0.12)"; (e.currentTarget as HTMLElement).style.color = T3; }}
+            >
+              ← Back to main site
+            </a>
             <a href="/portal" target="_blank" rel="noreferrer" style={{
               display: "inline-flex", alignItems: "center", gap: "5px",
               padding: "6px 12px",
@@ -3184,37 +3184,52 @@ if (loadingClients || !ac || !ap) {
           </div>
         </div>
 
-        {/* Scrolling marquee */}
-        <div style={{
-          height: "40px",
-          background: "#FFFFFF",
-          borderTop: "1px solid rgba(26,26,26,0.06)",
-          borderBottom: "1px solid rgba(26,26,26,0.08)",
-          overflow: "hidden",
-          display: "flex",
-          alignItems: "center",
-        }}>
-          <div className="marquee-track">
-            {[...clients, ...clients].map((c, i) => (
-              <span key={i} style={{
-                display: "inline-flex", alignItems: "center", gap: "10px",
-                padding: "0 40px",
-                fontSize: "10px", letterSpacing: "0.14em", textTransform: "uppercase",
-                color: T3,
-                fontFamily: "var(--font-inter, system-ui, sans-serif)",
-                whiteSpace: "nowrap",
-              }}>
-                <span style={{ width: "4px", height: "4px", borderRadius: "50%", background: c.color, display: "inline-block", flexShrink: 0 }} />
-                <span style={{ color: T2 }}>{c.name}</span>
-                <span style={{ color: "rgba(26,26,26,0.18)" }}>·</span>
-                <span>{c.tagline || c.timezone}</span>
-                <span style={{ color: "rgba(26,26,26,0.18)" }}>·</span>
-                <span>{c.timezone}</span>
-              </span>
-            ))}
-          </div>
-        </div>
       </header>
+
+      {/* Scrolling marquee */}
+      <div style={{
+        height: "40px",
+        background: "#FFFFFF",
+        borderTop: "1px solid rgba(26,26,26,0.06)",
+        borderBottom: "1px solid rgba(26,26,26,0.08)",
+        overflow: "hidden",
+        display: "flex",
+        alignItems: "center",
+      }}>
+        <div className="marquee-track">
+          {[...clients, ...clients].map((c, i) => (
+            <span key={i} style={{
+              display: "inline-flex", alignItems: "center", gap: "10px",
+              padding: "0 40px",
+              fontSize: "10px", letterSpacing: "0.14em", textTransform: "uppercase",
+              color: T3,
+              fontFamily: "var(--font-inter, system-ui, sans-serif)",
+              whiteSpace: "nowrap",
+            }}>
+              <span style={{ width: "4px", height: "4px", borderRadius: "50%", background: c.color, display: "inline-block", flexShrink: 0 }} />
+              <span style={{ color: T2 }}>{c.name}</span>
+              <span style={{ color: "rgba(26,26,26,0.18)" }}>·</span>
+              <span>{c.tagline || c.timezone}</span>
+              <span style={{ color: "rgba(26,26,26,0.18)" }}>·</span>
+              <span>{c.timezone}</span>
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Light image banner — services.png with cream overlay, matching landing page split section */}
+      <div style={{ position: "relative", height: "160px", overflow: "hidden", background: "#EDE8E0" }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/images/services.png" alt="" aria-hidden="true" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", filter: "brightness(1.05) contrast(1.05) saturate(0.6)" }} />
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(244,241,236,0.80) 0%, rgba(244,241,236,0.60) 100%)" }} />
+        <div style={{ position: "relative", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: "10px" }}>
+          <div style={{ width: "28px", height: "1px", background: "#C9A84C" }} />
+          <p style={{ fontFamily: "var(--font-cormorant, Georgia, serif)", fontSize: "clamp(18px, 2vw, 28px)", fontWeight: 300, fontStyle: "italic", color: "#1A1814", letterSpacing: "-0.01em" }}>
+            {ac ? ac.name : "Content Studio"}
+          </p>
+          <div style={{ width: "28px", height: "1px", background: "#C9A84C" }} />
+        </div>
+      </div>
 
       {/* ── Main content ── */}
       <main style={{ maxWidth: "1400px", margin: "0 auto", padding: "32px 32px 80px" }}>

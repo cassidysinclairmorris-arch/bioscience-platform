@@ -32,6 +32,22 @@ export default function LoginPage() {
   return (
     <div style={{ minHeight: "100vh", background: "#F5F2EE", display: "flex", alignItems: "stretch" }}>
 
+      {/* Back to main site */}
+      <a href="/landing" style={{
+        position: "fixed", top: "20px", left: "24px", zIndex: 100,
+        fontSize: "12px", fontWeight: 500,
+        color: "rgba(26,26,26,0.45)",
+        textDecoration: "none",
+        display: "inline-flex", alignItems: "center", gap: "6px",
+        fontFamily: "var(--font-dm-sans, system-ui, sans-serif)",
+        transition: "color 0.15s ease",
+      }}
+        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "#1A1A1A"; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "rgba(26,26,26,0.45)"; }}
+      >
+        ← Back to main site
+      </a>
+
       {/* ── Left panel — editorial image ──────────────────────────────────── */}
       <div style={{
         flex: "1 1 0",
@@ -41,14 +57,14 @@ export default function LoginPage() {
       }} className="login-left">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=1600&q=80&auto=format&fit=crop"
+          src="/images/login.png"
           alt=""
           aria-hidden="true"
           style={{
             position: "absolute", inset: 0,
             width: "100%", height: "100%",
             objectFit: "cover",
-            filter: "grayscale(20%) contrast(1.05)",
+            filter: "brightness(0.48) contrast(1.2) saturate(0.7)",
           }}
         />
         <div style={{
@@ -89,11 +105,11 @@ export default function LoginPage() {
       {/* ── Right panel — login form ────────────────────────────────────────── */}
       <div style={{
         width: "100%",
-        maxWidth: "480px",
+        maxWidth: "700px",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        padding: "48px 40px",
+        padding: "32px 40px",
         background: "#F5F2EE",
         position: "relative",
       }}>
@@ -105,26 +121,17 @@ export default function LoginPage() {
           background: "linear-gradient(90deg, #C9A84C 0%, transparent 100%)",
         }} />
 
-        <div className="fade-up" style={{ width: "100%", maxWidth: "360px" }}>
+        <div className="fade-up" style={{ width: "100%", maxWidth: "640px", textAlign: "center" }}>
 
           {/* Wordmark */}
-          <div style={{ marginBottom: "52px" }}>
-            <div style={{
-              fontFamily: "var(--font-playfair, var(--font-cormorant, Georgia, serif))",
-              fontSize: "30px",
-              fontWeight: 400,
-              fontStyle: "italic",
-              letterSpacing: "-0.02em",
-              color: "#1A1A1A",
-              marginBottom: "8px",
-              lineHeight: 1,
-            }}>
-              Linkwright Studios
-            </div>
+          <div style={{ marginBottom: "28px" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/linkwright-logo.png" alt="Linkwright" style={{ width: "300px", maxWidth: "100%", height: "auto", objectFit: "contain", marginBottom: "12px", display: "block", marginLeft: "auto", marginRight: "auto" }} />
             <div style={{
               width: "28px", height: "1px",
               background: "#C9A84C",
-              marginBottom: "10px",
+              marginBottom: "8px",
+              marginLeft: "auto", marginRight: "auto",
             }} />
             <div style={{
               fontSize: "11px",
@@ -252,8 +259,8 @@ export default function LoginPage() {
 
           {/* Footer */}
           <div style={{
-            marginTop: "40px",
-            paddingTop: "24px",
+            marginTop: "24px",
+            paddingTop: "16px",
             borderTop: "1px solid rgba(26,26,26,0.08)",
             fontSize: "11px",
             color: "rgba(26,26,26,0.30)",

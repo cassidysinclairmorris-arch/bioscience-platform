@@ -35,9 +35,9 @@ function StatusPill({ status }: { status: string }) {
   const cfg: Record<string, { bg: string; color: string; border: string }> = {
     draft:            { bg: "rgba(26,26,26,0.04)",    color: "rgba(26,26,26,0.55)",    border: "rgba(26,26,26,0.12)"    },
     pending_approval: { bg: "rgba(201,168,76,0.08)",  color: "#9C7A2A",                border: "rgba(201,168,76,0.30)"  },
-    approved:         { bg: "rgba(34,85,204,0.08)",   color: "#2255CC",                border: "rgba(34,85,204,0.25)"   },
-    scheduled:        { bg: "rgba(102,51,204,0.08)",  color: "#6633CC",                border: "rgba(102,51,204,0.25)"  },
-    posted:           { bg: "rgba(43,191,176,0.08)",  color: "#1D8A7F",                border: "rgba(43,191,176,0.28)"  },
+    approved:         { bg: "rgba(26,26,26,0.08)",   color: "#1A1A1A",                border: "rgba(26,26,26,0.25)"   },
+    scheduled:        { bg: "rgba(26,26,26,0.08)",  color: "#1A1A1A",                border: "rgba(26,26,26,0.25)"  },
+    posted:           { bg: "rgba(201,168,76,0.08)",  color: "#8A8680",                border: "rgba(201,168,76,0.28)"  },
   };
   const s = cfg[status] ?? cfg.draft;
   return (
@@ -61,28 +61,32 @@ function DashboardTab({ client, pendingPosts, postedPosts, accentColor, onNaviga
   const publishedThisMonth = postedPosts.filter(p => p.updated_at >= monthStart).length;
 
   const statCards = [
-    { label: "Awaiting Your Approval", value: pendingPosts.length, color: "#C9A84C", glow: "rgba(201,168,76,0.12)", action: pendingPosts.length > 0 ? () => onNavigate("approval") : undefined, actionLabel: "Review now →" },
-    { label: "Published This Month",   value: publishedThisMonth,  color: "#2BBFB0", glow: "rgba(43,191,176,0.10)", action: () => onNavigate("history"),  actionLabel: "View history →" },
-    { label: "Total Published",        value: postedPosts.length,  color: accentColor, glow: `${accentColor}26` },
+    { label: "Awaiting Your Approval", value: pendingPosts.length, color: "#C9A84C",  glow: "rgba(201,168,76,0.12)", action: pendingPosts.length > 0 ? () => onNavigate("approval") : undefined, actionLabel: "Review now →" },
+    { label: "Published This Month",   value: publishedThisMonth,  color: "#1A1A1A",  glow: "rgba(26,26,26,0.04)",   action: () => onNavigate("history"),  actionLabel: "View history →" },
+    { label: "Total Published",        value: postedPosts.length,  color: "#C9A84C",  glow: "rgba(201,168,76,0.08)" },
   ];
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
       {/* Welcome */}
-      <div style={glass({ padding: "32px 36px", borderTop: `3px solid ${accentColor}`, background: `linear-gradient(135deg, rgba(26,26,26,0.02), ${accentColor}08)` })}>
-        <div style={{ fontSize: "22px", fontFamily: "var(--font-jakarta, sans-serif)", fontWeight: 800, letterSpacing: "-0.04em", color: "#1A1A1A", marginBottom: "8px" }}>
+      <div style={glass({ padding: "40px 44px", borderTop: "3px solid #C9A84C" })}>
+        <p style={{ fontSize: "11px", fontWeight: 500, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(26,26,26,0.40)", marginBottom: "16px", display: "flex", alignItems: "center", gap: "10px" }}>
+          <span style={{ display: "block", width: "24px", height: "0.5px", background: "#C9A84C", flexShrink: 0 }} />
+          Client Portal
+        </p>
+        <h2 style={{ fontFamily: "var(--font-cormorant, Georgia, serif)", fontSize: "clamp(26px, 2.5vw, 40px)", fontWeight: 300, fontStyle: "italic", lineHeight: 1.15, letterSpacing: "-0.01em", color: "#1A1A1A", marginBottom: "12px" }}>
           Welcome back, {client.name}
-        </div>
+        </h2>
         {client.tagline && (
-          <p style={{ fontSize: "14px", color: "rgba(26,26,26,0.50)", lineHeight: 1.6 }}>{client.tagline}</p>
+          <p style={{ fontSize: "14px", fontWeight: 300, color: "rgba(26,26,26,0.50)", lineHeight: 1.7 }}>{client.tagline}</p>
         )}
         {pendingPosts.length > 0 && (
-          <div style={{ marginTop: "20px", display: "inline-flex", alignItems: "center", gap: "10px", padding: "10px 18px", background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.30)", borderRadius: "12px" }}>
-            <span style={{ fontSize: "14px", color: "#9C7A2A", fontWeight: 600 }}>
-              {pendingPosts.length} post{pendingPosts.length !== 1 ? "s" : ""} waiting for your approval
+          <div style={{ marginTop: "24px", display: "inline-flex", alignItems: "center", gap: "10px", padding: "10px 18px", background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.30)", borderRadius: "8px" }}>
+            <span style={{ fontSize: "13px", color: "#9C7A2A", fontWeight: 500 }}>
+              {pendingPosts.length} post{pendingPosts.length !== 1 ? "s" : ""} awaiting your approval
             </span>
-            <button onClick={() => onNavigate("approval")} style={{ fontSize: "13px", color: "#9C7A2A", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", fontWeight: 700, textDecoration: "underline", textUnderlineOffset: "3px" }}>
-              Review now →
+            <button onClick={() => onNavigate("approval")} style={{ fontSize: "12px", color: "#9C7A2A", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, textDecoration: "underline", textUnderlineOffset: "3px" }}>
+              Review →
             </button>
           </div>
         )}
@@ -93,7 +97,7 @@ function DashboardTab({ client, pendingPosts, postedPosts, accentColor, onNaviga
         {statCards.map((s, i) => (
           <div key={i} style={glass({ padding: "24px 28px", borderTop: `3px solid ${s.color}`, background: `linear-gradient(135deg, rgba(26,26,26,0.02), ${s.glow})` })}>
             <div style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(26,26,26,0.45)", marginBottom: "12px" }}>{s.label}</div>
-            <div style={{ fontSize: "40px", fontWeight: 800, fontFamily: "var(--font-jakarta, sans-serif)", color: s.color, letterSpacing: "-0.04em", lineHeight: 1 }}>{s.value}</div>
+            <div style={{ fontSize: "54px", fontWeight: 300, fontFamily: "var(--font-cormorant, Georgia, serif)", color: s.color, letterSpacing: "-0.02em", lineHeight: 1 }}>{s.value}</div>
             {s.action && (
               <button onClick={s.action} style={{ marginTop: "10px", fontSize: "12px", color: s.color, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, textDecoration: "underline", textUnderlineOffset: "3px", opacity: 0.8 }}>
                 {s.actionLabel}
@@ -107,7 +111,7 @@ function DashboardTab({ client, pendingPosts, postedPosts, accentColor, onNaviga
       {pendingPosts.length > 0 && (
         <div style={glass({ padding: "0", overflow: "hidden" })}>
           <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(26,26,26,0.08)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ fontFamily: "var(--font-jakarta, sans-serif)", fontSize: "16px", fontWeight: 700, letterSpacing: "-0.02em" }}>Needs Your Review</div>
+            <div style={{ fontFamily: "var(--font-cormorant, Georgia, serif)", fontSize: "24px", fontWeight: 300, fontStyle: "italic", letterSpacing: "-0.01em" }}>Needs Your Review</div>
             <StatusPill status="pending_approval" />
           </div>
           <div style={{ display: "flex", flexDirection: "column" }}>
@@ -161,19 +165,19 @@ function ApprovalTab({ client, pendingPosts, accentColor, onRefresh, onToast }: 
     setBusy(null);
     setRequestingId(null);
     setNoteText(prev => { const n = { ...prev }; delete n[p.id]; return n; });
-    onToast("Changes requested — post returned to drafts", "success");
+    onToast("Changes requested. Post returned to drafts.", "success");
     onRefresh();
   };
 
   if (pendingPosts.length === 0) {
     return (
       <div style={{ textAlign: "center", padding: "80px 0" }}>
-        <div style={{ width: "60px", height: "60px", borderRadius: "50%", background: "rgba(43,191,176,0.08)", border: "1px solid rgba(43,191,176,0.22)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
+        <div style={{ width: "60px", height: "60px", borderRadius: "50%", background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.22)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M5 13l4 4L19 7" stroke="#2BBFB0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M5 13l4 4L19 7" stroke="#C9A84C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </div>
-        <div style={{ fontSize: "18px", fontWeight: 700, color: "#1A1A1A", marginBottom: "8px", fontFamily: "var(--font-jakarta, sans-serif)" }}>All caught up!</div>
+        <div style={{ fontSize: "30px", fontWeight: 300, fontStyle: "italic", color: "#1A1A1A", marginBottom: "8px", fontFamily: "var(--font-cormorant, Georgia, serif)" }}>All caught up!</div>
         <p style={{ fontSize: "14px", color: "rgba(26,26,26,0.40)" }}>No posts are waiting for your approval right now.</p>
       </div>
     );
@@ -182,7 +186,7 @@ function ApprovalTab({ client, pendingPosts, accentColor, onRefresh, onToast }: 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
-        <div style={{ fontFamily: "var(--font-jakarta, sans-serif)", fontSize: "18px", fontWeight: 700, letterSpacing: "-0.03em" }}>Approval Queue</div>
+        <div style={{ fontFamily: "var(--font-cormorant, Georgia, serif)", fontSize: "32px", fontWeight: 300, fontStyle: "italic", letterSpacing: "-0.02em" }}>Approval Queue</div>
         <span style={{ fontSize: "12px", fontWeight: 600, padding: "3px 10px", background: "rgba(201,168,76,0.10)", border: "1px solid rgba(201,168,76,0.30)", color: "#9C7A2A", borderRadius: "20px" }}>
           {pendingPosts.length} pending
         </span>
@@ -282,7 +286,7 @@ function HistoryTab({ postedPosts, analytics, accentColor }: {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-      <div style={{ fontFamily: "var(--font-jakarta, sans-serif)", fontSize: "18px", fontWeight: 700, letterSpacing: "-0.03em", marginBottom: "8px" }}>
+      <div style={{ fontFamily: "var(--font-cormorant, Georgia, serif)", fontSize: "32px", fontWeight: 300, fontStyle: "italic", letterSpacing: "-0.02em", marginBottom: "8px" }}>
         Post History
       </div>
       {postedPosts.map((p, i) => {
@@ -290,7 +294,7 @@ function HistoryTab({ postedPosts, analytics, accentColor }: {
         return (
           <div key={p.id} style={glass({ overflow: "hidden" })}>
             <div style={{ padding: "14px 20px", borderBottom: "1px solid rgba(26,26,26,0.07)", display: "flex", alignItems: "center", gap: "10px", background: "rgba(26,26,26,0.02)", flexWrap: "wrap" }}>
-              <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#2BBFB0", flexShrink: 0 }} />
+              <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#C9A84C", flexShrink: 0 }} />
               <span style={{ fontSize: "11px", fontWeight: 600, padding: "2px 8px", background: `${accentColor}18`, border: `1px solid ${accentColor}30`, color: accentColor, borderRadius: "6px", letterSpacing: "0.02em" }}>{p.post_type}</span>
               <span style={{ fontSize: "12px", color: "rgba(26,26,26,0.45)" }}>{p.scheduled_day}</span>
               <StatusPill status="posted" />
@@ -313,7 +317,7 @@ function HistoryTab({ postedPosts, analytics, accentColor }: {
                 ].map(m => (
                   <div key={m.label}>
                     <div style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(26,26,26,0.35)", marginBottom: "2px" }}>{m.label}</div>
-                    <div style={{ fontSize: "16px", fontWeight: 700, color: accentColor, fontFamily: "var(--font-jakarta, sans-serif)" }}>{m.value}</div>
+                    <div style={{ fontSize: "22px", fontWeight: 300, color: accentColor, fontFamily: "var(--font-cormorant, Georgia, serif)" }}>{m.value}</div>
                   </div>
                 ))}
               </div>
@@ -350,7 +354,7 @@ function ReportsTab({ client, postedPosts, pendingPosts, accentColor }: {
     <div style={{ display: "flex", flexDirection: "column", gap: "24px" }} id="portal-report">
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ fontFamily: "var(--font-jakarta, sans-serif)", fontSize: "18px", fontWeight: 700, letterSpacing: "-0.03em" }}>
+        <div style={{ fontFamily: "var(--font-cormorant, Georgia, serif)", fontSize: "32px", fontWeight: 300, fontStyle: "italic", letterSpacing: "-0.02em" }}>
           LinkedIn Performance Report
         </div>
         <button
@@ -369,36 +373,37 @@ function ReportsTab({ client, postedPosts, pendingPosts, accentColor }: {
       {/* Brand header card */}
       <div style={{ background: `linear-gradient(135deg, ${accentColor}18, ${accentColor}08)`, border: `1px solid ${accentColor}30`, borderRadius: "16px", padding: "28px 32px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div>
-          <div style={{ fontSize: "24px", fontWeight: 800, fontFamily: "var(--font-jakarta, sans-serif)", color: "#1A1A1A", letterSpacing: "-0.04em", marginBottom: "4px" }}>{client.name}</div>
+          <div style={{ fontSize: "38px", fontWeight: 300, fontStyle: "italic", fontFamily: "var(--font-cormorant, Georgia, serif)", color: "#1A1A1A", letterSpacing: "-0.02em", marginBottom: "4px" }}>{client.name}</div>
           {client.tagline && <div style={{ fontSize: "13px", color: "rgba(26,26,26,0.50)" }}>{client.tagline}</div>}
           <div style={{ fontSize: "11px", color: "rgba(26,26,26,0.35)", marginTop: "8px" }}>
             Report generated {new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
           </div>
         </div>
         <div style={{ textAlign: "right" }}>
-          <div style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(26,26,26,0.40)", marginBottom: "6px" }}>Powered by</div>
-          <div style={{ fontSize: "16px", fontWeight: 800, color: accentColor, fontFamily: "var(--font-jakarta, sans-serif)", letterSpacing: "-0.03em" }}>Linkwright</div>
+          <div style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(26,26,26,0.40)", marginBottom: "8px" }}>Powered by</div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/linkwright-logo.png" alt="Linkwright" style={{ height: "24px", objectFit: "contain" }} />
         </div>
       </div>
 
       {/* Summary stats */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
         {[
-          { label: "Total Published",    value: postedPosts.length,  color: "#2BBFB0" },
+          { label: "Total Published",    value: postedPosts.length,  color: "#1A1A1A" },
           { label: "Pending Approval",   value: pendingPosts.length, color: "#C9A84C" },
-          { label: "Published This Month", value: postsPerMonth[postsPerMonth.length - 1]?.count || 0, color: accentColor },
-          { label: "Avg Posts / Month",  value: Math.round(postedPosts.length / Math.max(months.length, 1)), color: "#2255CC" },
+          { label: "Published This Month", value: postsPerMonth[postsPerMonth.length - 1]?.count || 0, color: "#C9A84C" },
+          { label: "Avg Posts / Month",  value: Math.round(postedPosts.length / Math.max(months.length, 1)), color: "#1A1A1A" },
         ].map((s, i) => (
           <div key={i} style={glass({ padding: "20px 24px", borderTop: `2px solid ${s.color}` })}>
             <div style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(26,26,26,0.40)", marginBottom: "10px" }}>{s.label}</div>
-            <div style={{ fontSize: "36px", fontWeight: 800, fontFamily: "var(--font-jakarta, sans-serif)", color: s.color, letterSpacing: "-0.04em", lineHeight: 1 }}>{s.value}</div>
+            <div style={{ fontSize: "48px", fontWeight: 300, fontFamily: "var(--font-cormorant, Georgia, serif)", color: s.color, letterSpacing: "-0.02em", lineHeight: 1 }}>{s.value}</div>
           </div>
         ))}
       </div>
 
       {/* Posts per month bar chart */}
       <div style={glass({ padding: "24px" })}>
-        <div style={{ fontFamily: "var(--font-jakarta, sans-serif)", fontSize: "15px", fontWeight: 700, letterSpacing: "-0.02em", marginBottom: "20px" }}>Posts Published by Month</div>
+        <div style={{ fontFamily: "var(--font-cormorant, Georgia, serif)", fontSize: "24px", fontWeight: 300, fontStyle: "italic", letterSpacing: "-0.01em", marginBottom: "20px" }}>Posts Published by Month</div>
         <div style={{ display: "flex", gap: "24px", alignItems: "flex-end", height: "120px" }}>
           {postsPerMonth.map(m => (
             <div key={m.label} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
@@ -414,7 +419,7 @@ function ReportsTab({ client, postedPosts, pendingPosts, accentColor }: {
       {postedPosts.length > 0 && (
         <div style={glass({ overflow: "hidden" })}>
           <div style={{ padding: "18px 24px", borderBottom: "1px solid rgba(26,26,26,0.08)" }}>
-            <div style={{ fontFamily: "var(--font-jakarta, sans-serif)", fontSize: "15px", fontWeight: 700, letterSpacing: "-0.02em" }}>Recent Posts</div>
+            <div style={{ fontFamily: "var(--font-cormorant, Georgia, serif)", fontSize: "24px", fontWeight: 300, fontStyle: "italic", letterSpacing: "-0.01em" }}>Recent Posts</div>
           </div>
           <div>
             {postedPosts.slice(0, 8).map((p, i) => (
@@ -481,7 +486,14 @@ export default function PortalPage() {
   useEffect(() => {
     fetch("/api/auth/me")
       .then(r => { if (!r.ok) { router.push("/portal/login"); return null; } return r.json(); })
-      .then(data => { if (data) setSession(data); });
+      .then(data => {
+        if (!data) return;
+        // Agency users (admin@gorlin.com) get full access; clients must have a clientId
+        if (!data.email || (data.role !== "agency" && !data.clientId)) {
+          router.push("/portal/login"); return;
+        }
+        setSession(data);
+      });
   }, [router]);
 
   useEffect(() => {
@@ -521,12 +533,22 @@ export default function PortalPage() {
     return (
       <div style={{ minHeight: "100vh", background: "#F5F2EE", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(26,26,26,0.50)", fontSize: "14px", flexDirection: "column", gap: "12px" }}>
         <p>No client account linked to your profile.</p>
-        <a href="/portal/login" style={{ color: "#2255CC", fontSize: "13px" }}>Back to login</a>
+        <a href="/portal/login" style={{ color: "#1A1A1A", fontSize: "13px" }}>Back to login</a>
       </div>
     );
   }
 
-  const accentColor = client.brand?.accent_color || client.color || "#0066ff";
+  // Six muted, warm-toned accents — all drawn from the same earthy editorial family as the landing page
+  const PALETTE = [
+    "#C9A84C", // gold (site primary)
+    "#8B6F4E", // caramel bronze
+    "#7A8B6A", // sage
+    "#9B8070", // warm terracotta
+    "#8A8096", // muted lavender-gray
+    "#6B7A88", // cool slate
+  ];
+  const paletteIndex = client.id.split("").reduce((acc, c) => (acc * 31 + c.charCodeAt(0)) & 0xffff, 0) % PALETTE.length;
+  const accentColor = PALETTE[paletteIndex];
 
   const TABS: { id: PortalTab; label: string; badge?: number }[] = [
     { id: "dashboard", label: "Dashboard" },
@@ -536,7 +558,7 @@ export default function PortalPage() {
   ];
 
   return (
-    <div style={{ minHeight: "100vh", background: "#F5F2EE", color: "#1A1A1A" }}>
+    <div style={{ minHeight: "100vh", background: "#F5F2EE", color: "#1A1A1A", fontFamily: "var(--font-dm-sans, system-ui, sans-serif)", paddingTop: "64px" }}>
 
       {/* Toast */}
       {toast && (
@@ -545,12 +567,12 @@ export default function PortalPage() {
           display: "flex", alignItems: "center", gap: "10px",
           padding: "12px 20px",
           background: "#FFFFFF",
-          border: `1px solid ${toast.type === "success" ? "rgba(43,191,176,0.30)" : toast.type === "error" ? "rgba(204,51,51,0.25)" : "rgba(26,26,26,0.10)"}`,
+          border: `1px solid ${toast.type === "success" ? "rgba(201,168,76,0.30)" : toast.type === "error" ? "rgba(204,51,51,0.25)" : "rgba(26,26,26,0.10)"}`,
           borderRadius: "12px",
           animation: "toastIn 0.3s cubic-bezier(0.16,1,0.3,1) both",
           boxShadow: "0 4px 24px rgba(26,26,26,0.10)",
         }}>
-          <span style={{ fontSize: "12px", color: toast.type === "success" ? "#1D8A7F" : toast.type === "error" ? "#cc3333" : "rgba(26,26,26,0.55)", fontWeight: 700 }}>
+          <span style={{ fontSize: "12px", color: toast.type === "success" ? "#8A8680" : toast.type === "error" ? "#cc3333" : "rgba(26,26,26,0.55)", fontWeight: 700 }}>
             {toast.type === "success" ? "✓" : toast.type === "error" ? "✕" : "✦"}
           </span>
           <span style={{ fontSize: "13px", fontWeight: 500, color: "#1A1A1A" }}>{toast.msg}</span>
@@ -558,23 +580,22 @@ export default function PortalPage() {
       )}
 
       {/* Nav */}
-      <header style={{ position: "sticky", top: 0, zIndex: 50, background: "#F5F2EE", borderBottom: "1px solid rgba(26,26,26,0.09)" }}>
-        <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 32px", height: "60px", display: "flex", alignItems: "center", gap: "24px" }}>
+      <header style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 50, background: "rgba(244,241,236,0.92)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", borderBottom: "0.5px solid rgba(26,24,20,0.10)" }}>
+        <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 32px", height: "64px", display: "flex", alignItems: "center", gap: "24px" }}>
 
-          {/* Logo + client name */}
-          <div style={{ display: "flex", alignItems: "center", gap: "12px", flexShrink: 0 }}>
-            {client.logo_file ? (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img src={client.logo_file} alt={client.name} style={{ height: "28px", objectFit: "contain" }} />
-            ) : (
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <div style={{ width: "28px", height: "28px", borderRadius: "8px", background: `${accentColor}30`, border: `1px solid ${accentColor}50`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: accentColor }} />
-                </div>
-                <span style={{ fontFamily: "var(--font-jakarta, sans-serif)", fontSize: "14px", fontWeight: 700, color: "#1A1A1A", letterSpacing: "-0.02em" }}>{client.name}</span>
-              </div>
-            )}
-          </div>
+          {/* Logo + tagline */}
+          <a href="/landing" style={{ flexShrink: 0, textDecoration: "none", display: "flex", alignItems: "center", gap: "20px" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/linkwright-logo.png" alt="Linkwright" style={{ height: "170px", objectFit: "contain" }} />
+            <div style={{ width: "0.5px", height: "28px", background: "rgba(26,24,20,0.15)" }} />
+            <span style={{
+              fontFamily: "var(--font-cormorant, var(--font-playfair, Georgia, serif))",
+              fontSize: "13px", fontWeight: 300, fontStyle: "italic",
+              color: "rgba(26,24,20,0.45)", letterSpacing: "0.01em", whiteSpace: "nowrap",
+            }}>
+              Engineered for LinkedIn. Optimised for 2026.
+            </span>
+          </a>
 
           {/* Agency client switcher */}
           {session.role === "agency" && clients.length > 1 && (
@@ -589,13 +610,13 @@ export default function PortalPage() {
           )}
 
           {/* Tabs */}
-          <nav style={{ display: "flex", gap: "2px", flex: 1, justifyContent: "center" }}>
+          <nav style={{ display: "flex", gap: "0px", flex: 1, justifyContent: "center" }}>
             {TABS.map(t => (
               <button key={t.id} onClick={() => setTab(t.id)}
-                style={{ position: "relative", padding: "7px 16px", background: tab === t.id ? "rgba(26,26,26,0.07)" : "transparent", border: "none", borderRadius: "10px", fontSize: "13px", fontWeight: tab === t.id ? 600 : 400, color: tab === t.id ? "#1A1A1A" : "rgba(26,26,26,0.45)", cursor: "pointer", transition: "all 0.15s ease", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                style={{ position: "relative", padding: "8px 18px", background: "transparent", border: "none", borderBottom: tab === t.id ? "1px solid #C9A84C" : "1px solid transparent", fontSize: "12px", fontWeight: 400, letterSpacing: "0.04em", color: tab === t.id ? "#1A1A1A" : "rgba(26,26,26,0.45)", cursor: "pointer", transition: "color 0.15s ease, border-color 0.15s ease", fontFamily: "var(--font-dm-sans, inherit)", display: "inline-flex", alignItems: "center", gap: "6px", marginBottom: "-1px" }}>
                 {t.label}
                 {t.badge && t.badge > 0 ? (
-                  <span style={{ minWidth: "18px", height: "18px", borderRadius: "9px", background: "#C9A84C", color: "#000", fontSize: "10px", fontWeight: 700, display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "0 4px" }}>
+                  <span style={{ minWidth: "16px", height: "16px", borderRadius: "8px", background: "rgba(201,168,76,0.15)", color: "#C9A84C", border: "1px solid rgba(201,168,76,0.30)", fontSize: "9px", fontWeight: 600, display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "0 4px" }}>
                     {t.badge}
                   </span>
                 ) : null}
@@ -603,18 +624,16 @@ export default function PortalPage() {
             ))}
           </nav>
 
-          {/* Right: agency studio link + sign out */}
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
-            {session.role === "agency" && (
-              <a href="/" style={{ fontSize: "12px", fontWeight: 500, color: "rgba(26,26,26,0.55)", textDecoration: "none", padding: "6px 12px", background: "rgba(26,26,26,0.04)", border: "1px solid rgba(26,26,26,0.10)", borderRadius: "8px", transition: "all 0.15s ease" }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(26,26,26,0.08)"; (e.currentTarget as HTMLElement).style.color = "#1A1A1A"; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "rgba(26,26,26,0.04)"; (e.currentTarget as HTMLElement).style.color = "rgba(26,26,26,0.55)"; }}>
-                ← Studio
-              </a>
-            )}
-            <a href="/portal/login" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "32px", height: "32px", background: "rgba(26,26,26,0.04)", border: "1px solid rgba(26,26,26,0.10)", borderRadius: "8px", color: "rgba(26,26,26,0.50)", textDecoration: "none", fontSize: "14px", transition: "all 0.15s ease" }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(26,26,26,0.08)"; (e.currentTarget as HTMLElement).style.color = "#1A1A1A"; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "rgba(26,26,26,0.04)"; (e.currentTarget as HTMLElement).style.color = "rgba(26,26,26,0.50)"; }}
+          {/* Right: back to main site + sign out */}
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
+            <a href="/landing" style={{ fontSize: "12px", fontWeight: 500, color: "rgba(26,26,26,0.55)", textDecoration: "none", padding: "6px 14px", background: "transparent", border: "1px solid rgba(26,26,26,0.12)", borderRadius: "6px", transition: "all 0.15s ease", fontFamily: "var(--font-dm-sans, sans-serif)" }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(26,26,26,0.22)"; (e.currentTarget as HTMLElement).style.color = "#1A1A1A"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(26,26,26,0.12)"; (e.currentTarget as HTMLElement).style.color = "rgba(26,26,26,0.55)"; }}>
+              ← Back to main site
+            </a>
+            <a href="/portal/login" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "32px", height: "32px", background: "transparent", border: "1px solid rgba(26,26,26,0.12)", borderRadius: "6px", color: "rgba(26,26,26,0.45)", textDecoration: "none", fontSize: "14px", transition: "all 0.15s ease" }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(26,26,26,0.22)"; (e.currentTarget as HTMLElement).style.color = "#1A1A1A"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(26,26,26,0.12)"; (e.currentTarget as HTMLElement).style.color = "rgba(26,26,26,0.45)"; }}
               title="Sign out">
               ↩
             </a>
@@ -623,6 +642,27 @@ export default function PortalPage() {
         {/* Accent line */}
         <div style={{ height: "2px", background: `linear-gradient(90deg, transparent 0%, ${accentColor}80 30%, ${accentColor} 50%, ${accentColor}80 70%, transparent 100%)`, transition: "all 0.4s ease" }} />
       </header>
+
+      {/* Banner — light services.png treatment, matching the landing page split section */}
+      <div style={{ position: "relative", height: "200px", overflow: "hidden", background: "#EDE8E0" }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/images/services.png"
+          alt="" aria-hidden="true"
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", filter: "brightness(1.05) contrast(1.05) saturate(0.6)" }}
+        />
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(244,241,236,0.78) 0%, rgba(244,241,236,0.58) 100%)" }} />
+        <div style={{ position: "relative", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "0 48px" }}>
+          <div style={{ width: "28px", height: "1px", background: accentColor, marginBottom: "20px", opacity: 0.8 }} />
+          <p style={{ fontFamily: "var(--font-cormorant, Georgia, serif)", fontSize: "clamp(22px, 3vw, 42px)", fontWeight: 300, fontStyle: "italic", color: "#1A1814", lineHeight: 1.2, maxWidth: "600px", letterSpacing: "-0.01em" }}>
+            {client.name}
+          </p>
+          {client.tagline && (
+            <p style={{ fontSize: "11px", color: "rgba(26,24,20,0.50)", marginTop: "10px", letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 500 }}>{client.tagline}</p>
+          )}
+          <div style={{ width: "28px", height: "1px", background: accentColor, marginTop: "20px", opacity: 0.8 }} />
+        </div>
+      </div>
 
       {/* Main */}
       <main style={{ maxWidth: "1100px", margin: "0 auto", padding: "36px 32px 80px" }}>

@@ -1,9 +1,16 @@
 import type { Metadata } from "next";
-import { Inter, Plus_Jakarta_Sans, Cormorant_Garamond, Playfair_Display } from "next/font/google";
+import { Inter, Plus_Jakarta_Sans, Cormorant_Garamond, Playfair_Display, DM_Sans } from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({
   variable: "--font-inter",
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  display: "swap",
+});
+
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
   display: "swap",
@@ -33,14 +40,14 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "Gorlin Content Studio",
-  description: "LinkedIn content platform for the Gorlin Companies bioscience portfolio",
+  title: "Linkwright Studios",
+  description: "LinkedIn growth agency engineered for founders, executives, and B2B brands.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${jakarta.variable} ${cormorant.variable} ${playfair.variable}`}>
-      <body>{children}</body>
+    <html lang="en" className={`${inter.variable} ${jakarta.variable} ${cormorant.variable} ${playfair.variable} ${dmSans.variable}`}>
+      <body style={{ fontFamily: "var(--font-dm-sans, system-ui, sans-serif)" }}>{children}</body>
     </html>
   );
 }

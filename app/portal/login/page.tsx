@@ -22,7 +22,7 @@ export default function PortalLoginPage() {
       });
       if (res.ok) {
         const data = await res.json();
-        router.push(data.role === "agency" ? "/" : "/portal");
+        router.push("/portal");
         router.refresh();
       } else {
         const data = await res.json();
@@ -38,6 +38,22 @@ export default function PortalLoginPage() {
   return (
     <div style={{ minHeight: "100vh", background: "#F5F2EE", display: "flex", alignItems: "stretch" }}>
 
+      {/* Back to main site */}
+      <a href="/landing" style={{
+        position: "fixed", top: "20px", left: "24px", zIndex: 100,
+        fontSize: "12px", fontWeight: 500,
+        color: "rgba(26,26,26,0.45)",
+        textDecoration: "none",
+        display: "inline-flex", alignItems: "center", gap: "6px",
+        fontFamily: "var(--font-dm-sans, system-ui, sans-serif)",
+        transition: "color 0.15s ease",
+      }}
+        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "#1A1A1A"; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "rgba(26,26,26,0.45)"; }}
+      >
+        ← Back to main site
+      </a>
+
       {/* ── Left panel — editorial image ──────────────────────────────────── */}
       <div style={{
         flex: "1 1 0",
@@ -47,23 +63,23 @@ export default function PortalLoginPage() {
       }} className="portal-login-left">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="https://images.unsplash.com/photo-1582719508461-905c673771fd?w=1600&q=80&auto=format&fit=crop"
+          src="/images/about.png"
           alt=""
           aria-hidden="true"
           style={{
             position: "absolute", inset: 0,
             width: "100%", height: "100%",
             objectFit: "cover",
-            filter: "grayscale(15%) contrast(1.05)",
+            filter: "brightness(1.05) contrast(1.05) saturate(0.65)",
           }}
         />
         <div style={{
           position: "absolute", inset: 0,
-          background: "linear-gradient(135deg, rgba(245,242,238,0.10) 0%, rgba(26,26,26,0.60) 100%)",
+          background: "linear-gradient(135deg, rgba(245,242,238,0.50) 0%, rgba(245,242,238,0.30) 100%)",
         }} />
         <div style={{
           position: "absolute", bottom: "48px", left: "48px", right: "48px",
-          color: "#F5F2EE",
+          color: "#1A1814",
         }}>
           <div style={{ width: "28px", height: "1px", background: "#C9A84C", marginBottom: "14px" }} />
           <div style={{
@@ -73,7 +89,7 @@ export default function PortalLoginPage() {
           }}>
             Your content, reviewed and approved.
           </div>
-          <div style={{ fontSize: "12px", color: "rgba(245,242,238,0.50)", letterSpacing: "0.06em" }}>
+          <div style={{ fontSize: "12px", color: "rgba(26,24,20,0.45)", letterSpacing: "0.06em" }}>
             Linkwright Studios · Client Portal
           </div>
         </div>
@@ -82,11 +98,11 @@ export default function PortalLoginPage() {
       {/* ── Right panel — login form ────────────────────────────────────────── */}
       <div style={{
         width: "100%",
-        maxWidth: "480px",
+        maxWidth: "700px",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        padding: "48px 40px",
+        padding: "32px 40px",
         background: "#F5F2EE",
         position: "relative",
       }}>
@@ -98,26 +114,21 @@ export default function PortalLoginPage() {
           background: "linear-gradient(90deg, #C9A84C 0%, transparent 100%)",
         }} />
 
-        <div style={{ width: "100%", maxWidth: "360px", animation: "fadeUp 0.45s cubic-bezier(0.16,1,0.3,1) both" }}>
+        <div style={{ width: "100%", maxWidth: "640px", textAlign: "center", animation: "fadeUp 0.45s cubic-bezier(0.16,1,0.3,1) both" }}>
 
           {/* Wordmark */}
-          <div style={{ marginBottom: "52px" }}>
+          <div style={{ marginBottom: "28px" }}>
             <div style={{
               fontFamily: "var(--font-playfair, var(--font-cormorant, Georgia, serif))",
-              fontSize: "30px", fontWeight: 400, fontStyle: "italic",
+              fontSize: "26px", fontWeight: 400, fontStyle: "italic",
               letterSpacing: "-0.02em", color: "#1A1A1A",
-              marginBottom: "8px", lineHeight: 1,
+              marginBottom: "6px", lineHeight: 1,
             }}>
               Client Portal
             </div>
-            <div style={{ width: "28px", height: "1px", background: "#C9A84C", marginBottom: "10px" }} />
-            <div style={{
-              fontSize: "11px", color: "rgba(26,26,26,0.40)",
-              letterSpacing: "0.14em", textTransform: "uppercase",
-              fontFamily: "var(--font-inter, system-ui, sans-serif)",
-            }}>
-              Linkwright Studios
-            </div>
+            <div style={{ width: "28px", height: "1px", background: "#C9A84C", marginBottom: "10px", marginLeft: "auto", marginRight: "auto" }} />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/linkwright-logo.png" alt="Linkwright" style={{ width: "300px", maxWidth: "100%", height: "auto", objectFit: "contain", opacity: 0.85, display: "block", marginLeft: "auto", marginRight: "auto" }} />
           </div>
 
           {/* Form */}
@@ -232,8 +243,8 @@ export default function PortalLoginPage() {
 
           {/* Footer */}
           <div style={{
-            marginTop: "40px",
-            paddingTop: "24px",
+            marginTop: "24px",
+            paddingTop: "16px",
             borderTop: "1px solid rgba(26,26,26,0.08)",
             fontSize: "11px",
             color: "rgba(26,26,26,0.30)",
