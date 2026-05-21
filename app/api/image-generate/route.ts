@@ -3,7 +3,7 @@ import Replicate from "replicate";
 import { getLinkedInTrends } from "@/lib/linkedin-trends";
 import { readBrand, getBrandBlock } from "@/lib/brand-context";
 
-const replicate = new Replicate({ auth: process.env.REPLICATE_API_TOKEN });
+const replicate = new Replicate({ auth: process.env.REPLICATE_API_TOKEN, useFileOutput: false });
 
 // ── Prompt builder ────────────────────────────────────────────────────────────
 function buildPrompt(
@@ -103,6 +103,8 @@ async function generateFlux(prompt: string): Promise<string> {
   return url;
 }
 
+export const maxDuration = 60;
+
 // ── Route handler ─────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
   try {
@@ -132,7 +134,7 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({ imageUrl, provider: "Ideogram (fallback)", prompt });
         } catch (e2) {
           console.error("[Ideogram] fallback failed:", e2);
-          return NextResponse.json({ error: "Both image providers failed", imageUrl: null }, { status: 502 });
+          return NextResponse.json({ error: `Flux: ${String(e1)} | Ideogram: ${String(e2)}`, imageUrl: null }, { status: 502 });
         }
       }
     } else {
@@ -146,7 +148,7 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({ imageUrl, provider: "Flux (fallback)", prompt });
         } catch (e2) {
           console.error("[Flux] fallback failed:", e2);
-          return NextResponse.json({ error: "Both image providers failed", imageUrl: null }, { status: 502 });
+          return NextResponse.json({ error: `Ideogram: ${String(e1)} | Flux: ${String(e2)}`, imageUrl: null }, { status: 502 });
         }
       }
     }

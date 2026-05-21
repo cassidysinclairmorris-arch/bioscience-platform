@@ -24,13 +24,17 @@ export async function getLinkedInTrends(
   const query = `LinkedIn algorithm 2026 best practices ${industry} content ${audience} April 2026`;
 
   try {
-    const message = await anthropic.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 600,
-      tools: [{ type: "web_search_20250305" as const, name: "web_search" }],
-      messages: [{
-        role: "user",
-        content: `Search for: "${query}"
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("trends timeout")), 12000)
+    );
+    const message = await Promise.race([
+      anthropic.messages.create({
+        model: "claude-sonnet-4-6",
+        max_tokens: 600,
+        tools: [{ type: "web_search_20250305" as const, name: "web_search" }],
+        messages: [{
+          role: "user",
+          content: `Search for: "${query}"
 
 Based on current LinkedIn algorithm updates and best practices for April 2026, write a concise 3-4 sentence summary covering:
 1. What content formats LinkedIn is currently boosting (and suppressing) in 2026
@@ -39,8 +43,10 @@ Based on current LinkedIn algorithm updates and best practices for April 2026, w
 4. Optimal posting cadence for ${timezone} timezone
 
 Be specific, data-driven, and focused only on what is working NOW in 2026. No generic advice.`,
-      }],
-    });
+        }],
+      }),
+      timeout,
+    ]);
 
     const text = message.content
       .filter((b): b is Anthropic.TextBlock => b.type === "text")

@@ -41,14 +41,16 @@ Instructions:
 - Keep hashtags at the end (3-4)
 - Keep the strong hook in the first 2 lines
 - Apply current LinkedIn best practices where relevant
-- Write only the revised post text — no preamble, no explanation of changes`,
+- Write only the revised post text — no preamble, no explanation of changes
+- CRITICAL FORMATTING RULE: Never use em dashes (—) anywhere in the post. This is absolute. Use alternative punctuation instead — commas, periods, colons, or restructure the sentence. Zero em dashes in any generated post.`,
       }],
     });
 
-    const content = message.content
+    const raw = message.content
       .filter((b): b is Anthropic.TextBlock => b.type === "text")
       .map(b => b.text)
       .join("");
+    const content = raw.replace(/—/g, ",").replace(/–/g, ",");
 
     return NextResponse.json({ content });
   } catch (error) {

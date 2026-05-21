@@ -28,7 +28,8 @@ Rules:
 - End with a genuine, specific open question that invites real professional comment
 - Stay completely true to the brand voice described above
 - Apply the current LinkedIn best practices from the context above
-- Write only the post text — no preamble, no quotes around it, no subject line`;
+- Write only the post text — no preamble, no quotes around it, no subject line
+- CRITICAL FORMATTING RULE: Never use em dashes (—) anywhere in the post. This is absolute. Use alternative punctuation instead — commas, periods, colons, or restructure the sentence. Zero em dashes in any generated post.`;
 
 export async function POST(req: NextRequest) {
   try {
@@ -53,10 +54,11 @@ export async function POST(req: NextRequest) {
         }],
       });
 
-      const content = message.content
+      const raw = message.content
         .filter((b): b is Anthropic.TextBlock => b.type === "text")
         .map(b => b.text)
         .join("");
+      const content = raw.replace(/—/g, ",").replace(/–/g, ",");
 
       return NextResponse.json({ content });
     } catch {
@@ -67,10 +69,11 @@ export async function POST(req: NextRequest) {
         messages: [{ role: "user", content: PROMPT(company, pillar, trends) }],
       });
 
-      const content = message.content
+      const raw = message.content
         .filter((b): b is Anthropic.TextBlock => b.type === "text")
         .map(b => b.text)
         .join("");
+      const content = raw.replace(/—/g, ",").replace(/–/g, ",");
 
       return NextResponse.json({ content });
     }

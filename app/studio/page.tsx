@@ -2984,12 +2984,19 @@ useEffect(() => {
   const generateAiImage = async (editRequest?: string, postContentOverride?: string) => {
     setIsImgGen(true);
     if (!editRequest) setImgUrl("");
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 90000);
     try {
-      const r = await fetch("/api/image-generate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ company: ac, pillar: ap, visualType: vizType, postContent: postContentOverride ?? post, editRequest }) });
+      const r = await fetch("/api/image-generate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ company: ac, pillar: ap, visualType: vizType, postContent: postContentOverride ?? post, editRequest }), signal: controller.signal });
+      clearTimeout(timer);
       const d = await r.json();
       if (d.imageUrl) { setImgUrl(d.imageUrl); setImgProvider(d.provider || ""); notify("Image generated", "success"); }
       else notify(d.error || "Image generation failed", "error");
-    } catch { notify("Image generation failed", "error"); }
+    } catch (e) {
+      clearTimeout(timer);
+      const isTimeout = e instanceof Error && e.name === "AbortError";
+      notify(isTimeout ? "Image generation timed out — please try again" : "Image generation failed", "error");
+    }
     setIsImgGen(false);
   };
 
