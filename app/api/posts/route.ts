@@ -17,23 +17,28 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const db = getDb();
-  const { company_id, company_name, post_type, scheduled_day, content, status, week_number, image_url } = await req.json();
+  const { company_id, company_name, post_type, scheduled_day, content, status, week_number, image_url, image_canvas_json } = await req.json();
   const result = db.prepare(
-    `INSERT INTO posts (company_id, company_name, post_type, scheduled_day, content, status, week_number, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(company_id, company_name, post_type, scheduled_day, content, status || "draft", week_number || null, image_url || null);
+    `INSERT INTO posts (company_id, company_name, post_type, scheduled_day, content, status, week_number, image_url, image_canvas_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run(company_id, company_name, post_type, scheduled_day, content, status || "draft", week_number || null, image_url || null, image_canvas_json || null);
   const post = db.prepare("SELECT * FROM posts WHERE id = ?").get(result.lastInsertRowid);
   return NextResponse.json({ post });
 }
 
 export async function PATCH(req: NextRequest) {
   const db = getDb();
-  const { id, status, content, notes, image_url } = await req.json();
+  const { id, status, content, notes, image_url, image_canvas_json, scheduled_at, linkedin_post_id } = await req.json();
+
   if (content !== undefined) {
     db.prepare("UPDATE posts SET content = ?, updated_at = datetime('now') WHERE id = ?").run(content, id);
   }
   if (status !== undefined) {
     if (status === "pending_approval") {
       db.prepare("UPDATE posts SET status = ?, notes = NULL, updated_at = datetime('now') WHERE id = ?").run(status, id);
+    } else if (status === "approved") {
+      db.prepare("UPDATE posts SET status = ?, approved_at = datetime('now'), updated_at = datetime('now') WHERE id = ?").run(status, id);
+    } else if (status === "posted") {
+      db.prepare("UPDATE posts SET status = ?, posted_at = datetime('now'), updated_at = datetime('now') WHERE id = ?").run(status, id);
     } else {
       db.prepare("UPDATE posts SET status = ?, updated_at = datetime('now') WHERE id = ?").run(status, id);
     }
@@ -44,6 +49,16 @@ export async function PATCH(req: NextRequest) {
   if (image_url !== undefined) {
     db.prepare("UPDATE posts SET image_url = ?, updated_at = datetime('now') WHERE id = ?").run(image_url, id);
   }
+  if (image_canvas_json !== undefined) {
+    db.prepare("UPDATE posts SET image_canvas_json = ?, updated_at = datetime('now') WHERE id = ?").run(image_canvas_json, id);
+  }
+  if (scheduled_at !== undefined) {
+    db.prepare("UPDATE posts SET scheduled_at = ?, status = 'scheduled', updated_at = datetime('now') WHERE id = ?").run(scheduled_at || null, id);
+  }
+  if (linkedin_post_id !== undefined) {
+    db.prepare("UPDATE posts SET linkedin_post_id = ?, updated_at = datetime('now') WHERE id = ?").run(linkedin_post_id, id);
+  }
+
   const post = db.prepare("SELECT * FROM posts WHERE id = ?").get(id);
   return NextResponse.json({ post });
 }

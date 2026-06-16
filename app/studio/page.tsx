@@ -2,12 +2,56 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { Company, Pillar } from "@/lib/companies";
+import ComposeCanvas, { type ComposeCanvasHandle } from "./ComposeCanvas";
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line,
+  PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
+type Report = {
+  id: number;
+  client_id: string;
+  type: "monthly" | "weekly";
+  period_start: string;
+  period_end: string;
+  status: "draft" | "published";
+  raw_pdf_url: string | null;
+  extracted_data: string | null;
+  narrative_agency: string | null;
+  narrative_client: string | null;
+  created_at: string;
+  updated_at: string;
+  published_at: string | null;
+};
+type ExtractedData = {
+  impressions?: number | null;
+  reach?: number | null;
+  engagementRate?: number | null;
+  totalEngagements?: number | null;
+  reactions?: number | null;
+  comments?: number | null;
+  shares?: number | null;
+  clicks?: number | null;
+  followerCount?: number | null;
+  followerGrowth?: number | null;
+  followerGrowthPercent?: number | null;
+  posts?: Array<{
+    date?: string | null;
+    content?: string | null;
+    impressions?: number | null;
+    engagementRate?: number | null;
+    reactions?: number | null;
+    comments?: number | null;
+    shares?: number | null;
+    clicks?: number | null;
+    type?: string | null;
+  }>;
+  topPost?: { date?: string | null; content?: string | null; impressions?: number | null; engagementRate?: number | null } | null;
+  periodStart?: string | null;
+  periodEnd?: string | null;
+};
 type Post = {
   id: number;
   company_id: string;
@@ -18,7 +62,12 @@ type Post = {
   status: "draft" | "pending_approval" | "approved" | "scheduled" | "posted";
   notes: string | null;
   image_url: string | null;
+  image_canvas_json: string | null;
   week_number: number | null;
+  approved_at: string | null;
+  scheduled_at: string | null;
+  posted_at: string | null;
+  linkedin_post_id: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -47,40 +96,6 @@ const LOGO_FILES: Record<string, string> = {
   senvi:    "/files/senvi_logo_final.png",
 };
 
-const REPORT_DATA = {
-  followerGrowth: [
-    { month: "Oct", "C-POLAR": 1240, Oxia: 890,  CoRegen: 670  },
-    { month: "Nov", "C-POLAR": 1380, Oxia: 1020, CoRegen: 780  },
-    { month: "Dec", "C-POLAR": 1510, Oxia: 1190, CoRegen: 920  },
-    { month: "Jan", "C-POLAR": 1720, Oxia: 1340, CoRegen: 1050 },
-    { month: "Feb", "C-POLAR": 1890, Oxia: 1480, CoRegen: 1180 },
-    { month: "Mar", "C-POLAR": 2100, Oxia: 1640, CoRegen: 1340 },
-    { month: "Apr", "C-POLAR": 2380, Oxia: 1810, CoRegen: 1490 },
-  ],
-  engagementByDay: [
-    { day: "Mon", rate: 2.4 },
-    { day: "Tue", rate: 4.9 },
-    { day: "Wed", rate: 6.3 },
-    { day: "Thu", rate: 5.8 },
-    { day: "Fri", rate: 3.7 },
-    { day: "Sat", rate: 1.6 },
-    { day: "Sun", rate: 1.1 },
-  ],
-  weeklyImpressions: [
-    { week: "W1",  impressions: 11200 },
-    { week: "W2",  impressions: 13800 },
-    { week: "W3",  impressions: 12400 },
-    { week: "W4",  impressions: 16700 },
-    { week: "W5",  impressions: 14900 },
-    { week: "W6",  impressions: 19200 },
-    { week: "W7",  impressions: 21400 },
-    { week: "W8",  impressions: 18600 },
-    { week: "W9",  impressions: 23100 },
-    { week: "W10", impressions: 26400 },
-    { week: "W11", impressions: 24800 },
-    { week: "W12", impressions: 29300 },
-  ],
-};
 
 // ── Style helpers ─────────────────────────────────────────────────────────────
 const T = "#1A1A1A";           // primary text
@@ -424,8 +439,8 @@ function ComposeTab({
   svg, setSvg, vizType, setVizType,
   refineRequest, setRefineRequest,
   svgRefineRequest, setSvgRefineRequest,
-  imgUrl, imgProvider, isImgGen, clearImgUrl,
-  generate, generateVisual, generateAiImage, refinePost, refineVisual, savePost, copy, downloadSvg, notify,
+  imgUrl, imgProvider, imgPrompt, isImgGen, clearImgUrl,
+  generate, generateVisual, generateAiImage, refinePost, refineVisual, savePost, sendForApproval, copy, downloadSvg, notify,
 }: {
   ac: Company; ap: Pillar; setAp: (p: Pillar) => void;
   post: string; setPost: (s: string) => void;
@@ -433,16 +448,18 @@ function ComposeTab({
   svg: string; setSvg: (s: string) => void; vizType: VisualType; setVizType: (v: VisualType) => void;
   refineRequest: string; setRefineRequest: (s: string) => void;
   svgRefineRequest: string; setSvgRefineRequest: (s: string) => void;
-  imgUrl: string; imgProvider: string; isImgGen: boolean; clearImgUrl: () => void;
+  imgUrl: string; imgProvider: string; imgPrompt: string; isImgGen: boolean; clearImgUrl: () => void;
   generate: () => void; generateVisual: (postContentOverride?: string) => void; generateAiImage: (editRequest?: string, postContentOverride?: string) => void;
   refinePost: () => void; refineVisual: () => void;
   savePost: (s: "draft" | "approved", imageUrl?: string) => void;
+  sendForApproval: (imageUrl?: string) => void;
   copy: (t: string) => void; downloadSvg: () => void; notify: (m: string, t?: "default" | "success" | "error") => void;
 }) {
   const [imageMode, setImageMode] = useState<"ai" | "svg">("ai");
   const [imgEditRequest, setImgEditRequest] = useState("");
   const [genMode, setGenMode] = useState<"post" | "standalone">("post");
   const [standaloneBrief, setStandaloneBrief] = useState("");
+  const canvasRef = useRef<ComposeCanvasHandle>(null);
   const charCount = post.length;
   const charLimit = 3000;
   const charPct = Math.min(charCount / charLimit, 1);
@@ -565,6 +582,12 @@ function ComposeTab({
                   <div style={{ display: "flex", gap: "8px", marginTop: "12px", flexWrap: "wrap" }}>
                     <GlassBtn onClick={() => copy(post)}>Copy</GlassBtn>
                     <GlassBtn onClick={() => savePost("draft", imageMode === "ai" ? imgUrl || undefined : undefined)} disabled={isSave}>Save draft</GlassBtn>
+                    <GlassBtn onClick={() => {
+                      const dataUrl = imgUrl ? (canvasRef.current?.getCanvasDataURL() ?? imgUrl) : undefined;
+                      sendForApproval(dataUrl);
+                    }} disabled={isSave || !post.trim()} variant="primary">
+                      {isSave ? <><Spinner /> Sending…</> : "Send for Approval ↗"}
+                    </GlassBtn>
                     <GlassBtn onClick={() => savePost("approved", imageMode === "ai" ? imgUrl || undefined : undefined)} disabled={isSave} variant="teal">Approve & save</GlassBtn>
                     <GlassBtn onClick={generate} disabled={isGen}>Regenerate</GlassBtn>
                   </div>
@@ -719,38 +742,36 @@ function ComposeTab({
             /* ── AI Image mode ── */
             imgUrl ? (
               <>
-                <div style={{ border: "1px solid rgba(26,26,26,0.09)", borderRadius: "8px", overflow: "hidden", marginBottom: "12px", position: "relative" }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={imgUrl} alt="AI generated visual" style={{ width: "100%", display: "block" }} />
-                  {imgProvider && (
-                    <span style={{ position: "absolute", top: "10px", right: "10px", fontSize: "10px", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", padding: "3px 8px", background: "rgba(0,0,0,0.65)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: "6px", color: "rgba(255,255,255,0.65)", backdropFilter: "blur(8px)" }}>
-                      {imgProvider}
-                    </span>
-                  )}
-                  <div style={{ position: "absolute", bottom: "16px", left: "16px" }}>
-                    <CompanyLogo company={ac} overlay />
-                  </div>
-                </div>
-                <div style={{ display: "flex", gap: "8px", marginBottom: "16px", flexWrap: "wrap" }}>
-                  <GlassBtn onClick={() => { const a = document.createElement("a"); a.href = imgUrl; a.download = `${ac.id}-${vizType}-${Date.now()}.png`; a.click(); notify("Image downloaded", "success"); }}>Download</GlassBtn>
+                <ComposeCanvas ref={canvasRef} imgUrl={imgUrl} imgProvider={imgProvider} imgPrompt={imgPrompt} ac={ac} notify={notify} />
+                <div style={{ display: "flex", gap: "8px", marginBottom: "16px", flexWrap: "wrap", marginTop: "4px" }}>
+                  <GlassBtn onClick={() => canvasRef.current?.downloadCanvas()}>Download</GlassBtn>
                   <GlassBtn onClick={() => generateAiImage(undefined, genMode === "standalone" ? standaloneBrief : undefined)} disabled={isImgGen}>{isImgGen ? <><Spinner /> Regenerating…</> : "Regenerate"}</GlassBtn>
                   <GlassBtn onClick={clearImgUrl} variant="ghost">Clear</GlassBtn>
                 </div>
                 <div style={{ borderTop: "1px solid rgba(26,26,26,0.08)", paddingTop: "16px" }}>
                   <div className="label" style={{ marginBottom: "10px" }}>Edit this image</div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", marginBottom: "10px" }}>
-                    {["Change the color scheme","Make it more minimal","Bolder typography","Add more contrast","Brighter background","Darker mood","More whitespace","Stronger visual hierarchy"].map(s => (
-                      <button key={s} onClick={() => setImgEditRequest(s)}
-                        style={{
-                          fontSize: "11px", padding: "5px 10px",
-                          background: imgEditRequest === s ? "rgba(201,168,76,0.08)" : "transparent",
-                          border: imgEditRequest === s ? "1px solid rgba(201,168,76,0.3)" : "1px solid rgba(26,26,26,0.09)",
-                          borderRadius: "6px", color: imgEditRequest === s ? GOLD : T3,
-                          cursor: "pointer", transition: "all 0.15s ease", fontFamily: "inherit", fontWeight: 500,
-                        }}>
-                        {s}
-                      </button>
-                    ))}
+                    {["Change the color scheme","Make it more minimal","Bolder typography","Add more contrast","Brighter background","Darker mood","More whitespace","Stronger visual hierarchy"].map(s => {
+                      const canvasDirect = ["Make it more minimal","Bolder typography","Add more contrast","More whitespace"];
+                      return (
+                        <button key={s} onClick={() => {
+                          if (canvasDirect.includes(s)) {
+                            canvasRef.current?.applyPreset(s);
+                          } else {
+                            setImgEditRequest(s);
+                          }
+                        }}
+                          style={{
+                            fontSize: "11px", padding: "5px 10px",
+                            background: imgEditRequest === s ? "rgba(201,168,76,0.08)" : "transparent",
+                            border: imgEditRequest === s ? "1px solid rgba(201,168,76,0.3)" : "1px solid rgba(26,26,26,0.09)",
+                            borderRadius: "6px", color: imgEditRequest === s ? GOLD : T3,
+                            cursor: "pointer", transition: "all 0.15s ease", fontFamily: "inherit", fontWeight: 500,
+                          }}>
+                          {s}
+                        </button>
+                      );
+                    })}
                   </div>
                   <div style={{ display: "flex", gap: "8px" }}>
                     <input
@@ -837,6 +858,7 @@ function ComposeTab({
             )
           )}
         </div>
+
       </div>
     </div>
   );
@@ -852,6 +874,9 @@ function LibraryTab({
 }) {
   const [editPost, setEditPost] = useState<Post | null>(null);
   const [editContent, setEditContent] = useState("");
+  const [schedulingId, setSchedulingId] = useState<number | null>(null);
+  const [scheduleAt, setScheduleAt] = useState("");
+  const [postingToLinkedIn, setPostingToLinkedIn] = useState<number | null>(null);
 
   const updateStatus = async (p: Post, s: Post["status"]) => {
     await fetch("/api/posts", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: p.id, status: s }) });
@@ -867,6 +892,25 @@ function LibraryTab({
     if (!editPost) return;
     await fetch("/api/posts", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: editPost.id, content: editContent }) });
     setEditPost(null); fetchPosts(); notify("Post updated", "success");
+  };
+  const schedulePost = async (p: Post) => {
+    if (!scheduleAt) return;
+    await fetch("/api/posts", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: p.id, scheduled_at: scheduleAt }) });
+    setSchedulingId(null); setScheduleAt(""); fetchPosts(); notify("Post scheduled ✓", "success");
+  };
+  const postToLinkedIn = async (p: Post) => {
+    setPostingToLinkedIn(p.id);
+    try {
+      const res = await fetch("/api/linkedin/post", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ postId: p.id, clientId: ac.id }),
+      });
+      const d = await res.json();
+      if (d.error) { notify(d.error, "error"); }
+      else { notify("Posted to LinkedIn ✓", "success"); fetchPosts(); }
+    } catch { notify("LinkedIn post failed", "error"); }
+    setPostingToLinkedIn(null);
   };
 
   return (
@@ -939,24 +983,53 @@ function LibraryTab({
                         <p style={{ fontSize: "12px", color: "rgba(208,112,112,0.8)", lineHeight: 1.6, margin: 0 }}>{p.notes}</p>
                       </div>
                     )}
-                    <div style={{ display: "flex", gap: "20px", alignItems: "center", marginTop: "12px", flexWrap: "wrap" }}>
-                      {[
-                        { label: "Copy", action: () => copy(p.content) },
-                        { label: "Edit", action: () => { setEditPost(p); setEditContent(p.content); } },
-                      ].map(a => (
-                        <button key={a.label} onClick={a.action}
-                          style={{ fontSize: "11px", color: T3, background: "none", border: "none", cursor: "pointer", letterSpacing: "0.06em", fontFamily: "inherit", textTransform: "uppercase" as const, transition: "color 0.15s" }}
-                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = T2; }}
-                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = T3; }}>
-                          {a.label}
-                        </button>
-                      ))}
-                      {p.status === "draft"    && <button onClick={() => updateStatus(p,"pending_approval")} style={{ fontSize: "11px", color: GOLD, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>Submit for Approval</button>}
-                      {p.status === "draft"    && <button onClick={() => updateStatus(p,"approved")} style={{ fontSize: "11px", color: "#2255CC", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>Approve</button>}
-                      {p.status === "pending_approval" && <button onClick={() => updateStatus(p,"approved")} style={{ fontSize: "11px", color: "#2255CC", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>Approve</button>}
-                      {p.status === "approved" && <button onClick={() => updateStatus(p,"posted")}   style={{ fontSize: "11px", color: "#2BBFB0", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>Mark posted</button>}
-                      <button onClick={() => deletePost(p.id)} style={{ fontSize: "11px", color: "rgba(204,68,68,0.5)", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", marginLeft: "auto", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>Delete</button>
-                    </div>
+                    {p.scheduled_at && (
+                      <div style={{ marginTop: "10px", display: "inline-flex", alignItems: "center", gap: "6px", padding: "4px 10px", background: "rgba(26,26,26,0.04)", border: "1px solid rgba(26,26,26,0.09)", borderRadius: "6px" }}>
+                        <span style={{ fontSize: "10px", color: T3, letterSpacing: "0.06em", textTransform: "uppercase" as const }}>Scheduled</span>
+                        <span style={{ fontSize: "11px", color: T2, fontWeight: 500 }}>{new Date(p.scheduled_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
+                      </div>
+                    )}
+                    {schedulingId === p.id ? (
+                      <div style={{ marginTop: "12px", display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+                        <input type="datetime-local" value={scheduleAt} onChange={e => setScheduleAt(e.target.value)}
+                          style={{ ...INPUT, width: "auto", flex: "none", padding: "7px 11px", fontSize: "12px" }}
+                          onFocus={e => e.target.style.borderColor = "rgba(201,168,76,0.35)"}
+                          onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
+                        />
+                        <GlassBtn onClick={() => schedulePost(p)} disabled={!scheduleAt} variant="teal">Confirm</GlassBtn>
+                        <GlassBtn onClick={() => { setSchedulingId(null); setScheduleAt(""); }}>Cancel</GlassBtn>
+                      </div>
+                    ) : (
+                      <div style={{ display: "flex", gap: "20px", alignItems: "center", marginTop: "12px", flexWrap: "wrap" }}>
+                        {[
+                          { label: "Copy", action: () => copy(p.content) },
+                          { label: "Edit", action: () => { setEditPost(p); setEditContent(p.content); } },
+                        ].map(a => (
+                          <button key={a.label} onClick={a.action}
+                            style={{ fontSize: "11px", color: T3, background: "none", border: "none", cursor: "pointer", letterSpacing: "0.06em", fontFamily: "inherit", textTransform: "uppercase" as const, transition: "color 0.15s" }}
+                            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = T2; }}
+                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = T3; }}>
+                            {a.label}
+                          </button>
+                        ))}
+                        {p.status === "draft"    && <button onClick={() => updateStatus(p,"pending_approval")} style={{ fontSize: "11px", color: GOLD, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>Submit for Approval</button>}
+                        {p.status === "draft"    && <button onClick={() => updateStatus(p,"approved")} style={{ fontSize: "11px", color: "#2255CC", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>Approve</button>}
+                        {p.status === "pending_approval" && <button onClick={() => updateStatus(p,"approved")} style={{ fontSize: "11px", color: "#2255CC", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>Approve</button>}
+                        {(p.status === "approved" || p.status === "scheduled") && (
+                          <button onClick={() => { setSchedulingId(p.id); setScheduleAt(p.scheduled_at?.slice(0,16) || ""); }} style={{ fontSize: "11px", color: GOLD, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>
+                            {p.scheduled_at ? "Reschedule" : "Schedule"}
+                          </button>
+                        )}
+                        {(p.status === "approved" || p.status === "scheduled") && (
+                          <button onClick={() => postToLinkedIn(p)} disabled={postingToLinkedIn === p.id}
+                            style={{ fontSize: "11px", color: "#0A66C2", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.06em", textTransform: "uppercase" as const, display: "flex", alignItems: "center", gap: "4px" }}>
+                            {postingToLinkedIn === p.id ? <><Spinner /> Posting…</> : "Post to LinkedIn"}
+                          </button>
+                        )}
+                        {p.status === "approved" && <button onClick={() => updateStatus(p,"posted")} style={{ fontSize: "11px", color: "#2BBFB0", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>Mark posted</button>}
+                        <button onClick={() => deletePost(p.id)} style={{ fontSize: "11px", color: "rgba(204,68,68,0.5)", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", marginLeft: "auto", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>Delete</button>
+                      </div>
+                    )}
                   </div>
                 </>
               )}
@@ -969,7 +1042,7 @@ function LibraryTab({
 }
 
 // ── Calendar Tab ──────────────────────────────────────────────────────────────
-function CalendarTab({ ac, clients }: { ac: Company; clients: Company[] }) {
+function CalendarTab({ ac, clients, allPosts }: { ac: Company; clients: Company[]; allPosts: Post[] }) {
   const DAY_ORDER = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
 
   // Normalise field names — DB uses snake_case, static companies use camelCase
@@ -1030,6 +1103,8 @@ function CalendarTab({ ac, clients }: { ac: Company; clients: Company[] }) {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)" }}>
           {DAY_ORDER.map(day => {
             const dayCompanies = clients.filter(c => getPostingDays(c).includes(day));
+            const dayPosts = allPosts.filter(p => p.scheduled_day === day && (p.status === "scheduled" || p.status === "approved" || p.status === "posted"));
+            const postStatusColor: Record<string, string> = { approved: "#2255CC", scheduled: GOLD, posted: "#2BBFB0" };
             return (
               <div key={day} style={{ minHeight: "160px", padding: "12px 10px", borderRight: "1px solid rgba(26,26,26,0.06)", borderBottom: "1px solid rgba(26,26,26,0.06)", background: !activeDays.includes(day) ? "rgba(26,26,26,0.03)" : "transparent" }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
@@ -1051,6 +1126,18 @@ function CalendarTab({ ac, clients }: { ac: Company; clients: Company[] }) {
                       </div>
                     );
                   })}
+                  {dayPosts.map(p => (
+                    <div key={p.id} style={{
+                      padding: "6px 8px",
+                      background: `${postStatusColor[p.status] || T3}10`,
+                      border: `1px solid ${postStatusColor[p.status] || T3}30`,
+                      borderLeft: `3px solid ${postStatusColor[p.status] || T3}`,
+                      borderRadius: "6px",
+                    }}>
+                      <div style={{ fontSize: "9px", fontWeight: 600, color: postStatusColor[p.status] || T3, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "2px" }}>{p.status}</div>
+                      <div style={{ fontSize: "10px", color: T2, lineHeight: 1.4, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const }}>{p.content.slice(0, 60)}</div>
+                    </div>
+                  ))}
                 </div>
               </div>
             );
@@ -1110,163 +1197,670 @@ function CalendarTab({ ac, clients }: { ac: Company; clients: Company[] }) {
 // ── Reports Tab ───────────────────────────────────────────────────────────────
 function ReportsTab({ ac }: { ac: Company }) {
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const [reports, setReports] = useState<Report[]>([]);
+  const [loadingReports, setLoadingReports] = useState(true);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [mainView, setMainView] = useState<"report" | "trends">("report");
+  // Upload state
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadType, setUploadType] = useState<"monthly" | "weekly">("monthly");
+  const [uploadStart, setUploadStart] = useState("");
+  const [uploadEnd, setUploadEnd] = useState("");
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [dragging, setDragging] = useState(false);
+  // Report interaction
+  const [narrativeTab, setNarrativeTab] = useState<"agency" | "client">("agency");
+  const [agencyNarrative, setAgencyNarrative] = useState("");
+  const [clientNarrative, setClientNarrative] = useState("");
+  const [narrativeSaving, setNarrativeSaving] = useState(false);
+  const [narrativeDirty, setNarrativeDirty] = useState(false);
+  const [sortBy, setSortBy] = useState<string>("impressions");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [expandedPost, setExpandedPost] = useState<number | null>(null);
+  const [publishing, setPublishing] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [reanalysing, setReanalysing] = useState(false);
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const [pollInterval, setPollInterval] = useState<ReturnType<typeof setInterval> | null>(null);
 
-  const topPosts = [
-    { type: "Science insight",  day: "Wednesday", impressions: "8,240", engagement: "6.8%", clicks: "312" },
-    { type: "Proof & data",     day: "Thursday",  impressions: "7,190", engagement: "5.9%", clicks: "271" },
-    { type: "Thought leadership",day: "Tuesday",  impressions: "6,850", engagement: "5.4%", clicks: "248" },
-    { type: "Human story",      day: "Friday",    impressions: "5,420", engagement: "4.7%", clicks: "189" },
-    { type: "Product highlight",day: "Wednesday", impressions: "4,970", engagement: "4.2%", clicks: "162" },
-  ];
+  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => { fetchReports(); }, [ac.id]);
+
+  const selectedReport = reports.find(r => r.id === selectedId) ?? null;
+  const extracted: ExtractedData | null = selectedReport?.extracted_data ? JSON.parse(selectedReport.extracted_data) : null;
+
+  useEffect(() => {
+    if (selectedReport) {
+      setAgencyNarrative(selectedReport.narrative_agency ?? "");
+      setClientNarrative(selectedReport.narrative_client ?? "");
+      setNarrativeDirty(false);
+    }
+  }, [selectedReport?.id]);
+
+  // Poll for narrative completion after upload
+  useEffect(() => {
+    if (pollInterval) clearInterval(pollInterval);
+    if (selectedReport && selectedReport.extracted_data && (!selectedReport.narrative_agency || !selectedReport.narrative_client)) {
+      const iv = setInterval(async () => {
+        const r = await fetch(`/api/reports/${selectedReport.id}`);
+        const d = await r.json();
+        if (d.report?.narrative_agency) {
+          setReports(prev => prev.map(rpt => rpt.id === d.report.id ? d.report : rpt));
+          clearInterval(iv);
+        }
+      }, 3000);
+      setPollInterval(iv);
+      return () => clearInterval(iv);
+    }
+  }, [selectedReport?.id, selectedReport?.narrative_agency]);
+
+  const fetchReports = async () => {
+    setLoadingReports(true);
+    const res = await fetch(`/api/reports?clientId=${ac.id}`);
+    const data = await res.json();
+    const list: Report[] = data.reports ?? [];
+    setReports(list);
+    if (list.length > 0) setSelectedId(prev => prev ?? list[0].id);
+    setLoadingReports(false);
+  };
+
+  const handleUpload = async () => {
+    if (!pdfFile || !uploadStart || !uploadEnd) return;
+    setUploading(true);
+    const fd = new FormData();
+    fd.append("file", pdfFile);
+    fd.append("clientId", ac.id);
+    fd.append("type", uploadType);
+    fd.append("periodStart", uploadStart);
+    fd.append("periodEnd", uploadEnd);
+    const res = await fetch("/api/reports/upload-pdf", { method: "POST", body: fd });
+    const data = await res.json();
+    if (data.report) {
+      await fetchReports();
+      setSelectedId(data.report.id);
+      setUploadOpen(false);
+      setPdfFile(null);
+    }
+    setUploading(false);
+  };
+
+  const handlePublish = async () => {
+    if (!selectedReport) return;
+    setPublishing(true);
+    const newStatus = selectedReport.status === "published" ? "draft" : "published";
+    await fetch(`/api/reports/${selectedReport.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: newStatus }),
+    });
+    await fetchReports();
+    setPublishing(false);
+  };
+
+  const handleSaveNarratives = async () => {
+    if (!selectedReport) return;
+    setNarrativeSaving(true);
+    await fetch(`/api/reports/${selectedReport.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ narrative_agency: agencyNarrative, narrative_client: clientNarrative }),
+    });
+    await fetchReports();
+    setNarrativeSaving(false);
+    setNarrativeDirty(false);
+  };
+
+  const handleReanalyse = async () => {
+    if (!selectedReport || reanalysing) return;
+    setReanalysing(true);
+    await fetch("/api/reports/generate-narrative", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reportId: selectedReport.id, force: true }),
+    });
+    await fetchReports();
+    setReanalysing(false);
+  };
+
+  const handleExportPdf = async (audience: "agency" | "client") => {
+    if (!selectedReport) return;
+    setExporting(true);
+    setExportMenuOpen(false);
+    const res = await fetch(`/api/reports/export-pdf?id=${selectedReport.id}&audience=${audience}`);
+    if (res.ok) {
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${ac.name.replace(/\s+/g, "-")}-${selectedReport.type}-${selectedReport.period_start.slice(0, 7)}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+    setExporting(false);
+  };
+
+  const handleDeleteReport = async (id: number) => {
+    if (!confirm("Delete this report?")) return;
+    await fetch(`/api/reports/${id}`, { method: "DELETE" });
+    await fetchReports();
+    if (selectedId === id) setSelectedId(null);
+  };
+
+  const fmtN = (n: number | null | undefined) => {
+    if (n == null) return "—";
+    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+    if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+    return String(n);
+  };
+  const fmtPct = (n: number | null | undefined) => n == null ? "—" : `${Number(n).toFixed(1)}%`;
+
+  const sortedPosts = (() => {
+    if (!extracted?.posts) return [];
+    return [...extracted.posts].sort((a, b) => {
+      const av = (a as Record<string, unknown>)[sortBy] as number ?? 0;
+      const bv = (b as Record<string, unknown>)[sortBy] as number ?? 0;
+      return sortDir === "desc" ? bv - av : av - bv;
+    });
+  })();
+
+  const engagementPie = extracted ? [
+    { name: "Reactions",  value: extracted.reactions ?? 0,        color: "#2255CC" },
+    { name: "Comments",   value: extracted.comments ?? 0,         color: "#2BBFB0" },
+    { name: "Shares",     value: extracted.shares ?? 0,           color: GOLD },
+    { name: "Clicks",     value: extracted.clicks ?? 0,           color: "#6633CC" },
+  ].filter(d => d.value > 0) : [];
+
+  const impressionsLine = extracted?.posts
+    ?.filter(p => p.date && p.impressions != null)
+    .map(p => ({ date: p.date!.slice(5), impressions: p.impressions! })) ?? [];
+
+  const postTypeBar = (() => {
+    if (!extracted?.posts) return [];
+    const c: Record<string, number> = {};
+    extracted.posts.forEach(p => { if (p.type) c[p.type] = (c[p.type] ?? 0) + 1; });
+    return Object.entries(c).map(([type, count]) => ({ type, count }));
+  })();
+
+  // Trends data — needs 3+ monthly reports with extracted data
+  const trendReports = reports.filter(r => r.type === "monthly" && r.extracted_data)
+    .sort((a, b) => a.period_start.localeCompare(b.period_start));
+  const trendData = trendReports.map(r => {
+    const d: ExtractedData = JSON.parse(r.extracted_data!);
+    return {
+      period: r.period_start.slice(0, 7),
+      impressions: d.impressions ?? 0,
+      engagementRate: d.engagementRate ?? 0,
+      followerCount: d.followerCount ?? 0,
+    };
+  });
+  const showTrends = trendData.length >= 3;
 
   const chartGrid = "rgba(26,26,26,0.07)";
   const chartText = "rgba(26,26,26,0.40)";
 
-  return (
-    <div className="fade-up" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+  const colStyle = (col: string): React.CSSProperties => ({
+    cursor: "pointer", padding: "10px 16px", fontSize: "10px", fontWeight: 600,
+    letterSpacing: "0.1em", textTransform: "uppercase", color: sortBy === col ? T : T3,
+    userSelect: "none", whiteSpace: "nowrap",
+  });
 
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
-        <div>
-          <div className="label" style={{ marginBottom: "6px" }}>Performance Report</div>
-          <div style={{ fontFamily: "var(--font-cormorant, 'Cormorant Garamond', Georgia, serif)", fontSize: "32px", fontWeight: 300, fontStyle: "italic", letterSpacing: "-0.02em", color: T, lineHeight: 1, marginBottom: "4px" }}>{ac.name}</div>
-          <div style={{ fontSize: "11px", color: T3 }}>Q1–Q2 2026</div>
+  if (loadingReports) {
+    return <div className="fade-up" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+      {[...Array(3)].map((_, i) => <div key={i} className="skeleton" style={{ height: 60, borderRadius: 8 }} />)}
+    </div>;
+  }
+
+  // ── Upload Panel ──────────────────────────────────────────────────────────
+  if (uploadOpen) {
+    return (
+      <div className="fade-up" style={{ display: "flex", flexDirection: "column", gap: "20px", maxWidth: 560 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <button onClick={() => setUploadOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: T3, padding: "4px", display: "flex", alignItems: "center" }}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 12L6 8l4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </button>
+          <div style={{ fontFamily: "var(--font-cormorant, serif)", fontSize: "24px", fontWeight: 300, fontStyle: "italic", color: T }}>Upload LinkedIn Report</div>
         </div>
-        <GlassBtn variant="ghost" onClick={() => window.print()} style={{ gap: "8px" }}>
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 5V2h8v3M3 9H1V5h12v4h-2M3 7h8v5H3V7z" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
-          Export PDF
+
+        <div style={glass({ padding: "24px", display: "flex", flexDirection: "column", gap: "20px" })}>
+          {/* Type toggle */}
+          <div>
+            <div className="label" style={{ marginBottom: "8px" }}>Report type</div>
+            <div style={{ display: "flex", gap: "8px" }}>
+              {(["monthly", "weekly"] as const).map(t => (
+                <button key={t} onClick={() => setUploadType(t)} style={{ padding: "8px 18px", borderRadius: "6px", border: `1px solid ${uploadType === t ? GOLD : "rgba(26,26,26,0.12)"}`, background: uploadType === t ? `${GOLD}14` : "transparent", color: uploadType === t ? GOLD : T2, fontSize: "13px", fontWeight: 500, cursor: "pointer", textTransform: "capitalize", fontFamily: "inherit" }}>
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Period */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+            <div>
+              <div className="label" style={{ marginBottom: "6px" }}>Period start</div>
+              <input type="date" value={uploadStart} onChange={e => setUploadStart(e.target.value)} style={{ ...INPUT, fontSize: "13px" }} />
+            </div>
+            <div>
+              <div className="label" style={{ marginBottom: "6px" }}>Period end</div>
+              <input type="date" value={uploadEnd} onChange={e => setUploadEnd(e.target.value)} style={{ ...INPUT, fontSize: "13px" }} />
+            </div>
+          </div>
+
+          {/* PDF drop zone */}
+          <div>
+            <div className="label" style={{ marginBottom: "8px" }}>LinkedIn analytics PDF</div>
+            <div
+              onDragOver={e => { e.preventDefault(); setDragging(true); }}
+              onDragLeave={() => setDragging(false)}
+              onDrop={e => { e.preventDefault(); setDragging(false); const f = e.dataTransfer.files[0]; if (f?.type === "application/pdf") setPdfFile(f); }}
+              onClick={() => { const inp = document.createElement("input"); inp.type = "file"; inp.accept = ".pdf"; inp.onchange = (e) => { const f = (e.target as HTMLInputElement).files?.[0]; if (f) setPdfFile(f); }; inp.click(); }}
+              style={{ border: `2px dashed ${dragging ? GOLD : "rgba(26,26,26,0.16)"}`, borderRadius: "8px", padding: "32px", textAlign: "center", cursor: "pointer", background: dragging ? `${GOLD}08` : "rgba(26,26,26,0.02)", transition: "all 0.15s" }}
+            >
+              {pdfFile ? (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="1" width="12" height="14" rx="2" stroke="#2BBFB0" strokeWidth="1.5"/><path d="M5 5h6M5 8h6M5 11h4" stroke="#2BBFB0" strokeWidth="1.3" strokeLinecap="round"/></svg>
+                  <span style={{ fontSize: "13px", color: "#2BBFB0", fontWeight: 500 }}>{pdfFile.name}</span>
+                  <button onClick={e => { e.stopPropagation(); setPdfFile(null); }} style={{ background: "none", border: "none", cursor: "pointer", color: T3, fontSize: "16px", lineHeight: 1 }}>×</button>
+                </div>
+              ) : (
+                <div>
+                  <svg width="32" height="32" viewBox="0 0 32 32" fill="none" style={{ marginBottom: "8px", opacity: 0.3 }}><path d="M8 20v4a2 2 0 002 2h12a2 2 0 002-2v-4M16 6v14M10 12l6-6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  <div style={{ fontSize: "13px", color: T2 }}>Drop PDF here or click to browse</div>
+                  <div style={{ fontSize: "11px", color: T3, marginTop: "4px" }}>LinkedIn analytics export, PDF format</div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <GlassBtn
+            variant="primary"
+            disabled={!pdfFile || !uploadStart || !uploadEnd || uploading}
+            onClick={handleUpload}
+            style={{ alignSelf: "flex-start", gap: "8px", opacity: (!pdfFile || !uploadStart || !uploadEnd) ? 0.5 : 1 }}
+          >
+            {uploading ? <><Spinner /> Analysing…</> : "Upload & Analyse"}
+          </GlassBtn>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Empty state ───────────────────────────────────────────────────────────
+  if (reports.length === 0) {
+    return (
+      <div className="fade-up" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "16px", padding: "80px 40px", textAlign: "center" }}>
+        <div style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.20)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "8px" }}>
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><path d="M4 22V6a2 2 0 012-2h12l6 6v12a2 2 0 01-2 2H6a2 2 0 01-2-2z" stroke={GOLD} strokeWidth="1.5"/><path d="M18 4v6h6M9 13h10M9 17h7" stroke={GOLD} strokeWidth="1.5" strokeLinecap="round"/></svg>
+        </div>
+        <div style={{ fontFamily: "var(--font-cormorant, serif)", fontSize: "24px", fontWeight: 300, fontStyle: "italic", color: T }}>No reports yet for {ac.name}</div>
+        <div style={{ fontSize: "13px", color: T2, maxWidth: 360 }}>Upload a LinkedIn analytics PDF to generate AI-powered insights, metrics, and narratives.</div>
+        <GlassBtn variant="primary" onClick={() => setUploadOpen(true)} style={{ marginTop: "8px", gap: "8px" }}>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M3 5l4-4 4 4M2 11h10v2H2z" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          Upload Report
         </GlassBtn>
       </div>
+    );
+  }
 
-      {/* KPI row */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "14px" }}>
-        {[
-          { label: "Total Impressions", value: "148.2K", delta: "+24%", color: "#2255CC" },
-          { label: "Avg Engagement",    value: "5.4%",   delta: "+1.2%",color: "#2BBFB0" },
-          { label: "Follower Growth",   value: "+1,140", delta: "+34%", color: ac.color  },
-          { label: "Link Clicks",       value: "4,820",  delta: "+18%", color: GOLD      },
-        ].map(k => (
-          <div key={k.label} style={glass({ padding: "20px 20px 18px", position: "relative", overflow: "hidden" })}>
-            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: k.color, opacity: 0.65 }} />
-            <div className="label" style={{ marginBottom: "12px" }}>{k.label}</div>
-            <div style={{ fontFamily: "var(--font-cormorant, 'Cormorant Garamond', Georgia, serif)", fontSize: "36px", fontWeight: 300, color: T, letterSpacing: "-0.02em", marginBottom: "4px", lineHeight: 1 }}>{k.value}</div>
-            <div style={{ fontSize: "11px", color: "#2BBFB0" }}>{k.delta} vs last quarter</div>
-          </div>
-        ))}
+  // ── Main layout: sidebar + content ───────────────────────────────────────
+  return (
+    <div className="fade-up" style={{ display: "grid", gridTemplateColumns: "220px 1fr", gap: "20px", alignItems: "start" }}>
+
+      {/* Sidebar: report list */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+        <GlassBtn variant="ghost" onClick={() => setUploadOpen(true)} style={{ width: "100%", justifyContent: "center", gap: "6px", marginBottom: "4px" }}>
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v8M2 5l4-4 4 4M1 10h10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          Upload New
+        </GlassBtn>
+        {reports.map(r => {
+          const d: ExtractedData | null = r.extracted_data ? JSON.parse(r.extracted_data) : null;
+          const isActive = r.id === selectedId;
+          return (
+            <div
+              key={r.id}
+              onClick={() => setSelectedId(r.id)}
+              style={{ padding: "12px 14px", borderRadius: "8px", border: `1px solid ${isActive ? GOLD : "rgba(26,26,26,0.08)"}`, background: isActive ? `${GOLD}08` : "#fff", cursor: "pointer", transition: "all 0.15s", position: "relative" }}
+            >
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
+                <span style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: isActive ? GOLD : T3 }}>{r.type}</span>
+                <span style={{ fontSize: "9px", padding: "1px 6px", borderRadius: "100px", background: r.status === "published" ? "rgba(43,191,176,0.12)" : "rgba(26,26,26,0.06)", color: r.status === "published" ? "#2BBFB0" : T3, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase" }}>{r.status}</span>
+              </div>
+              <div style={{ fontSize: "12px", fontWeight: 500, color: T, marginBottom: "3px" }}>{r.period_start.slice(0, 7)}</div>
+              {d?.impressions && <div style={{ fontSize: "11px", color: T3 }}>{fmtN(d.impressions)} impressions</div>}
+              <button
+                onClick={e => { e.stopPropagation(); handleDeleteReport(r.id); }}
+                style={{ position: "absolute", top: "8px", right: "8px", background: "none", border: "none", cursor: "pointer", color: T3, opacity: 0, transition: "opacity 0.15s", padding: "2px", fontSize: "14px", lineHeight: 1 }}
+                onMouseEnter={e => (e.currentTarget.style.opacity = "1")}
+                onMouseLeave={e => (e.currentTarget.style.opacity = "0")}
+              >×</button>
+            </div>
+          );
+        })}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-
-        {/* Follower growth */}
-        <div style={glass({ padding: "24px" })}>
-          <div style={{ marginBottom: "20px" }}>
-            <div className="label" style={{ marginBottom: "6px" }}>Follower Growth</div>
-            <div style={{ fontFamily: "var(--font-cormorant, serif)", fontSize: "18px", fontWeight: 300, fontStyle: "italic", color: T }}>Oct 2025 – Apr 2026</div>
-          </div>
-          {mounted ? (
-            <ResponsiveContainer width="100%" height={200}>
-              <AreaChart data={REPORT_DATA.followerGrowth}>
-                <defs>
-                  <linearGradient id="gBlue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#2255CC" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="#2255CC" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="gTeal" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#2BBFB0" stopOpacity={0.25} />
-                    <stop offset="100%" stopColor="#2BBFB0" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="gPurp" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#6633CC" stopOpacity={0.2} />
-                    <stop offset="100%" stopColor="#6633CC" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid stroke={chartGrid} vertical={false} />
-                <XAxis dataKey="month" tick={{ fill: chartText, fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: chartText, fontSize: 11 }} axisLine={false} tickLine={false} />
-                <Tooltip />
-                <Area type="monotone" dataKey="C-POLAR" stroke="#2255CC" fill="url(#gBlue)" strokeWidth={1.5} dot={false} />
-                <Area type="monotone" dataKey="Oxia"    stroke="#2BBFB0" fill="url(#gTeal)" strokeWidth={1.5} dot={false} />
-                <Area type="monotone" dataKey="CoRegen" stroke={GOLD}    fill="url(#gPurp)" strokeWidth={1.5} dot={false} />
-                <Legend iconType="circle" iconSize={6} wrapperStyle={{ fontSize: "11px", color: "rgba(26,26,26,0.50)" }} />
-              </AreaChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="skeleton" style={{ height: 200 }} />
-          )}
-        </div>
-
-        {/* Engagement by day */}
-        <div style={glass({ padding: "24px" })}>
-          <div style={{ marginBottom: "20px" }}>
-            <div className="label" style={{ marginBottom: "6px" }}>Engagement by Day</div>
-            <div style={{ fontFamily: "var(--font-cormorant, serif)", fontSize: "18px", fontWeight: 300, fontStyle: "italic", color: T }}>Average engagement rate %</div>
-          </div>
-          {mounted ? (
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={REPORT_DATA.engagementByDay} barSize={28}>
-                <CartesianGrid stroke={chartGrid} vertical={false} />
-                <XAxis dataKey="day" tick={{ fill: chartText, fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: chartText, fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => `${v}%`} />
-                <Tooltip formatter={(v) => [`${v}%`, "Engagement"]} />
-                <Bar dataKey="rate" fill="#2BBFB0" fillOpacity={0.6} radius={[3,3,0,0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="skeleton" style={{ height: 200 }} />
-          )}
-        </div>
-      </div>
-
-      {/* Weekly impressions */}
-      <div style={glass({ padding: "24px" })}>
-        <div style={{ marginBottom: "20px" }}>
-          <div className="label" style={{ marginBottom: "6px" }}>Weekly Impressions</div>
-          <div style={{ fontFamily: "var(--font-cormorant, serif)", fontSize: "18px", fontWeight: 300, fontStyle: "italic", color: T }}>12-week rolling view</div>
-        </div>
-        {mounted ? (
-          <ResponsiveContainer width="100%" height={160}>
-            <LineChart data={REPORT_DATA.weeklyImpressions}>
-              <CartesianGrid stroke={chartGrid} vertical={false} />
-              <XAxis dataKey="week" tick={{ fill: chartText, fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: chartText, fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => `${(v/1000).toFixed(0)}K`} />
-              <Tooltip formatter={(v) => [String(v).replace(/\B(?=(\d{3})+(?!\d))/g, ","), "Impressions"]} />
-              <Line type="monotone" dataKey="impressions" stroke="#2255CC" strokeWidth={1.5} dot={false} activeDot={{ r: 3, fill: "#2255CC" }} />
-            </LineChart>
-          </ResponsiveContainer>
+      {/* Main content */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "20px", minWidth: 0 }}>
+        {!selectedReport ? (
+          <div style={{ padding: "40px", textAlign: "center", color: T3, fontSize: "13px" }}>Select a report from the list</div>
         ) : (
-          <div className="skeleton" style={{ height: 160 }} />
-        )}
-      </div>
+          <>
+            {/* Report header */}
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "16px", flexWrap: "wrap" }}>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
+                  <span style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", padding: "2px 8px", borderRadius: "100px", background: "rgba(26,26,26,0.06)", color: T2 }}>{selectedReport.type}</span>
+                  <span style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", padding: "2px 8px", borderRadius: "100px", background: selectedReport.status === "published" ? "rgba(43,191,176,0.12)" : "rgba(26,26,26,0.06)", color: selectedReport.status === "published" ? "#2BBFB0" : T2 }}>{selectedReport.status}</span>
+                </div>
+                <div style={{ fontFamily: "var(--font-cormorant, serif)", fontSize: "28px", fontWeight: 300, fontStyle: "italic", color: T, marginBottom: "4px" }}>{ac.name}</div>
+                <div style={{ fontSize: "12px", color: T3 }}>{selectedReport.period_start} – {selectedReport.period_end}</div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                {showTrends && (
+                  <div style={{ display: "flex", background: "rgba(26,26,26,0.04)", borderRadius: "6px", padding: "3px" }}>
+                    {(["report", "trends"] as const).map(v => (
+                      <button key={v} onClick={() => setMainView(v)} style={{ padding: "5px 12px", borderRadius: "4px", border: "none", background: mainView === v ? "#fff" : "transparent", color: mainView === v ? T : T3, fontSize: "12px", fontWeight: 500, cursor: "pointer", fontFamily: "inherit", textTransform: "capitalize", boxShadow: mainView === v ? "0 1px 3px rgba(26,26,26,0.10)" : "none" }}>
+                        {v}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <GlassBtn variant="ghost" onClick={handlePublish} disabled={publishing} style={{ gap: "6px" }}>
+                  {publishing ? <Spinner /> : null}
+                  {selectedReport.status === "published" ? "Unpublish" : "Publish to Portal"}
+                </GlassBtn>
+                <GlassBtn variant="ghost" onClick={handleReanalyse} disabled={reanalysing} style={{ gap: "6px" }}>
+                  {reanalysing ? <Spinner /> : <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M10 6a4 4 0 11-1.17-2.83M10 2v3H7" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                  Re-analyse
+                </GlassBtn>
+                <div style={{ position: "relative" }}>
+                  <GlassBtn variant="ghost" disabled={exporting} onClick={() => setExportMenuOpen(p => !p)} style={{ gap: "6px" }}>
+                    {exporting ? <Spinner /> : <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 9v2h8V9M6 1v7M4 6l2 2 2-2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                    Export PDF ▾
+                  </GlassBtn>
+                  {exportMenuOpen && (
+                    <div style={{ position: "absolute", right: 0, top: "calc(100% + 4px)", background: "#fff", border: "1px solid rgba(26,26,26,0.10)", borderRadius: "8px", boxShadow: "0 4px 16px rgba(26,26,26,0.10)", zIndex: 20, minWidth: 160, overflow: "hidden" }}>
+                      {[{ label: "Agency version", v: "agency" }, { label: "Client version", v: "client" }].map(({ label, v }) => (
+                        <button key={v} onClick={() => handleExportPdf(v as "agency" | "client")} style={{ display: "block", width: "100%", padding: "10px 16px", textAlign: "left", background: "none", border: "none", cursor: "pointer", fontSize: "13px", color: T, fontFamily: "inherit" }}
+                          onMouseEnter={e => (e.currentTarget.style.background = "rgba(26,26,26,0.04)")}
+                          onMouseLeave={e => (e.currentTarget.style.background = "none")}>{label}</button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
 
-      {/* Top posts table */}
-      <div style={glass()}>
-        <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(26,26,26,0.08)" }}>
-          <div className="label" style={{ marginBottom: "6px" }}>Top Content</div>
-          <div style={{ fontFamily: "var(--font-cormorant, serif)", fontSize: "18px", fontWeight: 300, fontStyle: "italic", color: T }}>Best Performing Posts</div>
-        </div>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr style={{ borderBottom: "1px solid rgba(26,26,26,0.08)" }}>
-              {["Post type","Day","Impressions","Eng. rate","Clicks"].map(h => (
-                <th key={h} style={{ textAlign: "left", padding: "12px 20px", fontSize: "10px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(26,26,26,0.40)" }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {topPosts.map((p, i) => (
-              <tr key={i} style={{ borderBottom: i < topPosts.length - 1 ? "1px solid rgba(26,26,26,0.06)" : "none" }}>
-                <td style={{ padding: "14px 20px", fontSize: "13px", fontWeight: 500, color: "#1A1A1A" }}>{p.type}</td>
-                <td style={{ padding: "14px 20px", fontSize: "12px", color: "rgba(26,26,26,0.55)" }}>{p.day}</td>
-                <td style={{ padding: "14px 20px", fontSize: "13px", fontWeight: 600, color: "#1A1A1A" }}>{p.impressions}</td>
-                <td style={{ padding: "14px 20px" }}>
-                  <span style={{ fontSize: "12px", fontWeight: 600, color: "#2BBFB0" }}>{p.engagement}</span>
-                </td>
-                <td style={{ padding: "14px 20px", fontSize: "13px", color: "rgba(26,26,26,0.60)" }}>{p.clicks}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+            {/* ── TRENDS VIEW ── */}
+            {mainView === "trends" && showTrends && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                <div style={glass({ padding: "24px" })}>
+                  <div className="label" style={{ marginBottom: "6px" }}>Impressions Over Time</div>
+                  <div style={{ fontFamily: "var(--font-cormorant, serif)", fontSize: "18px", fontWeight: 300, fontStyle: "italic", color: T, marginBottom: "16px" }}>{trendData.length} monthly reports</div>
+                  {mounted && <ResponsiveContainer width="100%" height={200}>
+                    <LineChart data={trendData}>
+                      <CartesianGrid stroke={chartGrid} vertical={false} />
+                      <XAxis dataKey="period" tick={{ fill: chartText, fontSize: 11 }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fill: chartText, fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => `${(v/1000).toFixed(0)}K`} />
+                      <Tooltip formatter={(v: unknown) => [fmtN(v as number), "Impressions"]} />
+                      <Line type="monotone" dataKey="impressions" stroke="#2255CC" strokeWidth={2} dot={{ fill: "#2255CC", r: 3 }} />
+                    </LineChart>
+                  </ResponsiveContainer>}
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                  <div style={glass({ padding: "24px" })}>
+                    <div className="label" style={{ marginBottom: "16px" }}>Engagement Rate %</div>
+                    {mounted && <ResponsiveContainer width="100%" height={160}>
+                      <AreaChart data={trendData}>
+                        <defs><linearGradient id="gEngTrend" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#2BBFB0" stopOpacity={0.3}/><stop offset="100%" stopColor="#2BBFB0" stopOpacity={0}/></linearGradient></defs>
+                        <CartesianGrid stroke={chartGrid} vertical={false} />
+                        <XAxis dataKey="period" tick={{ fill: chartText, fontSize: 10 }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fill: chartText, fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => `${v}%`} />
+                        <Tooltip formatter={(v: unknown) => [`${Number(v).toFixed(1)}%`, "Engagement"]} />
+                        <Area type="monotone" dataKey="engagementRate" stroke="#2BBFB0" fill="url(#gEngTrend)" strokeWidth={1.5} dot={false} />
+                      </AreaChart>
+                    </ResponsiveContainer>}
+                  </div>
+                  <div style={glass({ padding: "24px" })}>
+                    <div className="label" style={{ marginBottom: "16px" }}>Follower Count</div>
+                    {mounted && <ResponsiveContainer width="100%" height={160}>
+                      <AreaChart data={trendData}>
+                        <defs><linearGradient id="gFollTrend" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={GOLD} stopOpacity={0.3}/><stop offset="100%" stopColor={GOLD} stopOpacity={0}/></linearGradient></defs>
+                        <CartesianGrid stroke={chartGrid} vertical={false} />
+                        <XAxis dataKey="period" tick={{ fill: chartText, fontSize: 10 }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fill: chartText, fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => fmtN(v as number)} />
+                        <Tooltip formatter={(v: unknown) => [fmtN(v as number), "Followers"]} />
+                        <Area type="monotone" dataKey="followerCount" stroke={GOLD} fill="url(#gFollTrend)" strokeWidth={1.5} dot={false} />
+                      </AreaChart>
+                    </ResponsiveContainer>}
+                  </div>
+                </div>
+                {/* MoM deltas */}
+                {trendData.length >= 2 && (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "12px" }}>
+                    {[
+                      { label: "Impressions MoM", cur: trendData[trendData.length-1].impressions, prev: trendData[trendData.length-2].impressions, fmt: fmtN },
+                      { label: "Engagement MoM", cur: trendData[trendData.length-1].engagementRate, prev: trendData[trendData.length-2].engagementRate, fmt: (v: number) => fmtPct(v) },
+                      { label: "Followers MoM", cur: trendData[trendData.length-1].followerCount, prev: trendData[trendData.length-2].followerCount, fmt: fmtN },
+                    ].map(({ label, cur, prev, fmt }) => {
+                      const delta = prev > 0 ? ((cur - prev) / prev * 100) : 0;
+                      const up = delta >= 0;
+                      return (
+                        <div key={label} style={glass({ padding: "16px 20px" })}>
+                          <div className="label" style={{ marginBottom: "8px" }}>{label}</div>
+                          <div style={{ fontFamily: "var(--font-cormorant, serif)", fontSize: "28px", fontWeight: 300, color: T, lineHeight: 1, marginBottom: "4px" }}>{(fmt as (v: number) => string)(cur)}</div>
+                          <div style={{ fontSize: "11px", color: up ? "#2BBFB0" : "#CC4422", fontWeight: 600 }}>{up ? "+" : ""}{delta.toFixed(1)}% vs last month</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── REPORT VIEW ── */}
+            {mainView === "report" && (
+              <>
+                {/* KPI cards */}
+                {extracted ? (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "12px" }}>
+                    {[
+                      { label: "Impressions",       value: fmtN(extracted.impressions),            color: "#2255CC" },
+                      { label: "Reach",             value: fmtN(extracted.reach),                  color: "#2BBFB0" },
+                      { label: "Engagement Rate",   value: fmtPct(extracted.engagementRate),        color: GOLD },
+                      { label: "Total Engagements", value: fmtN(extracted.totalEngagements),        color: "#6633CC" },
+                      { label: "Follower Count",    value: fmtN(extracted.followerCount),           color: "#2255CC" },
+                      { label: "Follower Growth",   value: extracted.followerGrowth != null ? `${extracted.followerGrowth > 0 ? "+" : ""}${extracted.followerGrowth}` : "—", color: "#2BBFB0" },
+                    ].map(k => (
+                      <div key={k.label} style={glass({ padding: "18px 20px 16px", position: "relative", overflow: "hidden" })}>
+                        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: k.color, opacity: 0.65 }} />
+                        <div className="label" style={{ marginBottom: "10px" }}>{k.label}</div>
+                        <div style={{ fontFamily: "var(--font-cormorant, serif)", fontSize: "32px", fontWeight: 300, color: T, letterSpacing: "-0.02em", lineHeight: 1 }}>{k.value}</div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "12px" }}>
+                    {[...Array(6)].map((_, i) => <div key={i} className="skeleton" style={{ height: 90, borderRadius: 8 }} />)}
+                  </div>
+                )}
+
+                {/* Charts */}
+                {extracted && (impressionsLine.length > 0 || engagementPie.length > 0) && (
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                    {/* Impressions line */}
+                    {impressionsLine.length > 0 && (
+                      <div style={glass({ padding: "20px 24px" })}>
+                        <div className="label" style={{ marginBottom: "6px" }}>Impressions</div>
+                        <div style={{ fontFamily: "var(--font-cormorant, serif)", fontSize: "16px", fontWeight: 300, fontStyle: "italic", color: T, marginBottom: "14px" }}>Per post over period</div>
+                        {mounted && <ResponsiveContainer width="100%" height={170}>
+                          <LineChart data={impressionsLine}>
+                            <CartesianGrid stroke={chartGrid} vertical={false} />
+                            <XAxis dataKey="date" tick={{ fill: chartText, fontSize: 10 }} axisLine={false} tickLine={false} />
+                            <YAxis tick={{ fill: chartText, fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => fmtN(v as number)} />
+                            <Tooltip formatter={(v: unknown) => [fmtN(v as number), "Impressions"]} />
+                            <Line type="monotone" dataKey="impressions" stroke="#2255CC" strokeWidth={1.5} dot={{ fill: "#2255CC", r: 2 }} />
+                          </LineChart>
+                        </ResponsiveContainer>}
+                      </div>
+                    )}
+
+                    {/* Engagement pie */}
+                    {engagementPie.length > 0 && (
+                      <div style={glass({ padding: "20px 24px" })}>
+                        <div className="label" style={{ marginBottom: "6px" }}>Engagement Breakdown</div>
+                        <div style={{ fontFamily: "var(--font-cormorant, serif)", fontSize: "16px", fontWeight: 300, fontStyle: "italic", color: T, marginBottom: "14px" }}>Reactions, comments, shares, clicks</div>
+                        {mounted && <ResponsiveContainer width="100%" height={170}>
+                          <PieChart>
+                            <Pie data={engagementPie} cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={3} dataKey="value">
+                              {engagementPie.map((entry, i) => <Cell key={i} fill={entry.color} fillOpacity={0.8} />)}
+                            </Pie>
+                            <Legend iconType="circle" iconSize={6} wrapperStyle={{ fontSize: "11px" }} />
+                            <Tooltip formatter={(v: unknown) => [fmtN(v as number), ""]} />
+                          </PieChart>
+                        </ResponsiveContainer>}
+                      </div>
+                    )}
+
+                    {/* Post type bar */}
+                    {postTypeBar.length > 0 && (
+                      <div style={glass({ padding: "20px 24px" })}>
+                        <div className="label" style={{ marginBottom: "6px" }}>Post Types</div>
+                        <div style={{ fontFamily: "var(--font-cormorant, serif)", fontSize: "16px", fontWeight: 300, fontStyle: "italic", color: T, marginBottom: "14px" }}>Count by format</div>
+                        {mounted && <ResponsiveContainer width="100%" height={170}>
+                          <BarChart data={postTypeBar} barSize={24}>
+                            <CartesianGrid stroke={chartGrid} vertical={false} />
+                            <XAxis dataKey="type" tick={{ fill: chartText, fontSize: 10 }} axisLine={false} tickLine={false} />
+                            <YAxis tick={{ fill: chartText, fontSize: 10 }} axisLine={false} tickLine={false} />
+                            <Tooltip />
+                            <Bar dataKey="count" fill={GOLD} fillOpacity={0.7} radius={[3, 3, 0, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>}
+                      </div>
+                    )}
+
+                    {/* Follower area (if data available) */}
+                    {extracted.followerCount != null && (
+                      <div style={glass({ padding: "20px 24px" })}>
+                        <div className="label" style={{ marginBottom: "6px" }}>Follower Summary</div>
+                        <div style={{ fontFamily: "var(--font-cormorant, serif)", fontSize: "16px", fontWeight: 300, fontStyle: "italic", color: T, marginBottom: "20px" }}>End of period</div>
+                        <div style={{ display: "flex", gap: "24px", alignItems: "flex-end" }}>
+                          <div>
+                            <div style={{ fontFamily: "var(--font-cormorant, serif)", fontSize: "48px", fontWeight: 300, color: T, lineHeight: 1, letterSpacing: "-0.02em" }}>{fmtN(extracted.followerCount)}</div>
+                            <div style={{ fontSize: "11px", color: T3, marginTop: "4px" }}>Total followers</div>
+                          </div>
+                          {extracted.followerGrowth != null && (
+                            <div>
+                              <div style={{ fontFamily: "var(--font-cormorant, serif)", fontSize: "32px", fontWeight: 300, color: "#2BBFB0", lineHeight: 1, letterSpacing: "-0.02em" }}>{extracted.followerGrowth > 0 ? "+" : ""}{extracted.followerGrowth}</div>
+                              <div style={{ fontSize: "11px", color: T3, marginTop: "4px" }}>This period</div>
+                            </div>
+                          )}
+                          {extracted.followerGrowthPercent != null && (
+                            <div>
+                              <div style={{ fontFamily: "var(--font-cormorant, serif)", fontSize: "32px", fontWeight: 300, color: "#2BBFB0", lineHeight: 1 }}>{fmtPct(extracted.followerGrowthPercent)}</div>
+                              <div style={{ fontSize: "11px", color: T3, marginTop: "4px" }}>Growth rate</div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Posts table */}
+                {sortedPosts.length > 0 && (
+                  <div style={glass()}>
+                    <div style={{ padding: "16px 20px", borderBottom: "1px solid rgba(26,26,26,0.08)" }}>
+                      <div className="label" style={{ marginBottom: "4px" }}>Post Performance</div>
+                      <div style={{ fontFamily: "var(--font-cormorant, serif)", fontSize: "18px", fontWeight: 300, fontStyle: "italic", color: T }}>Sortable by any metric</div>
+                    </div>
+                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                      <thead>
+                        <tr style={{ borderBottom: "1px solid rgba(26,26,26,0.08)" }}>
+                          {[
+                            { key: "date", label: "Date" },
+                            { key: "content", label: "Content" },
+                            { key: "impressions", label: "Impressions" },
+                            { key: "engagementRate", label: "Eng. Rate" },
+                            { key: "reactions", label: "Reactions" },
+                            { key: "comments", label: "Comments" },
+                            { key: "clicks", label: "Clicks" },
+                          ].map(({ key, label }) => (
+                            <th key={key} onClick={() => { if (sortBy === key) setSortDir(d => d === "desc" ? "asc" : "desc"); else { setSortBy(key); setSortDir("desc"); } }} style={colStyle(key)}>
+                              {label} {sortBy === key ? (sortDir === "desc" ? "↓" : "↑") : ""}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {sortedPosts.map((p, i) => {
+                          const isTop = extracted?.topPost?.content === p.content;
+                          const isExpanded = expandedPost === i;
+                          return (
+                            <tr key={i} style={{ borderBottom: "1px solid rgba(26,26,26,0.06)", borderLeft: isTop ? `3px solid ${GOLD}` : "3px solid transparent", cursor: "pointer", background: isExpanded ? "rgba(201,168,76,0.03)" : "transparent" }} onClick={() => setExpandedPost(isExpanded ? null : i)}>
+                              <td style={{ padding: "12px 16px", fontSize: "12px", color: T3, whiteSpace: "nowrap" }}>{p.date ?? "—"}</td>
+                              <td style={{ padding: "12px 16px", fontSize: "12px", color: T2, maxWidth: 220 }}>
+                                {isExpanded ? p.content : `${(p.content ?? "").slice(0, 80)}${(p.content?.length ?? 0) > 80 ? "…" : ""}`}
+                              </td>
+                              <td style={{ padding: "12px 16px", fontSize: "13px", fontWeight: 600, color: T }}>{fmtN(p.impressions)}</td>
+                              <td style={{ padding: "12px 16px" }}><span style={{ fontSize: "12px", fontWeight: 600, color: "#2BBFB0" }}>{fmtPct(p.engagementRate)}</span></td>
+                              <td style={{ padding: "12px 16px", fontSize: "12px", color: T2 }}>{fmtN(p.reactions)}</td>
+                              <td style={{ padding: "12px 16px", fontSize: "12px", color: T2 }}>{fmtN(p.comments)}</td>
+                              <td style={{ padding: "12px 16px", fontSize: "12px", color: T2 }}>{fmtN(p.clicks)}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                    {extracted?.topPost && <div style={{ padding: "10px 20px", fontSize: "11px", color: T3, borderTop: "1px solid rgba(26,26,26,0.06)" }}>Gold border = top performing post of the period</div>}
+                  </div>
+                )}
+
+                {/* Narrative section */}
+                <div style={glass({ padding: "24px" })}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
+                    <div>
+                      <div className="label" style={{ marginBottom: "4px" }}>Narrative</div>
+                      <div style={{ fontFamily: "var(--font-cormorant, serif)", fontSize: "18px", fontWeight: 300, fontStyle: "italic", color: T }}>AI-generated analysis</div>
+                    </div>
+                    <div style={{ display: "flex", gap: "4px" }}>
+                      {(["agency", "client"] as const).map(t => (
+                        <button key={t} onClick={() => setNarrativeTab(t)} style={{ padding: "6px 14px", borderRadius: "6px", border: `1px solid ${narrativeTab === t ? GOLD : "rgba(26,26,26,0.10)"}`, background: narrativeTab === t ? `${GOLD}14` : "transparent", color: narrativeTab === t ? GOLD : T2, fontSize: "12px", fontWeight: 500, cursor: "pointer", textTransform: "capitalize", fontFamily: "inherit" }}>
+                          {t}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {!selectedReport.narrative_agency && !selectedReport.narrative_client ? (
+                    <div style={{ padding: "24px", textAlign: "center", color: T3, fontSize: "13px", background: "rgba(26,26,26,0.02)", borderRadius: "6px" }}>
+                      {selectedReport.extracted_data ? "Generating narratives…" : "Upload a PDF to generate narratives"}
+                      {selectedReport.extracted_data && <div style={{ marginTop: "8px" }}><Spinner /></div>}
+                    </div>
+                  ) : (
+                    <>
+                      <textarea
+                        value={narrativeTab === "agency" ? agencyNarrative : clientNarrative}
+                        onChange={e => {
+                          if (narrativeTab === "agency") setAgencyNarrative(e.target.value);
+                          else setClientNarrative(e.target.value);
+                          setNarrativeDirty(true);
+                        }}
+                        rows={10}
+                        style={{ ...INPUT, resize: "vertical", lineHeight: 1.75, marginBottom: "12px" }}
+                        placeholder={narrativeTab === "agency" ? "Agency analysis will appear here…" : "Client summary will appear here…"}
+                      />
+                      {narrativeDirty && (
+                        <GlassBtn variant="primary" onClick={handleSaveNarratives} disabled={narrativeSaving} style={{ gap: "6px" }}>
+                          {narrativeSaving ? <><Spinner /> Saving…</> : "Save Changes"}
+                        </GlassBtn>
+                      )}
+                    </>
+                  )}
+                </div>
+              </>
+            )}
+          </>
+        )}
       </div>
     </div>
   );
@@ -1883,6 +2477,29 @@ function ClientsTab({ clients, notify, onClientAdded }: {
                 style={{ padding: "7px 14px", background: "rgba(26,26,26,0.04)", border: "1px solid rgba(26,26,26,0.12)", borderRadius: "6px", color: T3, cursor: "pointer", fontFamily: "inherit", fontSize: "12px" }}>
                 +
               </button>
+            </div>
+          </div>
+
+          {/* LinkedIn connection */}
+          <div style={{ marginBottom: "24px", padding: "16px 20px", background: "rgba(10,102,194,0.04)", border: "1px solid rgba(10,102,194,0.15)", borderRadius: "8px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", flexWrap: "wrap" }}>
+              <div>
+                <div style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" as const, color: "#0A66C2", marginBottom: "4px" }}>LinkedIn Account</div>
+                {(selectedClient as Record<string,unknown>).linkedin_urn ? (
+                  <div style={{ fontSize: "12px", color: T2 }}>
+                    Connected as <strong>{(selectedClient as Record<string,unknown>).linkedin_name as string || "LinkedIn user"}</strong>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: "12px", color: T3 }}>Not connected — posts will need to be published manually</div>
+                )}
+              </div>
+              <a href={`/api/auth/linkedin?client_id=${selectedClient.id}`}
+                style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "8px 16px", background: "#0A66C2", color: "#fff", border: "none", borderRadius: "6px", fontSize: "12px", fontWeight: 600, textDecoration: "none", letterSpacing: "0.04em", transition: "opacity 0.15s ease" }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = "0.88"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                {(selectedClient as Record<string,unknown>).linkedin_urn ? "Reconnect" : "Connect LinkedIn"}
+              </a>
             </div>
           </div>
 
@@ -2913,7 +3530,9 @@ const [loadingClients, setLoadingClients] = useState(true);
   const [isVisualRefining, setIsVisualRefining] = useState(false);
   const [imgUrl, setImgUrl]           = useState("");
   const [imgProvider, setImgProvider] = useState("");
+  const [imgPrompt, setImgPrompt]     = useState("");
   const [isImgGen, setIsImgGen]       = useState(false);
+  const [bellOpen, setBellOpen]       = useState(false);
 
   const notify = useCallback((m: string, t: "default"|"success"|"error" = "default") => {
     setNote(m); setNoteType(t);
@@ -2957,8 +3576,15 @@ useEffect(() => {
       .catch(() => setAuthRole(null));
   }, []);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("linkedin_connected")) { notify("LinkedIn connected successfully ✓", "success"); window.history.replaceState({}, "", window.location.pathname); }
+    if (params.get("linkedin_error")) { notify(`LinkedIn connection failed: ${params.get("linkedin_error")}`, "error"); window.history.replaceState({}, "", window.location.pathname); }
+  }, [notify]);
+
   const switchCompany = (c: Company) => {
-    setAc(c); setAp(c.pillars[0]); setPost(""); setSvg(""); setImgUrl(""); setImgProvider("");
+    setAc(c); setAp(c.pillars[0]); setPost(""); setSvg(""); setImgUrl(""); setImgProvider(""); setImgPrompt("");
   };
 
   const generate = async () => {
@@ -2990,7 +3616,7 @@ useEffect(() => {
       const r = await fetch("/api/image-generate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ company: ac, pillar: ap, visualType: vizType, postContent: postContentOverride ?? post, editRequest }), signal: controller.signal });
       clearTimeout(timer);
       const d = await r.json();
-      if (d.imageUrl) { setImgUrl(d.imageUrl); setImgProvider(d.provider || ""); notify("Image generated", "success"); }
+      if (d.imageUrl) { setImgUrl(d.imageUrl); setImgProvider(d.provider || ""); setImgPrompt(d.prompt || ""); notify("Image generated", "success"); }
       else notify(d.error || "Image generation failed", "error");
     } catch (e) {
       clearTimeout(timer);
@@ -3030,6 +3656,13 @@ useEffect(() => {
     setIsSave(false); notify(`Saved as ${status}`, "success"); fetchPosts(); fetchAllPosts();
   };
 
+  const sendForApproval = async (imageUrl?: string) => {
+    if (!post) return;
+    setIsSave(true);
+    await fetch("/api/posts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ company_id: ac!.id, company_name: ac!.name, post_type: ap!.type, scheduled_day: ap!.day, content: post, status: "pending_approval", image_url: imageUrl || null }) });
+    setIsSave(false); notify("Sent for client approval ✓", "success"); fetchPosts(); fetchAllPosts();
+  };
+
   const copy = (t: string) => { navigator.clipboard.writeText(t); notify("Copied to clipboard", "success"); };
 
   const downloadSvg = () => {
@@ -3063,6 +3696,9 @@ if (loadingClients || !ac || !ap) {
 }
   // Count posts with change-request notes (returned to draft with client feedback)
   const changeRequestCount = posts.filter(p => p.status === "draft" && p.notes).length;
+  const pendingApprovalAll = allPosts.filter(p => p.status === "pending_approval");
+  const changeRequestAll   = allPosts.filter(p => p.status === "draft" && p.notes);
+  const bellCount = pendingApprovalAll.length + changeRequestAll.length;
 
   const TABS: { id: Tab; label: string; badge?: number }[] = [
     { id: "overview",  label: "Overview"  },
@@ -3171,6 +3807,61 @@ if (loadingClients || !ac || !ap) {
             >
               Portal ↗
             </a>
+            {/* Notifications bell */}
+            <div style={{ position: "relative" }}>
+              <button onClick={() => setBellOpen(o => !o)}
+                style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center", width: "32px", height: "32px", background: bellOpen ? "rgba(201,168,76,0.08)" : "transparent", border: `1px solid ${bellOpen ? "rgba(201,168,76,0.3)" : "rgba(26,26,26,0.12)"}`, borderRadius: "6px", color: bellOpen ? GOLD : T3, cursor: "pointer", transition: "all 0.15s ease", fontFamily: "inherit" }}>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M7 1.5a4 4 0 0 1 4 4v2.5l1 1.5H2l1-1.5V5.5a4 4 0 0 1 4-4zM5.5 11.5a1.5 1.5 0 0 0 3 0" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                </svg>
+                {bellCount > 0 && (
+                  <span style={{ position: "absolute", top: "-4px", right: "-4px", minWidth: "14px", height: "14px", borderRadius: "7px", background: "#cc3333", color: "#fff", fontSize: "8px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px", border: "1.5px solid #F5F2EE" }}>
+                    {bellCount}
+                  </span>
+                )}
+              </button>
+              {bellOpen && (
+                <div style={{ position: "absolute", top: "calc(100% + 8px)", right: 0, width: "320px", background: "#FFFFFF", border: "1px solid rgba(26,26,26,0.10)", borderRadius: "12px", boxShadow: "0 8px 32px rgba(26,26,26,0.12)", zIndex: 200, overflow: "hidden" }}>
+                  <div style={{ padding: "14px 18px", borderBottom: "1px solid rgba(26,26,26,0.07)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <span style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: T3 }}>Needs Attention</span>
+                    {bellCount === 0 && <span style={{ fontSize: "11px", color: T3 }}>All clear</span>}
+                  </div>
+                  <div style={{ maxHeight: "360px", overflowY: "auto" }}>
+                    {bellCount === 0 ? (
+                      <div style={{ padding: "32px 18px", textAlign: "center", color: T3, fontSize: "13px" }}>No pending items</div>
+                    ) : (
+                      <>
+                        {pendingApprovalAll.map(p => (
+                          <div key={p.id} onClick={() => { setTab("library"); setBellOpen(false); }}
+                            style={{ padding: "12px 18px", borderBottom: "1px solid rgba(26,26,26,0.06)", cursor: "pointer", transition: "background 0.12s" }}
+                            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(26,26,26,0.02)"; }}
+                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
+                            <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "4px" }}>
+                              <span style={{ fontSize: "9px", fontWeight: 700, padding: "2px 7px", background: "rgba(201,168,76,0.10)", color: "#9C7A2A", border: "1px solid rgba(201,168,76,0.25)", borderRadius: "4px", letterSpacing: "0.08em" }}>PENDING</span>
+                              <span style={{ fontSize: "11px", color: T3 }}>{p.company_name}</span>
+                            </div>
+                            <div style={{ fontSize: "12px", color: T2, lineHeight: 1.5, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const }}>{p.content.slice(0, 100)}</div>
+                          </div>
+                        ))}
+                        {changeRequestAll.map(p => (
+                          <div key={p.id} onClick={() => { setTab("library"); setBellOpen(false); }}
+                            style={{ padding: "12px 18px", borderBottom: "1px solid rgba(26,26,26,0.06)", cursor: "pointer", transition: "background 0.12s" }}
+                            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(26,26,26,0.02)"; }}
+                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
+                            <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "4px" }}>
+                              <span style={{ fontSize: "9px", fontWeight: 700, padding: "2px 7px", background: "rgba(204,51,51,0.08)", color: "#cc3333", border: "1px solid rgba(204,51,51,0.20)", borderRadius: "4px", letterSpacing: "0.08em" }}>CHANGE REQ</span>
+                              <span style={{ fontSize: "11px", color: T3 }}>{p.company_name}</span>
+                            </div>
+                            <div style={{ fontSize: "12px", color: T2, lineHeight: 1.5, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const }}>{p.content.slice(0, 100)}</div>
+                          </div>
+                        ))}
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
             <a href="/login" style={{
               display: "flex", alignItems: "center", justifyContent: "center",
               width: "32px", height: "32px",
@@ -3249,9 +3940,9 @@ if (loadingClients || !ac || !ap) {
             svg={svg} setSvg={setSvg} vizType={vizType} setVizType={setVizType}
             refineRequest={refineRequest} setRefineRequest={setRefineRequest}
             svgRefineRequest={svgRefineRequest} setSvgRefineRequest={setSvgRefineRequest}
-            imgUrl={imgUrl} imgProvider={imgProvider} isImgGen={isImgGen} clearImgUrl={() => setImgUrl("")}
+            imgUrl={imgUrl} imgProvider={imgProvider} imgPrompt={imgPrompt} isImgGen={isImgGen} clearImgUrl={() => setImgUrl("")}
             generate={generate} generateVisual={generateVisual} generateAiImage={generateAiImage} refinePost={refinePost} refineVisual={refineVisual}
-            savePost={savePost} copy={copy} downloadSvg={downloadSvg} notify={notify}
+            savePost={savePost} sendForApproval={sendForApproval} copy={copy} downloadSvg={downloadSvg} notify={notify}
           />
         )}
         {tab === "library"   && (
@@ -3260,7 +3951,7 @@ if (loadingClients || !ac || !ap) {
             fetchPosts={() => { fetchPosts(); fetchAllPosts(); }} notify={notify} copy={copy}
           />
         )}
-        {tab === "calendar"  && <CalendarTab  ac={ac} clients={clients} />}
+        {tab === "calendar"  && <CalendarTab  ac={ac} clients={clients} allPosts={allPosts} />}
         {tab === "reports"   && <ReportsTab   ac={ac} />}
         {tab === "invoices"  && <InvoicesTab  ac={ac} notify={notify} />}
         {tab === "clients" && <ClientsTab clients={clients} notify={notify} onClientAdded={() => {

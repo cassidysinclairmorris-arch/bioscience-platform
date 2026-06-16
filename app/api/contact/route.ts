@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
 
   await transporter.sendMail({
     from: `"Linkwright Contact Form" <${process.env.SMTP_USER}>`,
-    to: "info@linkwrightstudio.com",
+    to: "cassidy@linkwrightstudio.com",
     replyTo: email,
     subject: `New enquiry from ${name}`,
     html: `

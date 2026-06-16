@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
-import { Inter, Plus_Jakarta_Sans, Cormorant_Garamond, Playfair_Display, DM_Sans } from "next/font/google";
+import { Inter, Plus_Jakarta_Sans, Cormorant_Garamond, Playfair_Display, DM_Sans, Raleway } from "next/font/google";
 import "./globals.css";
+
+const raleway = Raleway({
+  variable: "--font-raleway",
+  subsets: ["latin"],
+  weight: ["100", "200", "300", "400", "600", "700"],
+  display: "swap",
+});
 
 const inter = Inter({
   variable: "--font-inter",
@@ -46,7 +53,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${jakarta.variable} ${cormorant.variable} ${playfair.variable} ${dmSans.variable}`}>
+    <html lang="en" className={`${inter.variable} ${jakarta.variable} ${cormorant.variable} ${playfair.variable} ${dmSans.variable} ${raleway.variable}`} style={{ scrollBehavior: "smooth" }}>
       <body style={{ fontFamily: "var(--font-dm-sans, system-ui, sans-serif)" }}>{children}</body>
     </html>
   );

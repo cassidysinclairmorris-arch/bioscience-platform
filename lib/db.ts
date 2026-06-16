@@ -110,6 +110,22 @@ export function getDb(): Database.Database {
         client_id     TEXT    REFERENCES clients(id),
         created_at    TEXT    DEFAULT (datetime('now'))
       );
+
+      CREATE TABLE IF NOT EXISTS reports (
+        id               INTEGER PRIMARY KEY AUTOINCREMENT,
+        client_id        TEXT    NOT NULL REFERENCES clients(id),
+        type             TEXT    NOT NULL DEFAULT 'monthly',
+        period_start     TEXT    NOT NULL,
+        period_end       TEXT    NOT NULL,
+        status           TEXT    NOT NULL DEFAULT 'draft',
+        raw_pdf_url      TEXT,
+        extracted_data   TEXT,
+        narrative_agency TEXT,
+        narrative_client TEXT,
+        created_at       TEXT    DEFAULT (datetime('now')),
+        updated_at       TEXT    DEFAULT (datetime('now')),
+        published_at     TEXT
+      );
     `);
 
     // Migrations for existing databases
@@ -122,6 +138,17 @@ export function getDb(): Database.Database {
     try { db.exec(`ALTER TABLE brand_kits ADD COLUMN invert_logo INTEGER DEFAULT 0`); } catch {}
     try { db.exec(`ALTER TABLE posts ADD COLUMN notes TEXT`); } catch {}
     try { db.exec(`ALTER TABLE posts ADD COLUMN image_url TEXT`); } catch {}
+    try { db.exec(`ALTER TABLE posts ADD COLUMN image_canvas_json TEXT`); } catch {}
+    try { db.exec(`ALTER TABLE posts ADD COLUMN approved_at TEXT`); } catch {}
+    try { db.exec(`ALTER TABLE posts ADD COLUMN scheduled_at TEXT`); } catch {}
+    try { db.exec(`ALTER TABLE posts ADD COLUMN posted_at TEXT`); } catch {}
+    try { db.exec(`ALTER TABLE posts ADD COLUMN linkedin_post_id TEXT`); } catch {}
+    try { db.exec(`ALTER TABLE clients ADD COLUMN linkedin_access_token TEXT`); } catch {}
+    try { db.exec(`ALTER TABLE clients ADD COLUMN linkedin_refresh_token TEXT`); } catch {}
+    try { db.exec(`ALTER TABLE clients ADD COLUMN linkedin_urn TEXT`); } catch {}
+    try { db.exec(`ALTER TABLE clients ADD COLUMN linkedin_name TEXT`); } catch {}
+    try { db.exec(`ALTER TABLE clients ADD COLUMN linkedin_token_expires_at TEXT`); } catch {}
+    try { db.exec(`ALTER TABLE reports ADD COLUMN updated_at TEXT DEFAULT (datetime('now'))`); } catch {}
 
     // Seed admin user if no users exist
     const userCount = (db.prepare("SELECT COUNT(*) as n FROM users").get() as { n: number }).n;
@@ -143,7 +170,12 @@ export interface Post {
   status: "draft" | "pending_approval" | "approved" | "scheduled" | "posted";
   notes: string | null;
   image_url: string | null;
+  image_canvas_json: string | null;
   week_number: number | null;
+  approved_at: string | null;
+  scheduled_at: string | null;
+  posted_at: string | null;
+  linkedin_post_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -161,6 +193,11 @@ export interface Client {
   active: number;
   logo_file: string | null;
   created_at: string;
+  linkedin_access_token: string | null;
+  linkedin_refresh_token: string | null;
+  linkedin_urn: string | null;
+  linkedin_name: string | null;
+  linkedin_token_expires_at: string | null;
 }
 
 export interface BrandKit {
@@ -222,4 +259,20 @@ export interface User {
   role: "agency" | "client";
   client_id: string | null;
   created_at: string;
+}
+
+export interface Report {
+  id: number;
+  client_id: string;
+  type: "monthly" | "weekly";
+  period_start: string;
+  period_end: string;
+  status: "draft" | "published";
+  raw_pdf_url: string | null;
+  extracted_data: string | null;
+  narrative_agency: string | null;
+  narrative_client: string | null;
+  created_at: string;
+  updated_at: string;
+  published_at: string | null;
 }

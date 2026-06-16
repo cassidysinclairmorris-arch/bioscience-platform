@@ -108,7 +108,22 @@ export const maxDuration = 60;
 // ── Route handler ─────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
   try {
-    const { company, pillar, visualType, postContent, editRequest } = await req.json();
+    const { company, pillar, visualType, postContent, editRequest, rawPrompt } = await req.json();
+
+    // rawPrompt bypass: skip prompt builder, try Flux first, fallback Ideogram
+    if (rawPrompt) {
+      try {
+        const imageUrl = await generateFlux(rawPrompt as string);
+        return NextResponse.json({ imageUrl, provider: "Flux", prompt: rawPrompt });
+      } catch (e1) {
+        try {
+          const imageUrl = await generateIdeogram(rawPrompt as string);
+          return NextResponse.json({ imageUrl, provider: "Ideogram (fallback)", prompt: rawPrompt });
+        } catch (e2) {
+          return NextResponse.json({ error: `Flux: ${String(e1)} | Ideogram: ${String(e2)}`, imageUrl: null }, { status: 502 });
+        }
+      }
+    }
 
     const industry = (pillar?.type  as string) || "biotech";
     const audience = (company?.audience as string) || "Life science executives";

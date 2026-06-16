@@ -14,13 +14,48 @@ type Post = {
   id: number; company_id: string; company_name: string; post_type: string;
   scheduled_day: string; content: string;
   status: "draft" | "pending_approval" | "approved" | "scheduled" | "posted";
-  notes: string | null; week_number: number | null; created_at: string; updated_at: string;
+  notes: string | null; image_url: string | null; week_number: number | null; created_at: string; updated_at: string;
 };
 type PostAnalytic = {
   id: number; post_id: number; impressions: number; engagement_rate: number;
   clicks: number; likes: number; comments: number; reposts: number; recorded_at: string;
 };
 type PortalTab = "dashboard" | "approval" | "history" | "reports";
+type Report = {
+  id: number;
+  client_id: string;
+  type: "monthly" | "weekly";
+  period_start: string;
+  period_end: string;
+  status: "draft" | "published";
+  extracted_data: string | null;
+  narrative_client: string | null;
+  published_at: string | null;
+};
+type ExtractedData = {
+  impressions?: number | null;
+  reach?: number | null;
+  engagementRate?: number | null;
+  totalEngagements?: number | null;
+  reactions?: number | null;
+  comments?: number | null;
+  shares?: number | null;
+  clicks?: number | null;
+  followerCount?: number | null;
+  followerGrowth?: number | null;
+  followerGrowthPercent?: number | null;
+  posts?: Array<{
+    date?: string | null;
+    content?: string | null;
+    impressions?: number | null;
+    engagementRate?: number | null;
+    reactions?: number | null;
+    comments?: number | null;
+    shares?: number | null;
+    clicks?: number | null;
+    type?: string | null;
+  }>;
+};
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function glass(extra?: React.CSSProperties): React.CSSProperties {
@@ -204,6 +239,12 @@ function ApprovalTab({ client, pendingPosts, accentColor, onRefresh, onToast }: 
 
           {/* Content */}
           <div style={{ padding: "20px 24px" }}>
+            {p.image_url && (
+              <div style={{ marginBottom: "16px", borderRadius: "10px", overflow: "hidden", border: "1px solid rgba(26,26,26,0.08)" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={p.image_url} alt="Post visual" style={{ width: "100%", maxHeight: "360px", objectFit: "cover", display: "block" }} />
+              </div>
+            )}
             <p style={{ fontSize: "14px", lineHeight: 1.8, color: "rgba(26,26,26,0.85)", whiteSpace: "pre-wrap" }}>{p.content}</p>
           </div>
 
@@ -330,115 +371,160 @@ function HistoryTab({ postedPosts, analytics, accentColor }: {
 }
 
 // ── Reports ────────────────────────────────────────────────────────────────────
-function ReportsTab({ client, postedPosts, pendingPosts, accentColor }: {
-  client: Client; postedPosts: Post[]; pendingPosts: Post[]; accentColor: string;
+function ReportsTab({ client, accentColor }: {
+  client: Client; accentColor: string;
+  postedPosts?: Post[]; pendingPosts?: Post[];
 }) {
-  const now = new Date();
-  const months = Array.from({ length: 3 }, (_, i) => {
-    const d = new Date(now.getFullYear(), now.getMonth() - (2 - i), 1);
-    return { key: d.toISOString().slice(0, 7), label: d.toLocaleString("default", { month: "short", year: "numeric" }) };
-  });
+  const [reports, setReports] = useState<Report[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [exporting, setExporting] = useState(false);
 
-  const postsPerMonth = months.map(m => ({
-    label: m.label,
-    count: postedPosts.filter(p => p.updated_at.startsWith(m.key)).length,
-  }));
+  useEffect(() => {
+    setLoading(true);
+    fetch(`/api/reports?clientId=${client.id}&status=published`)
+      .then(r => r.json())
+      .then(d => {
+        const list: Report[] = d.reports ?? [];
+        setReports(list);
+        if (list.length > 0) setSelectedId(list[0].id);
+      })
+      .finally(() => setLoading(false));
+  }, [client.id]);
 
-  const maxCount = Math.max(...postsPerMonth.map(m => m.count), 1);
+  const selectedReport = reports.find(r => r.id === selectedId) ?? null;
+  const extracted: ExtractedData | null = selectedReport?.extracted_data ? JSON.parse(selectedReport.extracted_data) : null;
 
-  const printReport = () => {
-    window.print();
+  const fmtN = (n: number | null | undefined) => {
+    if (n == null) return "—";
+    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+    if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+    return String(n);
+  };
+  const fmtPct = (n: number | null | undefined) => n == null ? "—" : `${Number(n).toFixed(1)}%`;
+
+  const handleExport = async () => {
+    if (!selectedReport) return;
+    setExporting(true);
+    const res = await fetch(`/api/reports/export-pdf?id=${selectedReport.id}&audience=client`);
+    if (res.ok) {
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${client.name.replace(/\s+/g, "-")}-${selectedReport.type}-${selectedReport.period_start.slice(0, 7)}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+    setExporting(false);
   };
 
+  if (loading) {
+    return <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+      {[...Array(3)].map((_, i) => <div key={i} style={{ height: 60, borderRadius: 12, background: "rgba(26,26,26,0.05)", animation: "pulse 1.5s ease-in-out infinite" }} />)}
+    </div>;
+  }
+
+  if (reports.length === 0) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "12px", padding: "80px 40px", textAlign: "center" }}>
+        <div style={{ width: 56, height: 56, borderRadius: "50%", background: `${accentColor}12`, border: `1px solid ${accentColor}30`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "8px" }}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M4 18V6a2 2 0 012-2h9l5 5v9a2 2 0 01-2 2H6a2 2 0 01-2-2z" stroke={accentColor} strokeWidth="1.5"/><path d="M14 4v5h5M8 12h8M8 16h5" stroke={accentColor} strokeWidth="1.5" strokeLinecap="round"/></svg>
+        </div>
+        <div style={{ fontFamily: "var(--font-cormorant, Georgia, serif)", fontSize: "22px", fontWeight: 300, fontStyle: "italic", color: "#1A1A1A" }}>No published reports yet</div>
+        <div style={{ fontSize: "13px", color: "rgba(26,26,26,0.50)" }}>Your Linkwright team will publish performance reports here.</div>
+      </div>
+    );
+  }
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "24px" }} id="portal-report">
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ fontFamily: "var(--font-cormorant, Georgia, serif)", fontSize: "32px", fontWeight: 300, fontStyle: "italic", letterSpacing: "-0.02em" }}>
-          LinkedIn Performance Report
-        </div>
-        <button
-          onClick={printReport}
-          style={{ display: "inline-flex", alignItems: "center", gap: "7px", padding: "9px 18px", background: `${accentColor}18`, border: `1px solid ${accentColor}40`, borderRadius: "10px", fontSize: "13px", fontWeight: 600, color: accentColor, cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s ease" }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = `${accentColor}28`; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = `${accentColor}18`; }}
-        >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path d="M2 10v2h10v-2M7 2v7M4.5 6.5L7 9l2.5-2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-          Export PDF
-        </button>
-      </div>
-
-      {/* Brand header card */}
-      <div style={{ background: `linear-gradient(135deg, ${accentColor}18, ${accentColor}08)`, border: `1px solid ${accentColor}30`, borderRadius: "16px", padding: "28px 32px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div>
-          <div style={{ fontSize: "38px", fontWeight: 300, fontStyle: "italic", fontFamily: "var(--font-cormorant, Georgia, serif)", color: "#1A1A1A", letterSpacing: "-0.02em", marginBottom: "4px" }}>{client.name}</div>
-          {client.tagline && <div style={{ fontSize: "13px", color: "rgba(26,26,26,0.50)" }}>{client.tagline}</div>}
-          <div style={{ fontSize: "11px", color: "rgba(26,26,26,0.35)", marginTop: "8px" }}>
-            Report generated {new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
-          </div>
-        </div>
-        <div style={{ textAlign: "right" }}>
-          <div style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(26,26,26,0.40)", marginBottom: "8px" }}>Powered by</div>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/linkwright-logo.png" alt="Linkwright" style={{ height: "24px", objectFit: "contain" }} />
-        </div>
-      </div>
-
-      {/* Summary stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
-        {[
-          { label: "Total Published",    value: postedPosts.length,  color: "#1A1A1A" },
-          { label: "Pending Approval",   value: pendingPosts.length, color: "#C9A84C" },
-          { label: "Published This Month", value: postsPerMonth[postsPerMonth.length - 1]?.count || 0, color: "#C9A84C" },
-          { label: "Avg Posts / Month",  value: Math.round(postedPosts.length / Math.max(months.length, 1)), color: "#1A1A1A" },
-        ].map((s, i) => (
-          <div key={i} style={glass({ padding: "20px 24px", borderTop: `2px solid ${s.color}` })}>
-            <div style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(26,26,26,0.40)", marginBottom: "10px" }}>{s.label}</div>
-            <div style={{ fontSize: "48px", fontWeight: 300, fontFamily: "var(--font-cormorant, Georgia, serif)", color: s.color, letterSpacing: "-0.02em", lineHeight: 1 }}>{s.value}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Posts per month bar chart */}
-      <div style={glass({ padding: "24px" })}>
-        <div style={{ fontFamily: "var(--font-cormorant, Georgia, serif)", fontSize: "24px", fontWeight: 300, fontStyle: "italic", letterSpacing: "-0.01em", marginBottom: "20px" }}>Posts Published by Month</div>
-        <div style={{ display: "flex", gap: "24px", alignItems: "flex-end", height: "120px" }}>
-          {postsPerMonth.map(m => (
-            <div key={m.label} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
-              <div style={{ fontSize: "13px", fontWeight: 700, color: accentColor }}>{m.count}</div>
-              <div style={{ width: "100%", height: `${(m.count / maxCount) * 80}px`, minHeight: "4px", background: `linear-gradient(180deg, ${accentColor}, ${accentColor}60)`, borderRadius: "6px 6px 0 0", transition: "height 0.3s ease" }} />
-              <div style={{ fontSize: "11px", color: "rgba(26,26,26,0.45)", fontWeight: 500 }}>{m.label}</div>
-            </div>
+    <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+      {/* Report selector + export */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
+        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+          {reports.map(r => (
+            <button key={r.id} onClick={() => setSelectedId(r.id)} style={{ padding: "7px 14px", borderRadius: "8px", border: `1px solid ${r.id === selectedId ? accentColor : "rgba(26,26,26,0.12)"}`, background: r.id === selectedId ? `${accentColor}12` : "transparent", color: r.id === selectedId ? accentColor : "rgba(26,26,26,0.55)", fontSize: "12px", fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+              {r.period_start.slice(0, 7)} {r.type === "weekly" ? "(weekly)" : ""}
+            </button>
           ))}
         </div>
+        {selectedReport && (
+          <button onClick={handleExport} disabled={exporting} style={{ display: "inline-flex", alignItems: "center", gap: "7px", padding: "9px 18px", background: `${accentColor}18`, border: `1px solid ${accentColor}40`, borderRadius: "10px", fontSize: "13px", fontWeight: 600, color: accentColor, cursor: "pointer", fontFamily: "inherit", opacity: exporting ? 0.7 : 1 }}>
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 9v2h9V9M6.5 1v7M4 6l2.5 2.5L9 6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            {exporting ? "Generating…" : "Export PDF"}
+          </button>
+        )}
       </div>
 
-      {/* Recent posts table */}
-      {postedPosts.length > 0 && (
-        <div style={glass({ overflow: "hidden" })}>
-          <div style={{ padding: "18px 24px", borderBottom: "1px solid rgba(26,26,26,0.08)" }}>
-            <div style={{ fontFamily: "var(--font-cormorant, Georgia, serif)", fontSize: "24px", fontWeight: 300, fontStyle: "italic", letterSpacing: "-0.01em" }}>Recent Posts</div>
+      {selectedReport && (
+        <>
+          {/* Brand header */}
+          <div style={{ background: `linear-gradient(135deg, ${accentColor}18, ${accentColor}08)`, border: `1px solid ${accentColor}30`, borderRadius: "16px", padding: "24px 28px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div>
+              <div style={{ fontSize: "32px", fontWeight: 300, fontStyle: "italic", fontFamily: "var(--font-cormorant, Georgia, serif)", color: "#1A1A1A", letterSpacing: "-0.02em", marginBottom: "4px" }}>{client.name}</div>
+              <div style={{ fontSize: "12px", color: "rgba(26,26,26,0.45)" }}>{selectedReport.period_start} – {selectedReport.period_end}</div>
+              {selectedReport.published_at && <div style={{ fontSize: "11px", color: "rgba(26,26,26,0.35)", marginTop: "4px" }}>Published {new Date(selectedReport.published_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</div>}
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(26,26,26,0.35)", marginBottom: "6px" }}>Prepared by</div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/linkwright-logo.png" alt="Linkwright" style={{ height: "20px", objectFit: "contain" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+            </div>
           </div>
-          <div>
-            {postedPosts.slice(0, 8).map((p, i) => (
-              <div key={p.id} style={{ padding: "14px 24px", borderBottom: i < Math.min(postedPosts.length, 8) - 1 ? "1px solid rgba(26,26,26,0.06)" : "none", display: "flex", alignItems: "flex-start", gap: "14px" }}>
-                <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: accentColor, marginTop: "6px", flexShrink: 0 }} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: "13px", color: "rgba(26,26,26,0.75)", lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", marginBottom: "4px" }}>
-                    {p.content}
-                  </p>
-                  <div style={{ display: "flex", gap: "12px" }}>
-                    <span style={{ fontSize: "11px", color: "rgba(26,26,26,0.40)" }}>{p.post_type}</span>
-                    <span style={{ fontSize: "11px", color: "rgba(26,26,26,0.35)" }}>{formatDate(p.updated_at)}</span>
-                  </div>
+
+          {/* KPI cards */}
+          {extracted && (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
+              {[
+                { label: "Impressions",       value: fmtN(extracted.impressions),        color: "#1A1A1A" },
+                { label: "Reach",             value: fmtN(extracted.reach),              color: accentColor },
+                { label: "Engagement Rate",   value: fmtPct(extracted.engagementRate),   color: accentColor },
+                { label: "Total Engagements", value: fmtN(extracted.totalEngagements),   color: "#1A1A1A" },
+                { label: "Followers",         value: fmtN(extracted.followerCount),      color: accentColor },
+                { label: "Follower Growth",   value: extracted.followerGrowth != null ? `${extracted.followerGrowth > 0 ? "+" : ""}${extracted.followerGrowth}` : "—", color: "#1A1A1A" },
+              ].map(k => (
+                <div key={k.label} style={glass({ padding: "16px 20px 14px", borderTop: `2px solid ${k.color}` })}>
+                  <div style={{ fontSize: "9px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(26,26,26,0.40)", marginBottom: "8px" }}>{k.label}</div>
+                  <div style={{ fontFamily: "var(--font-cormorant, Georgia, serif)", fontSize: "32px", fontWeight: 300, color: k.color, letterSpacing: "-0.02em", lineHeight: 1 }}>{k.value}</div>
                 </div>
-                <StatusPill status="posted" />
+              ))}
+            </div>
+          )}
+
+          {/* Top posts */}
+          {extracted?.posts && extracted.posts.length > 0 && (
+            <div style={glass({ overflow: "hidden" })}>
+              <div style={{ padding: "16px 22px", borderBottom: "1px solid rgba(26,26,26,0.08)" }}>
+                <div style={{ fontFamily: "var(--font-cormorant, Georgia, serif)", fontSize: "22px", fontWeight: 300, fontStyle: "italic" }}>Top Posts This Period</div>
               </div>
-            ))}
-          </div>
-        </div>
+              <div>
+                {extracted.posts.slice(0, 5).map((p, i) => (
+                  <div key={i} style={{ padding: "14px 22px", borderBottom: i < 4 ? "1px solid rgba(26,26,26,0.06)" : "none", display: "flex", gap: "14px", alignItems: "flex-start" }}>
+                    <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: accentColor, marginTop: "6px", flexShrink: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: "13px", color: "rgba(26,26,26,0.75)", lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", marginBottom: "4px" }}>
+                        {p.content ?? "—"}
+                      </p>
+                      <div style={{ display: "flex", gap: "16px" }}>
+                        {p.impressions != null && <span style={{ fontSize: "11px", color: "rgba(26,26,26,0.50)", fontWeight: 500 }}>{fmtN(p.impressions)} impressions</span>}
+                        {p.engagementRate != null && <span style={{ fontSize: "11px", color: accentColor, fontWeight: 600 }}>{fmtPct(p.engagementRate)} engagement</span>}
+                        {p.date && <span style={{ fontSize: "11px", color: "rgba(26,26,26,0.35)" }}>{p.date}</span>}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Client narrative — NEVER show agency narrative */}
+          {selectedReport.narrative_client && (
+            <div style={glass({ padding: "24px 28px" })}>
+              <div style={{ fontFamily: "var(--font-cormorant, Georgia, serif)", fontSize: "22px", fontWeight: 300, fontStyle: "italic", marginBottom: "16px" }}>Performance Summary</div>
+              <p style={{ fontSize: "14px", lineHeight: 1.8, color: "rgba(26,26,26,0.75)", whiteSpace: "pre-wrap" }}>{selectedReport.narrative_client}</p>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
@@ -676,7 +762,7 @@ export default function PortalPage() {
           <HistoryTab postedPosts={postedPosts} analytics={analytics} accentColor={accentColor} />
         )}
         {tab === "reports" && (
-          <ReportsTab client={client} postedPosts={postedPosts} pendingPosts={pendingPosts} accentColor={accentColor} />
+          <ReportsTab client={client} accentColor={accentColor} />
         )}
       </main>
 
