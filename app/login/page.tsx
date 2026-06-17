@@ -56,15 +56,15 @@ export default function LoginPage() {
         className="login-hero"
         style={{ flex: 1, background: RED, display: "none", position: "relative", overflow: "hidden", padding: 48 }}
       >
-        <img
-          src="/images/25.png"
-          alt=""
-          aria-hidden
-          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
-        />
         <div
           aria-hidden
-          style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(227,0,0,0.45) 0%, rgba(10,10,10,0.62) 100%)" }}
+          style={{
+            position: "absolute",
+            inset: 0,
+            backgroundImage: "radial-gradient(#C40000 1.5px, transparent 1.5px)",
+            backgroundSize: "20px 20px",
+            opacity: 0.5,
+          }}
         />
         <div style={{ position: "relative", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
           <img src="/linkwright-logo-white.png" alt="Linkwright" style={{ height: 26, width: "auto", display: "block" }} />
