@@ -14,6 +14,8 @@ export async function POST(req: NextRequest) {
       maxAge: 60 * 60 * 24 * 30, // 30 days
       path: "/",
     });
+    // Clear any leftover client portal session so it cannot shadow agency access.
+    res.cookies.set("client_session", "", { path: "/", maxAge: 0 });
     return res;
   }
 

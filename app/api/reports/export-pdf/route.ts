@@ -195,10 +195,10 @@ export async function GET(req: NextRequest) {
 
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
-  const report = db.prepare("SELECT * FROM reports WHERE id = ?").get(id) as Report | null;
+  const report = await db.prepare("SELECT * FROM reports WHERE id = ?").get(id) as Report | null;
   if (!report) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const clientRow = db.prepare("SELECT name, logo_file FROM clients WHERE id = ?").get(report.client_id) as { name: string; logo_file: string | null } | null;
+  const clientRow = await db.prepare("SELECT name, logo_file FROM clients WHERE id = ?").get(report.client_id) as { name: string; logo_file: string | null } | null;
   const clientName = clientRow?.name ?? "Client";
 
   let logoBase64: string | undefined;

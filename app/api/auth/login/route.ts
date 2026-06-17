@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
     }
 
     const db = getDb();
-    const user = db.prepare("SELECT * FROM users WHERE email = ?").get(email) as {
+    const user = await db.prepare("SELECT * FROM users WHERE email = ?").get(email) as {
       id: number; email: string; password_hash: string; role: string; client_id: string | null;
     } | undefined;
 

@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
   if (status) { query += " AND status = ?"; params.push(status); }
   query += " ORDER BY period_start DESC";
 
-  const reports = db.prepare(query).all(...params);
+  const reports = await db.prepare(query).all(...params);
   return NextResponse.json({ reports });
 }
 
@@ -23,10 +23,10 @@ export async function POST(req: NextRequest) {
   if (!client_id || !period_start || !period_end) {
     return NextResponse.json({ error: "client_id, period_start, period_end required" }, { status: 400 });
   }
-  const result = db.prepare(
+  const result = await db.prepare(
     `INSERT INTO reports (client_id, type, period_start, period_end, status)
      VALUES (?, ?, ?, ?, 'draft')`
   ).run(client_id, type ?? "monthly", period_start, period_end);
-  const report = db.prepare("SELECT * FROM reports WHERE id = ?").get(result.lastInsertRowid);
+  const report = await db.prepare("SELECT * FROM reports WHERE id = ?").get(result.lastInsertRowid);
   return NextResponse.json({ report });
 }

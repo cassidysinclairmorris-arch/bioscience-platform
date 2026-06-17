@@ -47,8 +47,8 @@ export async function POST(req: NextRequest) {
     if (!postId || !clientId) return NextResponse.json({ error: "postId and clientId required" }, { status: 400 });
 
     const db     = getDb();
-    const client = db.prepare("SELECT * FROM clients WHERE id = ?").get(clientId) as Record<string, unknown> | undefined;
-    const post   = db.prepare("SELECT * FROM posts WHERE id = ?").get(postId) as Record<string, unknown> | undefined;
+    const client = await db.prepare("SELECT * FROM clients WHERE id = ?").get(clientId) as Record<string, unknown> | undefined;
+    const post   = await db.prepare("SELECT * FROM posts WHERE id = ?").get(postId) as Record<string, unknown> | undefined;
 
     if (!client) return NextResponse.json({ error: "Client not found" }, { status: 404 });
     if (!post)   return NextResponse.json({ error: "Post not found" }, { status: 404 });
@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
     const liPostId = postRes.headers.get("x-restli-id") || "";
 
     // Mark as posted in DB
-    db.prepare("UPDATE posts SET status = 'posted', posted_at = datetime('now'), linkedin_post_id = ?, updated_at = datetime('now') WHERE id = ?")
+    await db.prepare("UPDATE posts SET status = 'posted', posted_at = datetime('now'), linkedin_post_id = ?, updated_at = datetime('now') WHERE id = ?")
       .run(liPostId, postId);
 
     return NextResponse.json({ success: true, linkedinPostId: liPostId });

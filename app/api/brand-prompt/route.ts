@@ -79,9 +79,9 @@ export async function POST(req: NextRequest) {
     // Persist to DB if clientId provided
     if (clientId) {
       const db = getDb();
-      const existing = db.prepare("SELECT id FROM brand_kits WHERE client_id = ?").get(clientId);
+      const existing = await db.prepare("SELECT id FROM brand_kits WHERE client_id = ?").get(clientId);
       if (existing) {
-        db.prepare("UPDATE brand_kits SET brand_prompt = ?, updated_at = datetime('now') WHERE client_id = ?")
+        await db.prepare("UPDATE brand_kits SET brand_prompt = ?, updated_at = datetime('now') WHERE client_id = ?")
           .run(brandPrompt, clientId);
       }
     }

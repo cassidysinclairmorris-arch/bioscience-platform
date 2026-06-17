@@ -4,7 +4,9 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
-type UserSession = { role: "agency" | "client"; clientId: string | null; email: string };
+type ClientRole = "owner" | "administrator" | "user";
+type UserSession = { role: "agency" | "client"; clientId: string | null; email: string; clientRole?: ClientRole; firstName?: string };
+type TeamMember = { id: number; first_name: string; last_name: string; email: string; role: ClientRole; must_reset_password: number; last_login: string | null };
 type Client = {
   id: string; name: string; tagline: string | null; color: string;
   logo_file: string | null;
@@ -20,7 +22,9 @@ type PostAnalytic = {
   id: number; post_id: number; impressions: number; engagement_rate: number;
   clicks: number; likes: number; comments: number; reposts: number; recorded_at: string;
 };
-type PortalTab = "dashboard" | "approval" | "history" | "reports";
+type PortalTab = "dashboard" | "approval" | "history" | "reports" | "team" | "messages";
+
+type PortalMessage = { id: number; client_user_id: number; sender: "client" | "admin"; body: string; created_at: string; read_at: string | null };
 type Report = {
   id: number;
   client_id: string;
@@ -69,10 +73,10 @@ function Spinner() {
 function StatusPill({ status }: { status: string }) {
   const cfg: Record<string, { bg: string; color: string; border: string }> = {
     draft:            { bg: "rgba(26,26,26,0.04)",    color: "rgba(26,26,26,0.55)",    border: "rgba(26,26,26,0.12)"    },
-    pending_approval: { bg: "rgba(201,168,76,0.08)",  color: "#9C7A2A",                border: "rgba(201,168,76,0.30)"  },
+    pending_approval: { bg: "rgba(227,0,0,0.08)",  color: "#B00000",                border: "rgba(227,0,0,0.30)"  },
     approved:         { bg: "rgba(26,26,26,0.08)",   color: "#1A1A1A",                border: "rgba(26,26,26,0.25)"   },
     scheduled:        { bg: "rgba(26,26,26,0.08)",  color: "#1A1A1A",                border: "rgba(26,26,26,0.25)"  },
-    posted:           { bg: "rgba(201,168,76,0.08)",  color: "#8A8680",                border: "rgba(201,168,76,0.28)"  },
+    posted:           { bg: "rgba(227,0,0,0.08)",  color: "#8A8680",                border: "rgba(227,0,0,0.28)"  },
   };
   const s = cfg[status] ?? cfg.draft;
   return (
@@ -96,31 +100,31 @@ function DashboardTab({ client, pendingPosts, postedPosts, accentColor, onNaviga
   const publishedThisMonth = postedPosts.filter(p => p.updated_at >= monthStart).length;
 
   const statCards = [
-    { label: "Awaiting Your Approval", value: pendingPosts.length, color: "#C9A84C",  glow: "rgba(201,168,76,0.12)", action: pendingPosts.length > 0 ? () => onNavigate("approval") : undefined, actionLabel: "Review now →" },
+    { label: "Awaiting Your Approval", value: pendingPosts.length, color: "#E30000",  glow: "rgba(227,0,0,0.12)", action: pendingPosts.length > 0 ? () => onNavigate("approval") : undefined, actionLabel: "Review now →" },
     { label: "Published This Month",   value: publishedThisMonth,  color: "#1A1A1A",  glow: "rgba(26,26,26,0.04)",   action: () => onNavigate("history"),  actionLabel: "View history →" },
-    { label: "Total Published",        value: postedPosts.length,  color: "#C9A84C",  glow: "rgba(201,168,76,0.08)" },
+    { label: "Total Published",        value: postedPosts.length,  color: "#E30000",  glow: "rgba(227,0,0,0.08)" },
   ];
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
       {/* Welcome */}
-      <div style={glass({ padding: "40px 44px", borderTop: "3px solid #C9A84C" })}>
+      <div style={glass({ padding: "40px 44px", borderTop: "3px solid #E30000" })}>
         <p style={{ fontSize: "11px", fontWeight: 500, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(26,26,26,0.40)", marginBottom: "16px", display: "flex", alignItems: "center", gap: "10px" }}>
-          <span style={{ display: "block", width: "24px", height: "0.5px", background: "#C9A84C", flexShrink: 0 }} />
+          <span style={{ display: "block", width: "24px", height: "0.5px", background: "#E30000", flexShrink: 0 }} />
           Client Portal
         </p>
-        <h2 style={{ fontFamily: "var(--font-cormorant, Georgia, serif)", fontSize: "clamp(26px, 2.5vw, 40px)", fontWeight: 300, fontStyle: "italic", lineHeight: 1.15, letterSpacing: "-0.01em", color: "#1A1A1A", marginBottom: "12px" }}>
+        <h2 style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "clamp(26px, 2.5vw, 40px)", fontWeight: 300, fontStyle: "italic", lineHeight: 1.15, letterSpacing: "-0.01em", color: "#1A1A1A", marginBottom: "12px" }}>
           Welcome back, {client.name}
         </h2>
         {client.tagline && (
           <p style={{ fontSize: "14px", fontWeight: 300, color: "rgba(26,26,26,0.50)", lineHeight: 1.7 }}>{client.tagline}</p>
         )}
         {pendingPosts.length > 0 && (
-          <div style={{ marginTop: "24px", display: "inline-flex", alignItems: "center", gap: "10px", padding: "10px 18px", background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.30)", borderRadius: "8px" }}>
-            <span style={{ fontSize: "13px", color: "#9C7A2A", fontWeight: 500 }}>
+          <div style={{ marginTop: "24px", display: "inline-flex", alignItems: "center", gap: "10px", padding: "10px 18px", background: "rgba(227,0,0,0.08)", border: "1px solid rgba(227,0,0,0.30)", borderRadius: "8px" }}>
+            <span style={{ fontSize: "13px", color: "#B00000", fontWeight: 500 }}>
               {pendingPosts.length} post{pendingPosts.length !== 1 ? "s" : ""} awaiting your approval
             </span>
-            <button onClick={() => onNavigate("approval")} style={{ fontSize: "12px", color: "#9C7A2A", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, textDecoration: "underline", textUnderlineOffset: "3px" }}>
+            <button onClick={() => onNavigate("approval")} style={{ fontSize: "12px", color: "#B00000", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, textDecoration: "underline", textUnderlineOffset: "3px" }}>
               Review →
             </button>
           </div>
@@ -132,7 +136,7 @@ function DashboardTab({ client, pendingPosts, postedPosts, accentColor, onNaviga
         {statCards.map((s, i) => (
           <div key={i} style={glass({ padding: "24px 28px", borderTop: `3px solid ${s.color}`, background: `linear-gradient(135deg, rgba(26,26,26,0.02), ${s.glow})` })}>
             <div style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(26,26,26,0.45)", marginBottom: "12px" }}>{s.label}</div>
-            <div style={{ fontSize: "54px", fontWeight: 300, fontFamily: "var(--font-cormorant, Georgia, serif)", color: s.color, letterSpacing: "-0.02em", lineHeight: 1 }}>{s.value}</div>
+            <div style={{ fontSize: "54px", fontWeight: 300, fontFamily: "var(--font-raleway), sans-serif", color: s.color, letterSpacing: "-0.02em", lineHeight: 1 }}>{s.value}</div>
             {s.action && (
               <button onClick={s.action} style={{ marginTop: "10px", fontSize: "12px", color: s.color, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, textDecoration: "underline", textUnderlineOffset: "3px", opacity: 0.8 }}>
                 {s.actionLabel}
@@ -146,7 +150,7 @@ function DashboardTab({ client, pendingPosts, postedPosts, accentColor, onNaviga
       {pendingPosts.length > 0 && (
         <div style={glass({ padding: "0", overflow: "hidden" })}>
           <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(26,26,26,0.08)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ fontFamily: "var(--font-cormorant, Georgia, serif)", fontSize: "24px", fontWeight: 300, fontStyle: "italic", letterSpacing: "-0.01em" }}>Needs Your Review</div>
+            <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "24px", fontWeight: 300, fontStyle: "italic", letterSpacing: "-0.01em" }}>Needs Your Review</div>
             <StatusPill status="pending_approval" />
           </div>
           <div style={{ display: "flex", flexDirection: "column" }}>
@@ -207,12 +211,12 @@ function ApprovalTab({ client, pendingPosts, accentColor, onRefresh, onToast }: 
   if (pendingPosts.length === 0) {
     return (
       <div style={{ textAlign: "center", padding: "80px 0" }}>
-        <div style={{ width: "60px", height: "60px", borderRadius: "50%", background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.22)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
+        <div style={{ width: "60px", height: "60px", borderRadius: "50%", background: "rgba(227,0,0,0.08)", border: "1px solid rgba(227,0,0,0.22)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M5 13l4 4L19 7" stroke="#C9A84C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M5 13l4 4L19 7" stroke="#E30000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </div>
-        <div style={{ fontSize: "30px", fontWeight: 300, fontStyle: "italic", color: "#1A1A1A", marginBottom: "8px", fontFamily: "var(--font-cormorant, Georgia, serif)" }}>All caught up!</div>
+        <div style={{ fontSize: "30px", fontWeight: 300, fontStyle: "italic", color: "#1A1A1A", marginBottom: "8px", fontFamily: "var(--font-raleway), sans-serif" }}>All caught up!</div>
         <p style={{ fontSize: "14px", color: "rgba(26,26,26,0.40)" }}>No posts are waiting for your approval right now.</p>
       </div>
     );
@@ -221,8 +225,8 @@ function ApprovalTab({ client, pendingPosts, accentColor, onRefresh, onToast }: 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
-        <div style={{ fontFamily: "var(--font-cormorant, Georgia, serif)", fontSize: "32px", fontWeight: 300, fontStyle: "italic", letterSpacing: "-0.02em" }}>Approval Queue</div>
-        <span style={{ fontSize: "12px", fontWeight: 600, padding: "3px 10px", background: "rgba(201,168,76,0.10)", border: "1px solid rgba(201,168,76,0.30)", color: "#9C7A2A", borderRadius: "20px" }}>
+        <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "32px", fontWeight: 300, fontStyle: "italic", letterSpacing: "-0.02em" }}>Approval Queue</div>
+        <span style={{ fontSize: "12px", fontWeight: 600, padding: "3px 10px", background: "rgba(227,0,0,0.10)", border: "1px solid rgba(227,0,0,0.30)", color: "#B00000", borderRadius: "20px" }}>
           {pendingPosts.length} pending
         </span>
       </div>
@@ -327,7 +331,7 @@ function HistoryTab({ postedPosts, analytics, accentColor }: {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-      <div style={{ fontFamily: "var(--font-cormorant, Georgia, serif)", fontSize: "32px", fontWeight: 300, fontStyle: "italic", letterSpacing: "-0.02em", marginBottom: "8px" }}>
+      <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "32px", fontWeight: 300, fontStyle: "italic", letterSpacing: "-0.02em", marginBottom: "8px" }}>
         Post History
       </div>
       {postedPosts.map((p, i) => {
@@ -335,7 +339,7 @@ function HistoryTab({ postedPosts, analytics, accentColor }: {
         return (
           <div key={p.id} style={glass({ overflow: "hidden" })}>
             <div style={{ padding: "14px 20px", borderBottom: "1px solid rgba(26,26,26,0.07)", display: "flex", alignItems: "center", gap: "10px", background: "rgba(26,26,26,0.02)", flexWrap: "wrap" }}>
-              <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#C9A84C", flexShrink: 0 }} />
+              <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#E30000", flexShrink: 0 }} />
               <span style={{ fontSize: "11px", fontWeight: 600, padding: "2px 8px", background: `${accentColor}18`, border: `1px solid ${accentColor}30`, color: accentColor, borderRadius: "6px", letterSpacing: "0.02em" }}>{p.post_type}</span>
               <span style={{ fontSize: "12px", color: "rgba(26,26,26,0.45)" }}>{p.scheduled_day}</span>
               <StatusPill status="posted" />
@@ -358,7 +362,7 @@ function HistoryTab({ postedPosts, analytics, accentColor }: {
                 ].map(m => (
                   <div key={m.label}>
                     <div style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(26,26,26,0.35)", marginBottom: "2px" }}>{m.label}</div>
-                    <div style={{ fontSize: "22px", fontWeight: 300, color: accentColor, fontFamily: "var(--font-cormorant, Georgia, serif)" }}>{m.value}</div>
+                    <div style={{ fontSize: "22px", fontWeight: 300, color: accentColor, fontFamily: "var(--font-raleway), sans-serif" }}>{m.value}</div>
                   </div>
                 ))}
               </div>
@@ -431,7 +435,7 @@ function ReportsTab({ client, accentColor }: {
         <div style={{ width: 56, height: 56, borderRadius: "50%", background: `${accentColor}12`, border: `1px solid ${accentColor}30`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "8px" }}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M4 18V6a2 2 0 012-2h9l5 5v9a2 2 0 01-2 2H6a2 2 0 01-2-2z" stroke={accentColor} strokeWidth="1.5"/><path d="M14 4v5h5M8 12h8M8 16h5" stroke={accentColor} strokeWidth="1.5" strokeLinecap="round"/></svg>
         </div>
-        <div style={{ fontFamily: "var(--font-cormorant, Georgia, serif)", fontSize: "22px", fontWeight: 300, fontStyle: "italic", color: "#1A1A1A" }}>No published reports yet</div>
+        <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "22px", fontWeight: 300, fontStyle: "italic", color: "#1A1A1A" }}>No published reports yet</div>
         <div style={{ fontSize: "13px", color: "rgba(26,26,26,0.50)" }}>Your Linkwright team will publish performance reports here.</div>
       </div>
     );
@@ -461,7 +465,7 @@ function ReportsTab({ client, accentColor }: {
           {/* Brand header */}
           <div style={{ background: `linear-gradient(135deg, ${accentColor}18, ${accentColor}08)`, border: `1px solid ${accentColor}30`, borderRadius: "16px", padding: "24px 28px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div>
-              <div style={{ fontSize: "32px", fontWeight: 300, fontStyle: "italic", fontFamily: "var(--font-cormorant, Georgia, serif)", color: "#1A1A1A", letterSpacing: "-0.02em", marginBottom: "4px" }}>{client.name}</div>
+              <div style={{ fontSize: "32px", fontWeight: 300, fontStyle: "italic", fontFamily: "var(--font-raleway), sans-serif", color: "#1A1A1A", letterSpacing: "-0.02em", marginBottom: "4px" }}>{client.name}</div>
               <div style={{ fontSize: "12px", color: "rgba(26,26,26,0.45)" }}>{selectedReport.period_start} – {selectedReport.period_end}</div>
               {selectedReport.published_at && <div style={{ fontSize: "11px", color: "rgba(26,26,26,0.35)", marginTop: "4px" }}>Published {new Date(selectedReport.published_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</div>}
             </div>
@@ -485,7 +489,7 @@ function ReportsTab({ client, accentColor }: {
               ].map(k => (
                 <div key={k.label} style={glass({ padding: "16px 20px 14px", borderTop: `2px solid ${k.color}` })}>
                   <div style={{ fontSize: "9px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(26,26,26,0.40)", marginBottom: "8px" }}>{k.label}</div>
-                  <div style={{ fontFamily: "var(--font-cormorant, Georgia, serif)", fontSize: "32px", fontWeight: 300, color: k.color, letterSpacing: "-0.02em", lineHeight: 1 }}>{k.value}</div>
+                  <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "32px", fontWeight: 300, color: k.color, letterSpacing: "-0.02em", lineHeight: 1 }}>{k.value}</div>
                 </div>
               ))}
             </div>
@@ -495,7 +499,7 @@ function ReportsTab({ client, accentColor }: {
           {extracted?.posts && extracted.posts.length > 0 && (
             <div style={glass({ overflow: "hidden" })}>
               <div style={{ padding: "16px 22px", borderBottom: "1px solid rgba(26,26,26,0.08)" }}>
-                <div style={{ fontFamily: "var(--font-cormorant, Georgia, serif)", fontSize: "22px", fontWeight: 300, fontStyle: "italic" }}>Top Posts This Period</div>
+                <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "22px", fontWeight: 300, fontStyle: "italic" }}>Top Posts This Period</div>
               </div>
               <div>
                 {extracted.posts.slice(0, 5).map((p, i) => (
@@ -520,12 +524,270 @@ function ReportsTab({ client, accentColor }: {
           {/* Client narrative — NEVER show agency narrative */}
           {selectedReport.narrative_client && (
             <div style={glass({ padding: "24px 28px" })}>
-              <div style={{ fontFamily: "var(--font-cormorant, Georgia, serif)", fontSize: "22px", fontWeight: 300, fontStyle: "italic", marginBottom: "16px" }}>Performance Summary</div>
+              <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "22px", fontWeight: 300, fontStyle: "italic", marginBottom: "16px" }}>Performance Summary</div>
               <p style={{ fontSize: "14px", lineHeight: 1.8, color: "rgba(26,26,26,0.75)", whiteSpace: "pre-wrap" }}>{selectedReport.narrative_client}</p>
             </div>
           )}
         </>
       )}
+    </div>
+  );
+}
+
+// ── Team tab (owners and administrators only) ────────────────────────────────
+const ROLE_LABEL: Record<ClientRole, string> = { owner: "Owner", administrator: "Administrator", user: "User" };
+
+function TeamTab({ myRole, accentColor, onToast }: {
+  myRole: ClientRole;
+  accentColor: string;
+  onToast: (msg: string, type?: "success" | "error" | "default") => void;
+}) {
+  const [team, setTeam] = useState<TeamMember[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [form, setForm] = useState({ first_name: "", last_name: "", email: "", job_title: "", phone: "", role: "user" as ClientRole });
+
+  const load = useCallback(() => {
+    return fetch("/api/portal/team")
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (d && Array.isArray(d.team)) setTeam(d.team); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const adminCount = team.filter(m => m.role === "administrator").length;
+  const adminLimitReached = adminCount >= 5;
+
+  const add = async () => {
+    if (!form.first_name.trim() || !form.last_name.trim() || !form.email.trim()) {
+      onToast("Please fill in name and email.", "error");
+      return;
+    }
+    setBusy(true);
+    try {
+      const res = await fetch("/api/portal/team", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Could not add team member.");
+      onToast(data.emailSent ? "Team member added. Invite sent." : `Added, but the email failed: ${data.emailError}`, data.emailSent ? "success" : "error");
+      setForm({ first_name: "", last_name: "", email: "", job_title: "", phone: "", role: "user" });
+      await load();
+    } catch (e) {
+      onToast(e instanceof Error ? e.message : "Could not add team member.", "error");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const changeRole = async (m: TeamMember, role: ClientRole) => {
+    const res = await fetch(`/api/portal/team/${m.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ role }),
+    });
+    const data = await res.json();
+    if (!res.ok) { onToast(data.error || "Could not change role.", "error"); return; }
+    onToast("Role updated.", "success");
+    await load();
+  };
+
+  const resend = async (m: TeamMember) => {
+    const res = await fetch(`/api/portal/team/${m.id}/resend`, { method: "POST" });
+    const data = await res.json();
+    onToast(res.ok ? "Invite resent." : (data.error || "Could not resend."), res.ok ? "success" : "error");
+  };
+
+  const deactivate = async (m: TeamMember) => {
+    const res = await fetch(`/api/portal/team/${m.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ active: false }),
+    });
+    const data = await res.json();
+    if (!res.ok) { onToast(data.error || "Could not remove.", "error"); return; }
+    onToast("Team member removed.", "success");
+    await load();
+  };
+
+  const inputStyle: React.CSSProperties = { background: "#FFFFFF", border: "1px solid rgba(26,26,26,0.14)", borderRadius: "10px", padding: "11px 13px", fontSize: "14px", fontFamily: "inherit", color: "#1A1A1A", outline: "none", width: "100%", boxSizing: "border-box" };
+  const th: React.CSSProperties = { textAlign: "left", fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(26,26,26,0.40)", fontWeight: 600, padding: "0 12px 10px" };
+  const td: React.CSSProperties = { fontSize: "13px", color: "#1A1A1A", padding: "12px", borderTop: "1px solid rgba(26,26,26,0.07)", verticalAlign: "middle" };
+
+  return (
+    <div style={{ maxWidth: "980px", margin: "0 auto" }}>
+      <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "26px", fontWeight: 300, fontStyle: "italic", marginBottom: "6px" }}>Team</div>
+      <p style={{ fontSize: "13px", color: "rgba(26,26,26,0.55)", marginBottom: "24px" }}>
+        Manage administrators and users for your company.
+      </p>
+
+      {/* Add form */}
+      <div style={glass({ padding: "24px" })}>
+        <div style={{ fontSize: "12px", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "rgba(26,26,26,0.55)", marginBottom: "16px" }}>
+          Add a team member
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "12px" }}>
+          <input style={inputStyle} placeholder="First name" value={form.first_name} onChange={e => setForm({ ...form, first_name: e.target.value })} />
+          <input style={inputStyle} placeholder="Last name" value={form.last_name} onChange={e => setForm({ ...form, last_name: e.target.value })} />
+          <input style={inputStyle} placeholder="Email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
+          <input style={inputStyle} placeholder="Job title (optional)" value={form.job_title} onChange={e => setForm({ ...form, job_title: e.target.value })} />
+          <input style={inputStyle} placeholder="Phone (optional)" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
+          <select style={inputStyle} value={form.role} onChange={e => setForm({ ...form, role: e.target.value as ClientRole })}>
+            <option value="user">User</option>
+            <option value="administrator" disabled={adminLimitReached}>
+              Administrator{adminLimitReached ? " (limit reached)" : ""}
+            </option>
+          </select>
+        </div>
+        <button onClick={add} disabled={busy}
+          style={{ padding: "11px 22px", background: accentColor, color: "#FFFFFF", border: "none", borderRadius: "10px", fontSize: "13px", fontWeight: 600, cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1, fontFamily: "inherit" }}>
+          {busy ? "Adding..." : "Add and send invite"}
+        </button>
+      </div>
+
+      {/* Team table */}
+      <div style={glass({ padding: "20px 20px 8px", marginTop: "20px" })}>
+        {loading ? (
+          <div style={{ color: "rgba(26,26,26,0.45)", fontSize: "13px", padding: "8px 12px 16px" }}>Loading...</div>
+        ) : team.length === 0 ? (
+          <div style={{ color: "rgba(26,26,26,0.45)", fontSize: "13px", padding: "8px 12px 16px" }}>No team members yet.</div>
+        ) : (
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead><tr><th style={th}>Name</th><th style={th}>Email</th><th style={th}>Role</th><th style={th}>Status</th><th style={th}>Last login</th><th style={th}></th></tr></thead>
+            <tbody>
+              {team.map(m => {
+                const isOwnerRow = m.role === "owner";
+                // Owners manage admins and users; administrators manage users only.
+                const canManage = myRole === "owner" ? m.role !== "owner" : m.role === "user";
+                return (
+                  <tr key={m.id}>
+                    <td style={td}>{m.first_name} {m.last_name}</td>
+                    <td style={td}>{m.email}</td>
+                    <td style={td}>
+                      {/* Owner can change admin/user roles; admin can promote users to administrator */}
+                      {!isOwnerRow && myRole === "owner" ? (
+                        <select value={m.role} onChange={e => changeRole(m, e.target.value as ClientRole)}
+                          style={{ ...inputStyle, padding: "6px 8px", width: "auto", fontSize: "12px" }}>
+                          <option value="administrator">Administrator</option>
+                          <option value="user">User</option>
+                        </select>
+                      ) : !isOwnerRow && myRole === "administrator" && m.role === "user" ? (
+                        <button onClick={() => changeRole(m, "administrator")}
+                          style={{ fontSize: "12px", color: accentColor, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, textDecoration: "underline", textUnderlineOffset: "3px", padding: 0 }}>
+                          Promote to admin
+                        </button>
+                      ) : (
+                        ROLE_LABEL[m.role]
+                      )}
+                    </td>
+                    <td style={td}>{m.must_reset_password ? "Pending password reset" : "Active"}</td>
+                    <td style={td}>{m.last_login ? formatDate(m.last_login) : "Never"}</td>
+                    <td style={{ ...td, textAlign: "right", whiteSpace: "nowrap" }}>
+                      {canManage && (
+                        <>
+                          <button onClick={() => resend(m)}
+                            style={{ fontSize: "12px", color: "rgba(26,26,26,0.55)", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", marginRight: "14px" }}>
+                            Resend
+                          </button>
+                          <button onClick={() => deactivate(m)}
+                            style={{ fontSize: "12px", color: "#cc3333", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}>
+                            Remove
+                          </button>
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Messages tab ────────────────────────────────────────────────────────────
+function MessagesTab({ accentColor, onViewed }: { accentColor: string; onViewed: () => void }) {
+  const [messages, setMessages] = useState<PortalMessage[]>([]);
+  const [text, setText] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+
+  const load = useCallback((markRead: boolean) => {
+    return fetch(`/api/client-messages${markRead ? "?markRead=1" : ""}`)
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => {
+        if (d && Array.isArray(d.messages)) setMessages(d.messages);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    load(true).then(() => onViewed());
+    const iv = setInterval(() => load(false), 15000);
+    return () => clearInterval(iv);
+  }, [load, onViewed]);
+
+  const send = async () => {
+    const body = text.trim();
+    if (!body || sending) return;
+    setSending(true);
+    try {
+      const res = await fetch("/api/client-messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ body }),
+      });
+      if (res.ok) {
+        setText("");
+        await load(true);
+      }
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div style={{ maxWidth: "760px", margin: "0 auto" }}>
+      <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "26px", fontWeight: 300, fontStyle: "italic", marginBottom: "6px" }}>Messages</div>
+      <p style={{ fontSize: "13px", color: "rgba(26,26,26,0.55)", marginBottom: "24px" }}>Message your team at Linkwright. We reply here.</p>
+
+      <div style={{ background: "#FFFFFF", border: "1px solid rgba(26,26,26,0.10)", borderRadius: "16px", padding: "24px", minHeight: "320px", display: "flex", flexDirection: "column", gap: "14px" }}>
+        {loading ? (
+          <div style={{ color: "rgba(26,26,26,0.45)", fontSize: "13px" }}>Loading...</div>
+        ) : messages.length === 0 ? (
+          <div style={{ color: "rgba(26,26,26,0.45)", fontSize: "13px" }}>No messages yet. Send the first one below.</div>
+        ) : (
+          messages.map(m => (
+            <div key={m.id} style={{ display: "flex", justifyContent: m.sender === "client" ? "flex-end" : "flex-start" }}>
+              <div style={{ maxWidth: "78%", padding: "11px 15px", borderRadius: "14px", fontSize: "14px", lineHeight: 1.55, whiteSpace: "pre-wrap",
+                background: m.sender === "client" ? `${accentColor}14` : "rgba(26,26,26,0.05)",
+                border: `1px solid ${m.sender === "client" ? `${accentColor}33` : "rgba(26,26,26,0.08)"}`,
+                color: "#1A1A1A" }}>
+                <div style={{ fontSize: "10px", letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(26,26,26,0.40)", marginBottom: "4px", fontWeight: 600 }}>
+                  {m.sender === "client" ? "You" : "Linkwright"}
+                </div>
+                {m.body}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      <div style={{ display: "flex", gap: "10px", marginTop: "16px" }}>
+        <input
+          value={text}
+          onChange={e => setText(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter") send(); }}
+          placeholder="Write a message"
+          style={{ flex: 1, background: "#FFFFFF", border: "1px solid rgba(26,26,26,0.14)", borderRadius: "10px", padding: "12px 14px", fontSize: "14px", fontFamily: "inherit", color: "#1A1A1A", outline: "none" }}
+        />
+        <button onClick={send} disabled={sending || !text.trim()}
+          style={{ padding: "0 22px", background: accentColor, color: "#FFFFFF", border: "none", borderRadius: "10px", fontSize: "13px", fontWeight: 600, cursor: sending || !text.trim() ? "default" : "pointer", opacity: sending || !text.trim() ? 0.55 : 1, fontFamily: "inherit" }}>
+          Send
+        </button>
+      </div>
     </div>
   );
 }
@@ -539,6 +801,7 @@ export default function PortalPage() {
   const [pendingPosts, setPendingPosts] = useState<Post[]>([]);
   const [postedPosts, setPostedPosts]   = useState<Post[]>([]);
   const [analytics, setAnalytics]   = useState<Record<number, PostAnalytic>>({});
+  const [unreadMessages, setUnreadMessages] = useState(0);
   const [loading, setLoading]       = useState(true);
   const [toast, setToast]           = useState<{ msg: string; type: "success" | "error" | "default" } | null>(null);
   const router = useRouter();
@@ -571,12 +834,12 @@ export default function PortalPage() {
 
   useEffect(() => {
     fetch("/api/auth/me")
-      .then(r => { if (!r.ok) { router.push("/portal/login"); return null; } return r.json(); })
+      .then(r => { if (!r.ok) { router.push("/client/login"); return null; } return r.json(); })
       .then(data => {
         if (!data) return;
         // Agency users (admin@gorlin.com) get full access; clients must have a clientId
         if (!data.email || (data.role !== "agency" && !data.clientId)) {
-          router.push("/portal/login"); return;
+          router.push("/client/login"); return;
         }
         setSession(data);
       });
@@ -598,6 +861,25 @@ export default function PortalPage() {
       });
   }, [session, fetchPosts]);
 
+  // Poll unread message count for the badge (client sessions only).
+  useEffect(() => {
+    if (!session || session.role !== "client") return;
+    let active = true;
+    const load = () =>
+      fetch("/api/client-messages")
+        .then(r => (r.ok ? r.json() : null))
+        .then(d => { if (active && d && typeof d.unread === "number") setUnreadMessages(d.unread); })
+        .catch(() => {});
+    load();
+    const iv = setInterval(load, 20000);
+    return () => { active = false; clearInterval(iv); };
+  }, [session]);
+
+  const handleSignOut = async () => {
+    try { await fetch("/api/client/logout", { method: "POST" }); } catch {}
+    window.location.href = "/client/login";
+  };
+
   const handleClientSwitch = (c: Client) => {
     setClient(c);
     fetchPosts(c.id);
@@ -609,7 +891,7 @@ export default function PortalPage() {
 
   if (loading || !session) {
     return (
-      <div style={{ minHeight: "100vh", background: "#F5F2EE", display: "flex", alignItems: "center", justifyContent: "center", gap: "12px", color: "rgba(26,26,26,0.50)", fontSize: "14px" }}>
+      <div style={{ minHeight: "100vh", background: "#F5F5F5", display: "flex", alignItems: "center", justifyContent: "center", gap: "12px", color: "rgba(26,26,26,0.50)", fontSize: "14px" }}>
         <Spinner /> Loading…
       </div>
     );
@@ -617,34 +899,31 @@ export default function PortalPage() {
 
   if (!client) {
     return (
-      <div style={{ minHeight: "100vh", background: "#F5F2EE", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(26,26,26,0.50)", fontSize: "14px", flexDirection: "column", gap: "12px" }}>
+      <div style={{ minHeight: "100vh", background: "#F5F5F5", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(26,26,26,0.50)", fontSize: "14px", flexDirection: "column", gap: "12px" }}>
         <p>No client account linked to your profile.</p>
-        <a href="/portal/login" style={{ color: "#1A1A1A", fontSize: "13px" }}>Back to login</a>
+        <a href="/client/login" style={{ color: "#1A1A1A", fontSize: "13px" }}>Back to login</a>
       </div>
     );
   }
 
-  // Six muted, warm-toned accents — all drawn from the same earthy editorial family as the landing page
-  const PALETTE = [
-    "#C9A84C", // gold (site primary)
-    "#8B6F4E", // caramel bronze
-    "#7A8B6A", // sage
-    "#9B8070", // warm terracotta
-    "#8A8096", // muted lavender-gray
-    "#6B7A88", // cool slate
-  ];
-  const paletteIndex = client.id.split("").reduce((acc, c) => (acc * 31 + c.charCodeAt(0)) & 0xffff, 0) % PALETTE.length;
-  const accentColor = PALETTE[paletteIndex];
+  // Single brand accent across the portal.
+  const accentColor = "#E30000";
 
   const TABS: { id: PortalTab; label: string; badge?: number }[] = [
     { id: "dashboard", label: "Dashboard" },
     { id: "approval",  label: "Approval Queue", badge: pendingPosts.length },
     { id: "history",   label: "Post History" },
     { id: "reports",   label: "Reports" },
+    ...(session.clientRole === "owner" || session.clientRole === "administrator"
+      ? [{ id: "team" as const, label: "Team" }]
+      : []),
+    ...(session.role === "client"
+      ? [{ id: "messages" as const, label: "Messages", badge: unreadMessages }]
+      : []),
   ];
 
   return (
-    <div style={{ minHeight: "100vh", background: "#F5F2EE", color: "#1A1A1A", fontFamily: "var(--font-dm-sans, system-ui, sans-serif)", paddingTop: "64px" }}>
+    <div style={{ minHeight: "100vh", background: "#F5F5F5", color: "#1A1A1A", fontFamily: "Helvetica, Arial, sans-serif", paddingTop: "64px" }}>
 
       {/* Toast */}
       {toast && (
@@ -653,7 +932,7 @@ export default function PortalPage() {
           display: "flex", alignItems: "center", gap: "10px",
           padding: "12px 20px",
           background: "#FFFFFF",
-          border: `1px solid ${toast.type === "success" ? "rgba(201,168,76,0.30)" : toast.type === "error" ? "rgba(204,51,51,0.25)" : "rgba(26,26,26,0.10)"}`,
+          border: `1px solid ${toast.type === "success" ? "rgba(227,0,0,0.30)" : toast.type === "error" ? "rgba(204,51,51,0.25)" : "rgba(26,26,26,0.10)"}`,
           borderRadius: "12px",
           animation: "toastIn 0.3s cubic-bezier(0.16,1,0.3,1) both",
           boxShadow: "0 4px 24px rgba(26,26,26,0.10)",
@@ -675,7 +954,7 @@ export default function PortalPage() {
             <img src="/linkwright-logo.png" alt="Linkwright" style={{ height: "170px", objectFit: "contain" }} />
             <div style={{ width: "0.5px", height: "28px", background: "rgba(26,24,20,0.15)" }} />
             <span style={{
-              fontFamily: "var(--font-cormorant, var(--font-playfair, Georgia, serif))",
+              fontFamily: "var(--font-raleway), sans-serif",
               fontSize: "13px", fontWeight: 300, fontStyle: "italic",
               color: "rgba(26,24,20,0.45)", letterSpacing: "0.01em", whiteSpace: "nowrap",
             }}>
@@ -699,10 +978,10 @@ export default function PortalPage() {
           <nav style={{ display: "flex", gap: "0px", flex: 1, justifyContent: "center" }}>
             {TABS.map(t => (
               <button key={t.id} onClick={() => setTab(t.id)}
-                style={{ position: "relative", padding: "8px 18px", background: "transparent", border: "none", borderBottom: tab === t.id ? "1px solid #C9A84C" : "1px solid transparent", fontSize: "12px", fontWeight: 400, letterSpacing: "0.04em", color: tab === t.id ? "#1A1A1A" : "rgba(26,26,26,0.45)", cursor: "pointer", transition: "color 0.15s ease, border-color 0.15s ease", fontFamily: "var(--font-dm-sans, inherit)", display: "inline-flex", alignItems: "center", gap: "6px", marginBottom: "-1px" }}>
+                style={{ position: "relative", padding: "8px 18px", background: "transparent", border: "none", borderBottom: tab === t.id ? "1px solid #E30000" : "1px solid transparent", fontSize: "12px", fontWeight: 400, letterSpacing: "0.04em", color: tab === t.id ? "#1A1A1A" : "rgba(26,26,26,0.45)", cursor: "pointer", transition: "color 0.15s ease, border-color 0.15s ease", fontFamily: "Helvetica, Arial, sans-serif", display: "inline-flex", alignItems: "center", gap: "6px", marginBottom: "-1px" }}>
                 {t.label}
                 {t.badge && t.badge > 0 ? (
-                  <span style={{ minWidth: "16px", height: "16px", borderRadius: "8px", background: "rgba(201,168,76,0.15)", color: "#C9A84C", border: "1px solid rgba(201,168,76,0.30)", fontSize: "9px", fontWeight: 600, display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "0 4px" }}>
+                  <span style={{ minWidth: "16px", height: "16px", borderRadius: "8px", background: "rgba(227,0,0,0.15)", color: "#E30000", border: "1px solid rgba(227,0,0,0.30)", fontSize: "9px", fontWeight: 600, display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "0 4px" }}>
                     {t.badge}
                   </span>
                 ) : null}
@@ -712,17 +991,17 @@ export default function PortalPage() {
 
           {/* Right: back to main site + sign out */}
           <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
-            <a href="/" style={{ fontSize: "12px", fontWeight: 500, color: "rgba(26,26,26,0.55)", textDecoration: "none", padding: "6px 14px", background: "transparent", border: "1px solid rgba(26,26,26,0.12)", borderRadius: "6px", transition: "all 0.15s ease", fontFamily: "var(--font-dm-sans, sans-serif)" }}
+            <a href="/" style={{ fontSize: "12px", fontWeight: 500, color: "rgba(26,26,26,0.55)", textDecoration: "none", padding: "6px 14px", background: "transparent", border: "1px solid rgba(26,26,26,0.12)", borderRadius: "6px", transition: "all 0.15s ease", fontFamily: "Helvetica, Arial, sans-serif" }}
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(26,26,26,0.22)"; (e.currentTarget as HTMLElement).style.color = "#1A1A1A"; }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(26,26,26,0.12)"; (e.currentTarget as HTMLElement).style.color = "rgba(26,26,26,0.55)"; }}>
               ← Back to main site
             </a>
-            <a href="/portal/login" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "32px", height: "32px", background: "transparent", border: "1px solid rgba(26,26,26,0.12)", borderRadius: "6px", color: "rgba(26,26,26,0.45)", textDecoration: "none", fontSize: "14px", transition: "all 0.15s ease" }}
+            <button onClick={handleSignOut} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "32px", height: "32px", background: "transparent", border: "1px solid rgba(26,26,26,0.12)", borderRadius: "6px", color: "rgba(26,26,26,0.45)", cursor: "pointer", fontSize: "14px", transition: "all 0.15s ease", fontFamily: "inherit" }}
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(26,26,26,0.22)"; (e.currentTarget as HTMLElement).style.color = "#1A1A1A"; }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(26,26,26,0.12)"; (e.currentTarget as HTMLElement).style.color = "rgba(26,26,26,0.45)"; }}
               title="Sign out">
               ↩
-            </a>
+            </button>
           </div>
         </div>
         {/* Accent line */}
@@ -730,7 +1009,7 @@ export default function PortalPage() {
       </header>
 
       {/* Banner — light services.png treatment, matching the landing page split section */}
-      <div style={{ position: "relative", height: "200px", overflow: "hidden", background: "#EDE8E0" }}>
+      <div style={{ position: "relative", height: "200px", overflow: "hidden", background: "#ECECEC" }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/images/services.png"
@@ -740,7 +1019,7 @@ export default function PortalPage() {
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(244,241,236,0.78) 0%, rgba(244,241,236,0.58) 100%)" }} />
         <div style={{ position: "relative", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "0 48px" }}>
           <div style={{ width: "28px", height: "1px", background: accentColor, marginBottom: "20px", opacity: 0.8 }} />
-          <p style={{ fontFamily: "var(--font-cormorant, Georgia, serif)", fontSize: "clamp(22px, 3vw, 42px)", fontWeight: 300, fontStyle: "italic", color: "#1A1814", lineHeight: 1.2, maxWidth: "600px", letterSpacing: "-0.01em" }}>
+          <p style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "clamp(22px, 3vw, 42px)", fontWeight: 300, fontStyle: "italic", color: "#1A1814", lineHeight: 1.2, maxWidth: "600px", letterSpacing: "-0.01em" }}>
             {client.name}
           </p>
           {client.tagline && (
@@ -763,6 +1042,12 @@ export default function PortalPage() {
         )}
         {tab === "reports" && (
           <ReportsTab client={client} accentColor={accentColor} />
+        )}
+        {tab === "team" && (session.clientRole === "owner" || session.clientRole === "administrator") && (
+          <TeamTab myRole={session.clientRole} accentColor={accentColor} onToast={notify} />
+        )}
+        {tab === "messages" && (
+          <MessagesTab accentColor={accentColor} onViewed={() => setUnreadMessages(0)} />
         )}
       </main>
 

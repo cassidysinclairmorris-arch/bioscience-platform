@@ -305,7 +305,7 @@ function Nav() {
         />
         {/* Password-protected entry points */}
         <Link
-          href="/portal/login"
+          href="/client/login"
           style={{
             fontFamily: FONT,
             fontWeight: 400,
@@ -317,7 +317,7 @@ function Nav() {
             whiteSpace: "nowrap",
           }}
         >
-          Client Portal
+          Client Login
         </Link>
         <Link
           href="/login"

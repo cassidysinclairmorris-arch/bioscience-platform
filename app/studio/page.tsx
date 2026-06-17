@@ -71,7 +71,45 @@ type Post = {
   created_at: string;
   updated_at: string;
 };
-type Tab = "overview" | "compose" | "library" | "calendar" | "reports" | "invoices" | "clients";
+type Tab = "overview" | "compose" | "library" | "calendar" | "reports" | "invoices" | "clients" | "clientusers";
+
+// ── Client Users / Messages types ──────────────────────────────────────────────
+type ClientUser = {
+  id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  role: string;
+  company_id: string;
+  company_name: string;
+  job_title: string | null;
+  phone: string | null;
+  notes: string | null;
+  must_reset_password: number;
+  active: number;
+  created_at: string;
+  last_login: string | null;
+  unread: number;
+};
+type MessageThread = {
+  client_user_id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  company_name: string;
+  last_body: string;
+  last_at: string;
+  unread: number;
+};
+type ClientMessage = {
+  id: number;
+  client_user_id: number;
+  sender: "client" | "admin";
+  body: string;
+  created_at: string;
+  read_at: string | null;
+};
+const ROLE_LIMITS: Record<string, number> = { owner: 1, administrator: 5, user: 10 };
 type VisualType = "quote" | "stat" | "brand" | "science" | "photo";
 type InvoiceItem = { description: string; qty: number; rate: number };
 type Invoice = {
@@ -101,7 +139,7 @@ const LOGO_FILES: Record<string, string> = {
 const T = "#1A1A1A";           // primary text
 const T2 = "rgba(26,26,26,0.55)";
 const T3 = "rgba(26,26,26,0.35)";
-const GOLD = "#C9A84C";
+const GOLD = "#E30000";
 
 const glass = (extra?: React.CSSProperties): React.CSSProperties => ({
   background: "#FFFFFF",
@@ -111,7 +149,7 @@ const glass = (extra?: React.CSSProperties): React.CSSProperties => ({
 });
 
 const glassElevated = (extra?: React.CSSProperties): React.CSSProperties => ({
-  background: "#F5F2EE",
+  background: "#F5F5F5",
   border: "1px solid rgba(26,26,26,0.08)",
   borderRadius: "8px",
   ...extra,
@@ -154,12 +192,12 @@ function CompanyLogo({ company, overlay }: { company: Company; overlay?: boolean
 function StatusBadge({ status }: { status: string }) {
   const cfg: Record<string, { bg: string; color: string; border: string }> = {
     draft:            { bg: "rgba(26,26,26,0.04)",    color: T2,        border: "rgba(26,26,26,0.12)"     },
-    pending_approval: { bg: "rgba(201,168,76,0.08)",  color: "#9C7A2A", border: "rgba(201,168,76,0.30)"   },
+    pending_approval: { bg: "rgba(227,0,0,0.08)",  color: "#B00000", border: "rgba(227,0,0,0.30)"   },
     approved:         { bg: "rgba(34,85,204,0.08)",   color: "#2255CC", border: "rgba(34,85,204,0.25)"    },
     scheduled:        { bg: "rgba(102,51,204,0.08)",  color: "#6633CC", border: "rgba(102,51,204,0.25)"   },
     posted:           { bg: "rgba(43,191,176,0.08)",  color: "#1D8A7F", border: "rgba(43,191,176,0.28)"   },
     paid:             { bg: "rgba(43,191,176,0.08)",  color: "#1D8A7F", border: "rgba(43,191,176,0.28)"   },
-    pending:          { bg: "rgba(201,168,76,0.08)",  color: "#9C7A2A", border: "rgba(201,168,76,0.30)"   },
+    pending:          { bg: "rgba(227,0,0,0.08)",  color: "#B00000", border: "rgba(227,0,0,0.30)"   },
     overdue:          { bg: "rgba(204,51,51,0.08)",   color: "#cc3333", border: "rgba(204,51,51,0.25)"    },
   };
   const s = cfg[status] ?? cfg.draft;
@@ -168,7 +206,7 @@ function StatusBadge({ status }: { status: string }) {
       fontSize: "9px", fontWeight: 500, letterSpacing: "0.12em", textTransform: "uppercase",
       padding: "3px 8px", borderRadius: "4px",
       background: s.bg, color: s.color, border: `1px solid ${s.border}`,
-      fontFamily: "var(--font-inter, system-ui, sans-serif)",
+      fontFamily: "Helvetica, Arial, sans-serif",
     }}>
       {status.replace("_", " ")}
     </span>
@@ -354,7 +392,7 @@ function OverviewTab({ ac, clients, posts, allPosts }: { ac: Company; clients: C
             <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: s.color, opacity: 0.7 }} />
             <div className="label" style={{ marginBottom: "16px" }}>{s.label}</div>
             <div style={{
-              fontFamily: "var(--font-cormorant, 'Cormorant Garamond', Georgia, serif)",
+              fontFamily: "var(--font-raleway), sans-serif",
               fontSize: "48px", fontWeight: 300,
               color: T, letterSpacing: "-0.02em", lineHeight: 1,
             }}>{s.value}</div>
@@ -370,7 +408,7 @@ function OverviewTab({ ac, clients, posts, allPosts }: { ac: Company; clients: C
             <div>
               <div className="label" style={{ marginBottom: "6px" }}>Active portfolio</div>
               <div style={{
-                fontFamily: "var(--font-cormorant, 'Cormorant Garamond', Georgia, serif)",
+                fontFamily: "var(--font-raleway), sans-serif",
                 fontSize: "28px", fontWeight: 300, fontStyle: "italic",
                 letterSpacing: "-0.02em", color: T, lineHeight: 1,
               }}>
@@ -463,7 +501,7 @@ function ComposeTab({
   const charCount = post.length;
   const charLimit = 3000;
   const charPct = Math.min(charCount / charLimit, 1);
-  const charColor = charCount > 2800 ? "#cc3333" : charCount > 2500 ? "#C9A84C" : "#2BBFB0";
+  const charColor = charCount > 2800 ? "#cc3333" : charCount > 2500 ? "#E30000" : "#2BBFB0";
 
   return (
     <div className="fade-up" style={{ display: "grid", gridTemplateColumns: "280px 1fr", gap: "20px" }}>
@@ -476,7 +514,7 @@ function ComposeTab({
           <div style={{ padding: "20px", borderBottom: "1px solid rgba(26,26,26,0.08)" }}>
             <CompanyLogo company={ac} />
             <div style={{
-              fontFamily: "var(--font-cormorant, 'Cormorant Garamond', Georgia, serif)",
+              fontFamily: "var(--font-raleway), sans-serif",
               fontSize: "13px", fontStyle: "italic", fontWeight: 300,
               color: T3, marginTop: "10px", letterSpacing: "0.02em",
             }}>{ac.tagline}</div>
@@ -536,12 +574,12 @@ function ComposeTab({
             <div>
               <div className="label" style={{ marginBottom: "6px" }}>Generating for</div>
               <div style={{
-                fontFamily: "var(--font-cormorant, 'Cormorant Garamond', Georgia, serif)",
+                fontFamily: "var(--font-raleway), sans-serif",
                 fontSize: "22px", fontWeight: 300, fontStyle: "italic",
                 color: T, letterSpacing: "-0.01em", lineHeight: 1,
               }}>
                 {ap.type}
-                <span style={{ color: T3, fontStyle: "normal", fontSize: "14px", fontFamily: "var(--font-inter, system-ui, sans-serif)", fontWeight: 400 }}> · {ap.day} · {ac.name}</span>
+                <span style={{ color: T3, fontStyle: "normal", fontSize: "14px", fontFamily: "Helvetica, Arial, sans-serif", fontWeight: 400 }}> · {ap.day} · {ac.name}</span>
               </div>
             </div>
             <GlassBtn onClick={generate} disabled={isGen} variant="primary" style={{ gap: "8px" }}>
@@ -560,7 +598,7 @@ function ComposeTab({
                       onChange={e => setPost(e.target.value)}
                       rows={11}
                       style={{ ...INPUT, resize: "none" }}
-                      onFocus={e => e.target.style.borderColor = "rgba(201,168,76,0.35)"}
+                      onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
                       onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
                     />
                     {/* Char counter */}
@@ -618,12 +656,12 @@ function ComposeTab({
             ) : isGen ? (
               <div style={{ height: "200px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "16px" }}>
                 <Spinner />
-                <p style={{ color: T3, fontFamily: "var(--font-cormorant, serif)", fontStyle: "italic", fontSize: "16px" } as React.CSSProperties}>Writing in {ac.name}&apos;s voice…</p>
+                <p style={{ color: T3, fontFamily: "var(--font-raleway), sans-serif", fontStyle: "italic", fontSize: "16px" } as React.CSSProperties}>Writing in {ac.name}&apos;s voice…</p>
               </div>
             ) : (
               <div style={{ height: "180px", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid rgba(26,26,26,0.08)", borderRadius: "8px", flexDirection: "column", gap: "12px" }}>
                 <div style={{ width: "32px", height: "1px", background: GOLD, opacity: 0.4 }} />
-                <p style={{ fontSize: "13px", color: T3, fontFamily: "var(--font-cormorant, serif)", fontStyle: "italic" }}>Select a pillar and generate</p>
+                <p style={{ fontSize: "13px", color: T3, fontFamily: "var(--font-raleway), sans-serif", fontStyle: "italic" }}>Select a pillar and generate</p>
               </div>
             )}
           </div>
@@ -638,8 +676,8 @@ function ComposeTab({
                 <button key={s} onClick={() => setRefineRequest(s)}
                   style={{
                     fontSize: "12px", padding: "6px 12px",
-                    background: refineRequest === s ? "rgba(201,168,76,0.08)" : "transparent",
-                    border: refineRequest === s ? "1px solid rgba(201,168,76,0.3)" : "1px solid rgba(26,26,26,0.09)",
+                    background: refineRequest === s ? "rgba(227,0,0,0.08)" : "transparent",
+                    border: refineRequest === s ? "1px solid rgba(227,0,0,0.3)" : "1px solid rgba(26,26,26,0.09)",
                     borderRadius: "6px", color: refineRequest === s ? GOLD : T3,
                     cursor: "pointer", transition: "all 0.15s ease", fontFamily: "inherit", fontWeight: 500,
                   }}>
@@ -654,7 +692,7 @@ function ComposeTab({
                 onKeyDown={e => e.key === "Enter" && refinePost()}
                 placeholder="Or describe any change…"
                 style={{ ...INPUT, flex: 1, padding: "9px 14px" }}
-                onFocus={e => e.target.style.borderColor = "rgba(201,168,76,0.35)"}
+                onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
                 onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
               />
               <GlassBtn onClick={refinePost} disabled={isRefining || !refineRequest.trim()} variant="primary">
@@ -714,8 +752,8 @@ function ComposeTab({
               <button key={t} onClick={() => setVizType(t)}
                 style={{
                   fontSize: "11px", fontWeight: 600, padding: "5px 12px",
-                  background: vizType === t ? "rgba(201,168,76,0.08)" : "transparent",
-                  border: vizType === t ? `1px solid rgba(201,168,76,0.3)` : "1px solid rgba(26,26,26,0.09)",
+                  background: vizType === t ? "rgba(227,0,0,0.08)" : "transparent",
+                  border: vizType === t ? `1px solid rgba(227,0,0,0.3)` : "1px solid rgba(26,26,26,0.09)",
                   borderRadius: "6px", color: vizType === t ? GOLD : T3,
                   cursor: "pointer", textTransform: "uppercase", letterSpacing: "0.06em",
                   transition: "all 0.15s ease", fontFamily: "inherit",
@@ -733,7 +771,7 @@ function ComposeTab({
               rows={3}
               placeholder="What should this visual be about? e.g. A bold statement about ambient protection technology, showing the invisible shield concept..."
               style={{ ...INPUT, resize: "vertical", marginBottom: "14px", fontSize: "13px", lineHeight: 1.6 }}
-              onFocus={e => e.target.style.borderColor = "rgba(201,168,76,0.35)"}
+              onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
               onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
             />
           )}
@@ -763,8 +801,8 @@ function ComposeTab({
                         }}
                           style={{
                             fontSize: "11px", padding: "5px 10px",
-                            background: imgEditRequest === s ? "rgba(201,168,76,0.08)" : "transparent",
-                            border: imgEditRequest === s ? "1px solid rgba(201,168,76,0.3)" : "1px solid rgba(26,26,26,0.09)",
+                            background: imgEditRequest === s ? "rgba(227,0,0,0.08)" : "transparent",
+                            border: imgEditRequest === s ? "1px solid rgba(227,0,0,0.3)" : "1px solid rgba(26,26,26,0.09)",
                             borderRadius: "6px", color: imgEditRequest === s ? GOLD : T3,
                             cursor: "pointer", transition: "all 0.15s ease", fontFamily: "inherit", fontWeight: 500,
                           }}>
@@ -780,7 +818,7 @@ function ComposeTab({
                       onKeyDown={e => { if (e.key === "Enter" && imgEditRequest.trim()) { generateAiImage(imgEditRequest, genMode === "standalone" ? standaloneBrief : undefined); setImgEditRequest(""); } }}
                       placeholder="Describe your edit…"
                       style={{ ...INPUT, flex: 1, padding: "9px 14px" }}
-                      onFocus={e => e.target.style.borderColor = "rgba(201,168,76,0.35)"}
+                      onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
                       onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
                     />
                     <GlassBtn onClick={() => { if (imgEditRequest.trim()) { generateAiImage(imgEditRequest, genMode === "standalone" ? standaloneBrief : undefined); setImgEditRequest(""); } }} disabled={isImgGen || !imgEditRequest.trim()} variant="primary">
@@ -927,7 +965,7 @@ function LibraryTab({
               color: filterStatus === s ? T : T3,
               borderRadius: "0",
               cursor: "pointer",
-              transition: "all 0.15s ease", fontFamily: "var(--font-inter, system-ui, sans-serif)",
+              transition: "all 0.15s ease", fontFamily: "Helvetica, Arial, sans-serif",
               textTransform: "uppercase" as const, letterSpacing: "0.1em",
               marginBottom: "-17px", paddingBottom: "16px",
             }}>
@@ -940,7 +978,7 @@ function LibraryTab({
       {posts.length === 0 ? (
         <div style={{ textAlign: "center", padding: "100px 0" }}>
           <div style={{ width: "32px", height: "1px", background: GOLD, opacity: 0.3, margin: "0 auto 20px" }} />
-          <p style={{ fontSize: "14px", color: T3, fontFamily: "var(--font-cormorant, serif)", fontStyle: "italic" }}>No posts yet for {ac.name}</p>
+          <p style={{ fontSize: "14px", color: T3, fontFamily: "var(--font-raleway), sans-serif", fontStyle: "italic" }}>No posts yet for {ac.name}</p>
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "0" }}>
@@ -952,7 +990,7 @@ function LibraryTab({
                 <div style={{ padding: "20px 0" }}>
                   <textarea value={editContent} onChange={e => setEditContent(e.target.value)} rows={10}
                     style={{ ...INPUT, resize: "none" }}
-                    onFocus={e => e.target.style.borderColor = "rgba(201,168,76,0.35)"}
+                    onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
                     onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
                   />
                   <div style={{ display: "flex", gap: "8px", marginTop: "12px" }}>
@@ -993,7 +1031,7 @@ function LibraryTab({
                       <div style={{ marginTop: "12px", display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
                         <input type="datetime-local" value={scheduleAt} onChange={e => setScheduleAt(e.target.value)}
                           style={{ ...INPUT, width: "auto", flex: "none", padding: "7px 11px", fontSize: "12px" }}
-                          onFocus={e => e.target.style.borderColor = "rgba(201,168,76,0.35)"}
+                          onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
                           onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
                         />
                         <GlassBtn onClick={() => schedulePost(p)} disabled={!scheduleAt} variant="teal">Confirm</GlassBtn>
@@ -1084,7 +1122,7 @@ function CalendarTab({ ac, clients, allPosts }: { ac: Company; clients: Company[
             <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: s.color, opacity: 0.65 }} />
             <div className="label" style={{ marginBottom: "10px" }}>{s.day}</div>
             <div style={{
-              fontFamily: "var(--font-cormorant, 'Cormorant Garamond', Georgia, serif)",
+              fontFamily: "var(--font-raleway), sans-serif",
               fontSize: "18px", fontWeight: 300, fontStyle: "italic",
               color: T, marginBottom: "6px", lineHeight: 1.2,
             }}>{s.role}</div>
@@ -1149,7 +1187,7 @@ function CalendarTab({ ac, clients, allPosts }: { ac: Company; clients: Company[
       <div style={glass()}>
         <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(26,26,26,0.08)" }}>
           <div className="label" style={{ marginBottom: "6px" }}>Master schedule</div>
-          <div style={{ fontFamily: "var(--font-cormorant, 'Cormorant Garamond', Georgia, serif)", fontSize: "22px", fontWeight: 300, fontStyle: "italic", color: T, lineHeight: 1 }}>Posting Calendar</div>
+          <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "22px", fontWeight: 300, fontStyle: "italic", color: T, lineHeight: 1 }}>Posting Calendar</div>
           <p style={{ fontSize: "11px", color: T3, marginTop: "4px" }}>{clients.length} active clients · {activeDays.length} posting days</p>
         </div>
         <div style={{ overflowX: "auto" }}>
@@ -1419,7 +1457,7 @@ function ReportsTab({ ac }: { ac: Company }) {
           <button onClick={() => setUploadOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: T3, padding: "4px", display: "flex", alignItems: "center" }}>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 12L6 8l4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </button>
-          <div style={{ fontFamily: "var(--font-cormorant, serif)", fontSize: "24px", fontWeight: 300, fontStyle: "italic", color: T }}>Upload LinkedIn Report</div>
+          <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "24px", fontWeight: 300, fontStyle: "italic", color: T }}>Upload LinkedIn Report</div>
         </div>
 
         <div style={glass({ padding: "24px", display: "flex", flexDirection: "column", gap: "20px" })}>
@@ -1490,10 +1528,10 @@ function ReportsTab({ ac }: { ac: Company }) {
   if (reports.length === 0) {
     return (
       <div className="fade-up" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "16px", padding: "80px 40px", textAlign: "center" }}>
-        <div style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.20)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "8px" }}>
+        <div style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(227,0,0,0.08)", border: "1px solid rgba(227,0,0,0.20)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "8px" }}>
           <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><path d="M4 22V6a2 2 0 012-2h12l6 6v12a2 2 0 01-2 2H6a2 2 0 01-2-2z" stroke={GOLD} strokeWidth="1.5"/><path d="M18 4v6h6M9 13h10M9 17h7" stroke={GOLD} strokeWidth="1.5" strokeLinecap="round"/></svg>
         </div>
-        <div style={{ fontFamily: "var(--font-cormorant, serif)", fontSize: "24px", fontWeight: 300, fontStyle: "italic", color: T }}>No reports yet for {ac.name}</div>
+        <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "24px", fontWeight: 300, fontStyle: "italic", color: T }}>No reports yet for {ac.name}</div>
         <div style={{ fontSize: "13px", color: T2, maxWidth: 360 }}>Upload a LinkedIn analytics PDF to generate AI-powered insights, metrics, and narratives.</div>
         <GlassBtn variant="primary" onClick={() => setUploadOpen(true)} style={{ marginTop: "8px", gap: "8px" }}>
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M3 5l4-4 4 4M2 11h10v2H2z" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -1552,7 +1590,7 @@ function ReportsTab({ ac }: { ac: Company }) {
                   <span style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", padding: "2px 8px", borderRadius: "100px", background: "rgba(26,26,26,0.06)", color: T2 }}>{selectedReport.type}</span>
                   <span style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", padding: "2px 8px", borderRadius: "100px", background: selectedReport.status === "published" ? "rgba(43,191,176,0.12)" : "rgba(26,26,26,0.06)", color: selectedReport.status === "published" ? "#2BBFB0" : T2 }}>{selectedReport.status}</span>
                 </div>
-                <div style={{ fontFamily: "var(--font-cormorant, serif)", fontSize: "28px", fontWeight: 300, fontStyle: "italic", color: T, marginBottom: "4px" }}>{ac.name}</div>
+                <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "28px", fontWeight: 300, fontStyle: "italic", color: T, marginBottom: "4px" }}>{ac.name}</div>
                 <div style={{ fontSize: "12px", color: T3 }}>{selectedReport.period_start} – {selectedReport.period_end}</div>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
@@ -1596,7 +1634,7 @@ function ReportsTab({ ac }: { ac: Company }) {
               <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                 <div style={glass({ padding: "24px" })}>
                   <div className="label" style={{ marginBottom: "6px" }}>Impressions Over Time</div>
-                  <div style={{ fontFamily: "var(--font-cormorant, serif)", fontSize: "18px", fontWeight: 300, fontStyle: "italic", color: T, marginBottom: "16px" }}>{trendData.length} monthly reports</div>
+                  <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "18px", fontWeight: 300, fontStyle: "italic", color: T, marginBottom: "16px" }}>{trendData.length} monthly reports</div>
                   {mounted && <ResponsiveContainer width="100%" height={200}>
                     <LineChart data={trendData}>
                       <CartesianGrid stroke={chartGrid} vertical={false} />
@@ -1648,7 +1686,7 @@ function ReportsTab({ ac }: { ac: Company }) {
                       return (
                         <div key={label} style={glass({ padding: "16px 20px" })}>
                           <div className="label" style={{ marginBottom: "8px" }}>{label}</div>
-                          <div style={{ fontFamily: "var(--font-cormorant, serif)", fontSize: "28px", fontWeight: 300, color: T, lineHeight: 1, marginBottom: "4px" }}>{(fmt as (v: number) => string)(cur)}</div>
+                          <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "28px", fontWeight: 300, color: T, lineHeight: 1, marginBottom: "4px" }}>{(fmt as (v: number) => string)(cur)}</div>
                           <div style={{ fontSize: "11px", color: up ? "#2BBFB0" : "#CC4422", fontWeight: 600 }}>{up ? "+" : ""}{delta.toFixed(1)}% vs last month</div>
                         </div>
                       );
@@ -1675,7 +1713,7 @@ function ReportsTab({ ac }: { ac: Company }) {
                       <div key={k.label} style={glass({ padding: "18px 20px 16px", position: "relative", overflow: "hidden" })}>
                         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: k.color, opacity: 0.65 }} />
                         <div className="label" style={{ marginBottom: "10px" }}>{k.label}</div>
-                        <div style={{ fontFamily: "var(--font-cormorant, serif)", fontSize: "32px", fontWeight: 300, color: T, letterSpacing: "-0.02em", lineHeight: 1 }}>{k.value}</div>
+                        <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "32px", fontWeight: 300, color: T, letterSpacing: "-0.02em", lineHeight: 1 }}>{k.value}</div>
                       </div>
                     ))}
                   </div>
@@ -1692,7 +1730,7 @@ function ReportsTab({ ac }: { ac: Company }) {
                     {impressionsLine.length > 0 && (
                       <div style={glass({ padding: "20px 24px" })}>
                         <div className="label" style={{ marginBottom: "6px" }}>Impressions</div>
-                        <div style={{ fontFamily: "var(--font-cormorant, serif)", fontSize: "16px", fontWeight: 300, fontStyle: "italic", color: T, marginBottom: "14px" }}>Per post over period</div>
+                        <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "16px", fontWeight: 300, fontStyle: "italic", color: T, marginBottom: "14px" }}>Per post over period</div>
                         {mounted && <ResponsiveContainer width="100%" height={170}>
                           <LineChart data={impressionsLine}>
                             <CartesianGrid stroke={chartGrid} vertical={false} />
@@ -1709,7 +1747,7 @@ function ReportsTab({ ac }: { ac: Company }) {
                     {engagementPie.length > 0 && (
                       <div style={glass({ padding: "20px 24px" })}>
                         <div className="label" style={{ marginBottom: "6px" }}>Engagement Breakdown</div>
-                        <div style={{ fontFamily: "var(--font-cormorant, serif)", fontSize: "16px", fontWeight: 300, fontStyle: "italic", color: T, marginBottom: "14px" }}>Reactions, comments, shares, clicks</div>
+                        <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "16px", fontWeight: 300, fontStyle: "italic", color: T, marginBottom: "14px" }}>Reactions, comments, shares, clicks</div>
                         {mounted && <ResponsiveContainer width="100%" height={170}>
                           <PieChart>
                             <Pie data={engagementPie} cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={3} dataKey="value">
@@ -1726,7 +1764,7 @@ function ReportsTab({ ac }: { ac: Company }) {
                     {postTypeBar.length > 0 && (
                       <div style={glass({ padding: "20px 24px" })}>
                         <div className="label" style={{ marginBottom: "6px" }}>Post Types</div>
-                        <div style={{ fontFamily: "var(--font-cormorant, serif)", fontSize: "16px", fontWeight: 300, fontStyle: "italic", color: T, marginBottom: "14px" }}>Count by format</div>
+                        <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "16px", fontWeight: 300, fontStyle: "italic", color: T, marginBottom: "14px" }}>Count by format</div>
                         {mounted && <ResponsiveContainer width="100%" height={170}>
                           <BarChart data={postTypeBar} barSize={24}>
                             <CartesianGrid stroke={chartGrid} vertical={false} />
@@ -1743,21 +1781,21 @@ function ReportsTab({ ac }: { ac: Company }) {
                     {extracted.followerCount != null && (
                       <div style={glass({ padding: "20px 24px" })}>
                         <div className="label" style={{ marginBottom: "6px" }}>Follower Summary</div>
-                        <div style={{ fontFamily: "var(--font-cormorant, serif)", fontSize: "16px", fontWeight: 300, fontStyle: "italic", color: T, marginBottom: "20px" }}>End of period</div>
+                        <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "16px", fontWeight: 300, fontStyle: "italic", color: T, marginBottom: "20px" }}>End of period</div>
                         <div style={{ display: "flex", gap: "24px", alignItems: "flex-end" }}>
                           <div>
-                            <div style={{ fontFamily: "var(--font-cormorant, serif)", fontSize: "48px", fontWeight: 300, color: T, lineHeight: 1, letterSpacing: "-0.02em" }}>{fmtN(extracted.followerCount)}</div>
+                            <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "48px", fontWeight: 300, color: T, lineHeight: 1, letterSpacing: "-0.02em" }}>{fmtN(extracted.followerCount)}</div>
                             <div style={{ fontSize: "11px", color: T3, marginTop: "4px" }}>Total followers</div>
                           </div>
                           {extracted.followerGrowth != null && (
                             <div>
-                              <div style={{ fontFamily: "var(--font-cormorant, serif)", fontSize: "32px", fontWeight: 300, color: "#2BBFB0", lineHeight: 1, letterSpacing: "-0.02em" }}>{extracted.followerGrowth > 0 ? "+" : ""}{extracted.followerGrowth}</div>
+                              <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "32px", fontWeight: 300, color: "#2BBFB0", lineHeight: 1, letterSpacing: "-0.02em" }}>{extracted.followerGrowth > 0 ? "+" : ""}{extracted.followerGrowth}</div>
                               <div style={{ fontSize: "11px", color: T3, marginTop: "4px" }}>This period</div>
                             </div>
                           )}
                           {extracted.followerGrowthPercent != null && (
                             <div>
-                              <div style={{ fontFamily: "var(--font-cormorant, serif)", fontSize: "32px", fontWeight: 300, color: "#2BBFB0", lineHeight: 1 }}>{fmtPct(extracted.followerGrowthPercent)}</div>
+                              <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "32px", fontWeight: 300, color: "#2BBFB0", lineHeight: 1 }}>{fmtPct(extracted.followerGrowthPercent)}</div>
                               <div style={{ fontSize: "11px", color: T3, marginTop: "4px" }}>Growth rate</div>
                             </div>
                           )}
@@ -1772,7 +1810,7 @@ function ReportsTab({ ac }: { ac: Company }) {
                   <div style={glass()}>
                     <div style={{ padding: "16px 20px", borderBottom: "1px solid rgba(26,26,26,0.08)" }}>
                       <div className="label" style={{ marginBottom: "4px" }}>Post Performance</div>
-                      <div style={{ fontFamily: "var(--font-cormorant, serif)", fontSize: "18px", fontWeight: 300, fontStyle: "italic", color: T }}>Sortable by any metric</div>
+                      <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "18px", fontWeight: 300, fontStyle: "italic", color: T }}>Sortable by any metric</div>
                     </div>
                     <table style={{ width: "100%", borderCollapse: "collapse" }}>
                       <thead>
@@ -1797,7 +1835,7 @@ function ReportsTab({ ac }: { ac: Company }) {
                           const isTop = extracted?.topPost?.content === p.content;
                           const isExpanded = expandedPost === i;
                           return (
-                            <tr key={i} style={{ borderBottom: "1px solid rgba(26,26,26,0.06)", borderLeft: isTop ? `3px solid ${GOLD}` : "3px solid transparent", cursor: "pointer", background: isExpanded ? "rgba(201,168,76,0.03)" : "transparent" }} onClick={() => setExpandedPost(isExpanded ? null : i)}>
+                            <tr key={i} style={{ borderBottom: "1px solid rgba(26,26,26,0.06)", borderLeft: isTop ? `3px solid ${GOLD}` : "3px solid transparent", cursor: "pointer", background: isExpanded ? "rgba(227,0,0,0.03)" : "transparent" }} onClick={() => setExpandedPost(isExpanded ? null : i)}>
                               <td style={{ padding: "12px 16px", fontSize: "12px", color: T3, whiteSpace: "nowrap" }}>{p.date ?? "—"}</td>
                               <td style={{ padding: "12px 16px", fontSize: "12px", color: T2, maxWidth: 220 }}>
                                 {isExpanded ? p.content : `${(p.content ?? "").slice(0, 80)}${(p.content?.length ?? 0) > 80 ? "…" : ""}`}
@@ -1821,7 +1859,7 @@ function ReportsTab({ ac }: { ac: Company }) {
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
                     <div>
                       <div className="label" style={{ marginBottom: "4px" }}>Narrative</div>
-                      <div style={{ fontFamily: "var(--font-cormorant, serif)", fontSize: "18px", fontWeight: 300, fontStyle: "italic", color: T }}>AI-generated analysis</div>
+                      <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "18px", fontWeight: 300, fontStyle: "italic", color: T }}>AI-generated analysis</div>
                     </div>
                     <div style={{ display: "flex", gap: "4px" }}>
                       {(["agency", "client"] as const).map(t => (
@@ -1896,7 +1934,7 @@ function LogoUploadPanel({ logo, currentLogoSrc, onFile, onToggleInvert }: {
 
         {/* Processing spinner */}
         {logo.processing && (
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "9px 14px", background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.18)", borderRadius: "6px", fontSize: "12px", color: GOLD }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "9px 14px", background: "rgba(227,0,0,0.06)", border: "1px solid rgba(227,0,0,0.18)", borderRadius: "6px", fontSize: "12px", color: GOLD }}>
             <Spinner /> Removing background…
           </div>
         )}
@@ -1946,7 +1984,7 @@ function LogoUploadPanel({ logo, currentLogoSrc, onFile, onToggleInvert }: {
                   Display {logo.inverted ? "(inverted)" : "(original)"}
                 </div>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={dispSrc} alt="display" style={{ height: "60px", maxWidth: "140px", objectFit: "contain", background: "#F5F2EE", borderRadius: "6px", padding: "6px", border: "1px solid rgba(43,191,176,0.2)" }} />
+                <img src={dispSrc} alt="display" style={{ height: "60px", maxWidth: "140px", objectFit: "contain", background: "#F5F5F5", borderRadius: "6px", padding: "6px", border: "1px solid rgba(43,191,176,0.2)" }} />
               </div>
             )}
 
@@ -2227,7 +2265,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
         <div>
           <div className="label" style={{ marginBottom: "6px" }}>Portfolio</div>
-          <div style={{ fontFamily: "var(--font-cormorant, 'Cormorant Garamond', Georgia, serif)", fontSize: "32px", fontWeight: 300, fontStyle: "italic", color: T, lineHeight: 1 }}>Clients</div>
+          <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "32px", fontWeight: 300, fontStyle: "italic", color: T, lineHeight: 1 }}>Clients</div>
           <div style={{ fontSize: "11px", color: T3, marginTop: "4px" }}>{clients.length} active clients</div>
         </div>
         <GlassBtn variant="primary" onClick={() => { setShowForm(s => !s); setSelectedClient(null); setEditForm(null); }}>
@@ -2266,9 +2304,9 @@ function ClientsTab({ clients, notify, onClientAdded }: {
           }} style={{ ...glass({ padding: "20px", paddingTop: "22px", position: "relative", overflow: "hidden" }), cursor: "pointer" }}>
             <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: c.color, opacity: 0.6 }} />
             <div style={{ marginBottom: "12px" }}>
-              <div style={{ fontFamily: "var(--font-cormorant, 'Cormorant Garamond', Georgia, serif)", fontSize: "18px", fontWeight: 300, color: T, letterSpacing: "-0.01em" }}>{c.name}</div>
+              <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "18px", fontWeight: 300, color: T, letterSpacing: "-0.01em" }}>{c.name}</div>
             </div>
-            <div style={{ fontSize: "12px", fontStyle: "italic", color: T3, marginBottom: "12px", fontFamily: "var(--font-cormorant, serif)" }}>{c.tagline}</div>
+            <div style={{ fontSize: "12px", fontStyle: "italic", color: T3, marginBottom: "12px", fontFamily: "var(--font-raleway), sans-serif" }}>{c.tagline}</div>
             <div style={{ fontSize: "10px", color: T3, marginBottom: "12px", letterSpacing: "0.08em", textTransform: "uppercase" as const }}>{c.timezone}</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
               {(Array.isArray(c.pillars) ? c.pillars : []).slice(0, 4).map((p: Record<string, unknown>, i: number) => (
@@ -2287,7 +2325,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
           <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: "24px" }}>
             <div>
               <div className="label" style={{ marginBottom: "4px" }}>Editing</div>
-              <div style={{ fontFamily: "var(--font-cormorant, 'Cormorant Garamond', Georgia, serif)", fontSize: "22px", fontWeight: 300, fontStyle: "italic", color: T }}>
+              <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "22px", fontWeight: 300, fontStyle: "italic", color: T }}>
                 {selectedClient.name}
               </div>
             </div>
@@ -2306,7 +2344,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
                 <input type="text" value={editForm[f.key] as string}
                   onChange={e => setEditForm(p => ({ ...p!, [f.key]: e.target.value }))}
                   style={{ ...INPUT, padding: "10px 13px", fontSize: "13px" }}
-                  onFocus={e => e.target.style.borderColor = "rgba(201,168,76,0.35)"}
+                  onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
                   onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
                 />
               </div>
@@ -2330,7 +2368,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
                   <input type="text" value={editForm[f.key] as string}
                     onChange={e => setEditForm(p => ({ ...p!, [f.key]: e.target.value }))}
                     style={{ ...INPUT, padding: "8px 10px", fontSize: "12px" }}
-                    onFocus={e => e.target.style.borderColor = "rgba(201,168,76,0.35)"}
+                    onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
                     onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
                   />
                 </div>
@@ -2351,7 +2389,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
                   placeholder={(f as Record<string, string>).placeholder}
                   rows={3}
                   style={{ ...INPUT, resize: "none", fontSize: "13px" }}
-                  onFocus={e => e.target.style.borderColor = "rgba(201,168,76,0.35)"}
+                  onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
                   onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
                 />
               </div>
@@ -2369,7 +2407,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
                   onChange={e => setEditForm(p => ({ ...p!, [f.key]: e.target.value }))}
                   placeholder={(f as Record<string, string>).placeholder}
                   style={{ ...INPUT, padding: "10px 13px", fontSize: "13px" }}
-                  onFocus={e => e.target.style.borderColor = "rgba(201,168,76,0.35)"}
+                  onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
                   onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
                 />
               </div>
@@ -2398,10 +2436,10 @@ function ClientsTab({ clients, notify, onClientAdded }: {
           </div>
 
           {/* Brand Prompt */}
-          <div style={glassElevated({ padding: "20px", marginBottom: "20px", border: "1px solid rgba(201,168,76,0.12)" })}>
+          <div style={glassElevated({ padding: "20px", marginBottom: "20px", border: "1px solid rgba(227,0,0,0.12)" })}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
               <div>
-                <div style={{ fontSize: "10px", fontWeight: 500, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(201,168,76,0.6)", marginBottom: "2px" }}>
+                <div style={{ fontSize: "10px", fontWeight: 500, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(227,0,0,0.6)", marginBottom: "2px" }}>
                   AI Image Brand Prompt
                 </div>
                 <div style={{ fontSize: "11px", color: T3 }}>Prepended to every Ideogram / Flux generation request</div>
@@ -2409,7 +2447,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
               <GlassBtn
                 onClick={generateBrandPromptForEdit}
                 disabled={isGenEditBrandPrompt}
-                style={{ background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.25)", color: GOLD }}
+                style={{ background: "rgba(227,0,0,0.08)", border: "1px solid rgba(227,0,0,0.25)", color: GOLD }}
               >
                 {isGenEditBrandPrompt ? <><Spinner /> Generating…</> : "Generate ↗"}
               </GlassBtn>
@@ -2420,7 +2458,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
               rows={8}
               placeholder="Click Generate to create an optimised AI image prompt from this brand's data…"
               style={{ ...INPUT, resize: "vertical", fontSize: "12px", lineHeight: 1.7, fontFamily: "monospace" }}
-              onFocus={e => e.target.style.borderColor = "rgba(201,168,76,0.35)"}
+              onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
               onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
             />
           </div>
@@ -2448,7 +2486,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
                   <input type="text" value={p}
                     onChange={e => setEditForm(f => ({ ...f!, key_phrases: (f!.key_phrases as string[]).map((x, idx) => idx === i ? e.target.value : x) }))}
                     style={{ ...INPUT, padding: "9px 12px", fontSize: "13px" }}
-                    onFocus={e => e.target.style.borderColor = "rgba(201,168,76,0.35)"}
+                    onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
                     onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
                   />
                   {i === (editForm.key_phrases as string[]).length - 1 && (
@@ -2469,7 +2507,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
                 <input key={i} type="text" value={b}
                   onChange={e => setEditForm(f => ({ ...f!, badges: (f!.badges as string[]).map((x, idx) => idx === i ? e.target.value : x) }))}
                   style={{ ...INPUT, width: "140px", padding: "7px 10px", fontSize: "12px" }}
-                  onFocus={e => e.target.style.borderColor = "rgba(201,168,76,0.35)"}
+                  onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
                   onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
                 />
               ))}
@@ -2576,12 +2614,12 @@ function ClientsTab({ clients, notify, onClientAdded }: {
         <div className="fade-up" style={glass({ padding: "32px" })}>
           <div style={{ marginBottom: "20px" }}>
             <div className="label" style={{ marginBottom: "4px" }}>Add</div>
-            <div style={{ fontFamily: "var(--font-cormorant, serif)", fontSize: "22px", fontWeight: 300, fontStyle: "italic", color: T }}>New Client</div>
+            <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "22px", fontWeight: 300, fontStyle: "italic", color: T }}>New Client</div>
           </div>
 
 {/* URL extractor */}
-<div style={glassElevated({ padding: "20px", marginBottom: "24px", border: "1px solid rgba(201,168,76,0.12)" })}>
-  <div style={{ fontSize: "10px", fontWeight: 500, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(201,168,76,0.6)", marginBottom: "8px" }}>
+<div style={glassElevated({ padding: "20px", marginBottom: "24px", border: "1px solid rgba(227,0,0,0.12)" })}>
+  <div style={{ fontSize: "10px", fontWeight: 500, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(227,0,0,0.6)", marginBottom: "8px" }}>
     Auto-fill from website
   </div>
   <div style={{ fontSize: "12px", color: T3, marginBottom: "14px" }}>
@@ -2593,7 +2631,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
       id="brand-url-input"
       placeholder="https://example.com"
       style={{ ...INPUT, flex: 1, padding: "10px 14px", fontSize: "13px" }}
-      onFocus={e => e.target.style.borderColor = "rgba(201,168,76,0.35)"}
+      onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
       onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
     />
     <GlassBtn
@@ -2671,7 +2709,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
                   onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
                   placeholder={f.placeholder}
                   style={{ ...INPUT, padding: "10px 13px", fontSize: "13px" }}
-                  onFocus={e => e.target.style.borderColor = "rgba(201,168,76,0.35)"}
+                  onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
                   onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
                 />
               </div>
@@ -2697,7 +2735,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
                     value={(form as Record<string, unknown>)[f.key] as string}
                     onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
                     style={{ ...INPUT, padding: "8px 10px", fontSize: "12px" }}
-                    onFocus={e => e.target.style.borderColor = "rgba(201,168,76,0.35)"}
+                    onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
                     onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
                   />
                 </div>
@@ -2719,7 +2757,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
                   placeholder={f.placeholder}
                   rows={3}
                   style={{ ...INPUT, resize: "none", fontSize: "13px" }}
-                  onFocus={e => e.target.style.borderColor = "rgba(201,168,76,0.35)"}
+                  onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
                   onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
                 />
               </div>
@@ -2738,7 +2776,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
                   onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
                   placeholder={f.placeholder}
                   style={{ ...INPUT, padding: "10px 13px", fontSize: "13px" }}
-                  onFocus={e => e.target.style.borderColor = "rgba(201,168,76,0.35)"}
+                  onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
                   onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
                 />
               </div>
@@ -2768,10 +2806,10 @@ function ClientsTab({ clients, notify, onClientAdded }: {
           </div>
 
           {/* Brand Prompt */}
-          <div style={glassElevated({ padding: "20px", marginBottom: "20px", border: "1px solid rgba(201,168,76,0.15)" })}>
+          <div style={glassElevated({ padding: "20px", marginBottom: "20px", border: "1px solid rgba(227,0,0,0.15)" })}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
               <div>
-                <div style={{ fontSize: "10px", fontWeight: 500, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(201,168,76,0.7)", marginBottom: "2px" }}>
+                <div style={{ fontSize: "10px", fontWeight: 500, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(227,0,0,0.7)", marginBottom: "2px" }}>
                   AI Image Brand Prompt
                 </div>
                 <div style={{ fontSize: "11px", color: "rgba(26,26,26,0.45)" }}>Prepended to every Ideogram / Flux generation request</div>
@@ -2779,7 +2817,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
               <GlassBtn
                 onClick={generateBrandPromptForNew}
                 disabled={isGenBrandPrompt}
-                style={{ background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.25)", color: GOLD }}
+                style={{ background: "rgba(227,0,0,0.08)", border: "1px solid rgba(227,0,0,0.25)", color: GOLD }}
               >
                 {isGenBrandPrompt ? <><Spinner /> Generating…</> : "Generate ↗"}
               </GlassBtn>
@@ -2790,7 +2828,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
               rows={8}
               placeholder="Click Generate to create an optimised AI image prompt from this brand's data…"
               style={{ ...INPUT, resize: "vertical", fontSize: "12px", lineHeight: 1.7, fontFamily: "monospace" }}
-              onFocus={e => e.target.style.borderColor = "rgba(201,168,76,0.45)"}
+              onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.45)"}
               onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
             />
           </div>
@@ -2804,7 +2842,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
                     onChange={e => updatePhrase(i, e.target.value)}
                     placeholder={`Phrase ${i + 1}`}
                     style={{ ...INPUT, padding: "9px 12px", fontSize: "13px" }}
-                    onFocus={e => e.target.style.borderColor = "rgba(201,168,76,0.35)"}
+                    onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
                     onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
                   />
                   {i === form.key_phrases.length - 1 && (
@@ -2826,7 +2864,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
                   onChange={e => updateBadge(i, e.target.value)}
                   placeholder="Tag"
                   style={{ ...INPUT, width: "140px", padding: "7px 10px", fontSize: "12px" }}
-                  onFocus={e => e.target.style.borderColor = "rgba(201,168,76,0.35)"}
+                  onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
                   onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
                 />
               ))}
@@ -2847,14 +2885,14 @@ function ClientsTab({ clients, notify, onClientAdded }: {
                     onChange={e => updatePillar(i, "type", e.target.value)}
                     placeholder="Post type"
                     style={{ ...INPUT, padding: "9px 12px", fontSize: "13px" }}
-                    onFocus={e => e.target.style.borderColor = "rgba(201,168,76,0.35)"}
+                    onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
                     onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
                   />
                   <input type="text" value={p.example}
                     onChange={e => updatePillar(i, "example", e.target.value)}
                     placeholder="Content direction / example topic"
                     style={{ ...INPUT, padding: "9px 12px", fontSize: "13px" }}
-                    onFocus={e => e.target.style.borderColor = "rgba(201,168,76,0.35)"}
+                    onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
                     onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
                   />
                 </div>
@@ -2941,7 +2979,7 @@ const [editSaving, setEditSaving] = useState(false);
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
         <div>
           <div className="label" style={{ marginBottom: "6px" }}>Billing</div>
-          <div style={{ fontFamily: "var(--font-cormorant, 'Cormorant Garamond', Georgia, serif)", fontSize: "32px", fontWeight: 300, fontStyle: "italic", color: T, lineHeight: 1 }}>Invoices</div>
+          <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "32px", fontWeight: 300, fontStyle: "italic", color: T, lineHeight: 1 }}>Invoices</div>
           <div style={{ fontSize: "11px", color: T3, marginTop: "4px" }}>{invoices.length} invoices total</div>
         </div>
         <GlassBtn variant="primary" onClick={() => { setShowForm(true); setEditId(null); }}>
@@ -2955,7 +2993,7 @@ const [editSaving, setEditSaving] = useState(false);
           <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: "24px" }}>
             <div>
               <div className="label" style={{ marginBottom: "4px" }}>{editId ? "Edit" : "New"}</div>
-              <div style={{ fontFamily: "var(--font-cormorant, serif)", fontSize: "20px", fontWeight: 300, fontStyle: "italic", color: T }}>Invoice</div>
+              <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "20px", fontWeight: 300, fontStyle: "italic", color: T }}>Invoice</div>
             </div>
             <GlassBtn onClick={() => setShowForm(false)} variant="ghost">✕</GlassBtn>
           </div>
@@ -2975,7 +3013,7 @@ const [editSaving, setEditSaving] = useState(false);
                   value={(form as Record<string, unknown>)[f.key] as string}
                   onChange={e => setForm(prev => ({ ...prev, [f.key]: f.type === "number" ? Number(e.target.value) : e.target.value }))}
                   style={{ ...INPUT, padding: "10px 13px", fontSize: "13px" }}
-                  onFocus={e => e.target.style.borderColor = "rgba(201,168,76,0.35)"}
+                  onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
                   onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
                 />
               </div>
@@ -2993,7 +3031,7 @@ const [editSaving, setEditSaving] = useState(false);
                     onChange={e => updateItem(i, "description", e.target.value)}
                     placeholder="Description"
                     style={{ ...INPUT, padding: "9px 12px", fontSize: "13px" }}
-                    onFocus={e => e.target.style.borderColor = "rgba(201,168,76,0.35)"}
+                    onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
                     onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
                   />
                   <input
@@ -3001,7 +3039,7 @@ const [editSaving, setEditSaving] = useState(false);
                     onChange={e => updateItem(i, "qty", Number(e.target.value))}
                     placeholder="Qty"
                     style={{ ...INPUT, padding: "9px 12px", fontSize: "13px", textAlign: "center" }}
-                    onFocus={e => e.target.style.borderColor = "rgba(201,168,76,0.35)"}
+                    onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
                     onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
                   />
                   <input
@@ -3009,7 +3047,7 @@ const [editSaving, setEditSaving] = useState(false);
                     onChange={e => updateItem(i, "rate", Number(e.target.value))}
                     placeholder="Rate ($)"
                     style={{ ...INPUT, padding: "9px 12px", fontSize: "13px" }}
-                    onFocus={e => e.target.style.borderColor = "rgba(201,168,76,0.35)"}
+                    onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
                     onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
                   />
                   <button onClick={() => removeItem(i)}
@@ -3036,7 +3074,7 @@ const [editSaving, setEditSaving] = useState(false);
                   <span>Tax ({form.tax_rate}%)</span><span>${formTax.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
                 </div>
               )}
-              <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 0 0", fontFamily: "var(--font-cormorant, serif)", fontSize: "20px", fontWeight: 300, color: T }}>
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 0 0", fontFamily: "var(--font-raleway), sans-serif", fontSize: "20px", fontWeight: 300, color: T }}>
                 <span>Total</span><span>${(formTotal + formTax).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
               </div>
             </div>
@@ -3047,7 +3085,7 @@ const [editSaving, setEditSaving] = useState(false);
             <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(26,26,26,0.45)", marginBottom: "7px" }}>Notes</label>
             <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="Payment terms, notes to client…"
               style={{ ...INPUT, resize: "none", fontSize: "13px" }}
-              onFocus={e => e.target.style.borderColor = "rgba(201,168,76,0.35)"}
+              onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
               onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
             />
           </div>
@@ -3063,7 +3101,7 @@ const [editSaving, setEditSaving] = useState(false);
       {invoices.length === 0 && !showForm ? (
         <div style={{ textAlign: "center", padding: "100px 0" }}>
           <div style={{ width: "32px", height: "1px", background: GOLD, opacity: 0.3, margin: "0 auto 20px" }} />
-          <p style={{ fontSize: "14px", color: T3, fontFamily: "var(--font-cormorant, serif)", fontStyle: "italic" }}>No invoices yet. Create your first one above.</p>
+          <p style={{ fontSize: "14px", color: T3, fontFamily: "var(--font-raleway), sans-serif", fontStyle: "italic" }}>No invoices yet. Create your first one above.</p>
         </div>
       ) : (
         <div style={glass()}>
@@ -3083,7 +3121,7 @@ const [editSaving, setEditSaving] = useState(false);
                     <td style={{ padding: "14px 20px", fontSize: "13px", color: T }}>{inv.client_name}</td>
                     <td style={{ padding: "14px 20px", fontSize: "11px", color: T3 }}>{inv.date}</td>
                     <td style={{ padding: "14px 20px", fontSize: "11px", color: inv.status === "overdue" ? "#d07070" : T3 }}>{inv.due_date}</td>
-                    <td style={{ padding: "14px 20px", fontFamily: "var(--font-cormorant, serif)", fontSize: "18px", fontWeight: 300, color: T }}>
+                    <td style={{ padding: "14px 20px", fontFamily: "var(--font-raleway), sans-serif", fontSize: "18px", fontWeight: 300, color: T }}>
                       ${total(inv).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                     </td>
                     <td style={{ padding: "14px 20px" }}><StatusBadge status={inv.status} /></td>
@@ -3121,7 +3159,7 @@ function LandingPage() {
   ];
 
   return (
-    <div style={{ minHeight: "100vh", background: "#F5F2EE", color: "#1A1A1A", fontFamily: "var(--font-inter, system-ui, sans-serif)", overflowX: "hidden" }}>
+    <div style={{ minHeight: "100vh", background: "#F5F5F5", color: "#1A1A1A", fontFamily: "Helvetica, Arial, sans-serif", overflowX: "hidden" }}>
 
       {/* ── Nav ── */}
       <nav style={{
@@ -3157,7 +3195,7 @@ function LandingPage() {
             border: "0.5px solid rgba(26,26,26,0.70)", color: "#1A1A1A",
             textDecoration: "none", transition: "background 0.2s, color 0.2s",
           }}
-            onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = "#1A1A1A"; el.style.color = "#F5F2EE"; }}
+            onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = "#1A1A1A"; el.style.color = "#F5F5F5"; }}
             onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = "transparent"; el.style.color = "#1A1A1A"; }}
           >
             Team Login
@@ -3186,7 +3224,7 @@ function LandingPage() {
 
           {/* Headline */}
           <h1 style={{
-            fontFamily: "var(--font-cormorant, var(--font-playfair, Georgia, serif))",
+            fontFamily: "var(--font-raleway), sans-serif",
             fontSize: "clamp(52px, 6vw, 84px)", fontWeight: 300,
             lineHeight: 1.05, letterSpacing: "-0.02em", color: "#1A1A1A",
             marginBottom: "32px",
@@ -3208,11 +3246,11 @@ function LandingPage() {
           <div style={{ display: "flex", alignItems: "center", gap: "32px" }}>
             <a href="/portal/login"
               style={{
-                fontFamily: "var(--font-inter, system-ui, sans-serif)",
+                fontFamily: "Helvetica, Arial, sans-serif",
                 fontSize: "12px", fontWeight: 500, letterSpacing: "0.12em",
                 textTransform: "uppercase",
                 background: hoverClient ? "rgba(26,26,26,0.85)" : "#1A1A1A",
-                color: "#F5F2EE", padding: "14px 36px",
+                color: "#F5F5F5", padding: "14px 36px",
                 textDecoration: "none", display: "inline-block",
                 transition: "opacity 0.2s", opacity: hoverClient ? 0.82 : 1,
               }}
@@ -3246,13 +3284,13 @@ function LandingPage() {
           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(160deg, rgba(26,24,20,0.05) 0%, rgba(26,24,20,0.82) 100%)" }} />
 
           {/* Gold top accent */}
-          <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: "linear-gradient(90deg, #C9A84C 0%, transparent 100%)" }} />
+          <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: "linear-gradient(90deg, #E30000 0%, transparent 100%)" }} />
 
           {/* Bottom caption */}
           <div style={{ padding: "48px 40px", position: "relative", zIndex: 1 }}>
             <div style={{ width: "1px", height: "40px", background: "rgba(244,241,236,0.20)", marginBottom: "20px" }} />
             <p style={{
-              fontFamily: "var(--font-cormorant, var(--font-playfair, Georgia, serif))",
+              fontFamily: "var(--font-raleway), sans-serif",
               fontSize: "20px", fontWeight: 300, fontStyle: "italic",
               color: "rgba(244,241,236,0.70)", lineHeight: 1.5, maxWidth: "320px",
             }}>
@@ -3268,14 +3306,14 @@ function LandingPage() {
 
       {/* ── Marquee strip ── */}
       <div style={{
-        background: "#1A1814", color: "#F5F2EE",
+        background: "#1A1814", color: "#F5F5F5",
         padding: "18px 0", overflow: "hidden",
         borderTop: "0.5px solid rgba(26,26,26,0.20)",
       }}>
         <div className="marquee-track" style={{ display: "flex", gap: "60px", whiteSpace: "nowrap" }}>
           {taglineItems.map((t, i) => (
             <span key={i} style={{
-              fontFamily: "var(--font-cormorant, var(--font-playfair, Georgia, serif))",
+              fontFamily: "var(--font-raleway), sans-serif",
               fontSize: "17px", fontWeight: 300, fontStyle: "italic",
               color: t === "·" ? "rgba(244,241,236,0.25)" : "rgba(244,241,236,0.80)",
               flexShrink: 0,
@@ -3297,7 +3335,7 @@ function LandingPage() {
         </div>
 
         <h2 style={{
-          fontFamily: "var(--font-cormorant, var(--font-playfair, Georgia, serif))",
+          fontFamily: "var(--font-raleway), sans-serif",
           fontSize: "clamp(36px, 4vw, 56px)", fontWeight: 300,
           lineHeight: 1.1, letterSpacing: "-0.02em", color: "#1A1A1A",
           maxWidth: "700px", marginBottom: "64px",
@@ -3326,7 +3364,7 @@ function LandingPage() {
       {/* ── Philosophy strip ── */}
       <section style={{ background: "#1A1814", padding: "100px 48px" }}>
         <h2 style={{
-          fontFamily: "var(--font-cormorant, var(--font-playfair, Georgia, serif))",
+          fontFamily: "var(--font-raleway), sans-serif",
           fontSize: "clamp(36px, 5vw, 68px)", fontWeight: 300, fontStyle: "italic",
           lineHeight: 1.1, color: "rgba(244,241,236,0.90)",
           maxWidth: "800px", margin: "0 auto 64px", textAlign: "center",
@@ -3342,7 +3380,7 @@ function LandingPage() {
             <div key={p.title}>
               <div style={{ fontSize: "11px", fontWeight: 500, letterSpacing: "0.20em", textTransform: "uppercase", color: "rgba(244,241,236,0.35)", marginBottom: "12px" }}>{p.title}</div>
               <p style={{
-                fontFamily: "var(--font-cormorant, var(--font-playfair, Georgia, serif))",
+                fontFamily: "var(--font-raleway), sans-serif",
                 fontSize: "20px", fontWeight: 300, color: "rgba(244,241,236,0.85)", lineHeight: 1.45,
               }}>{p.text}</p>
             </div>
@@ -3363,7 +3401,7 @@ function LandingPage() {
             Platform Access
           </div>
           <h2 style={{
-            fontFamily: "var(--font-cormorant, var(--font-playfair, Georgia, serif))",
+            fontFamily: "var(--font-raleway), sans-serif",
             fontSize: "clamp(36px, 4vw, 52px)", fontWeight: 300,
             lineHeight: 1.1, letterSpacing: "-0.02em", color: "#1A1A1A",
             marginBottom: "24px",
@@ -3388,19 +3426,19 @@ function LandingPage() {
           >
             <div style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(26,26,26,0.35)", marginBottom: "12px" }}>01</div>
             <div style={{
-              fontFamily: "var(--font-cormorant, var(--font-playfair, Georgia, serif))",
+              fontFamily: "var(--font-raleway), sans-serif",
               fontSize: "24px", fontWeight: 400, color: "#1A1A1A", marginBottom: "8px",
             }}>Client Portal</div>
             <p style={{ fontSize: "14px", fontWeight: 300, color: "rgba(26,26,26,0.55)", lineHeight: 1.6, marginBottom: "20px" }}>
               Review drafts, approve content, and track your LinkedIn performance.
             </p>
-            <span style={{ fontSize: "12px", fontWeight: 500, color: "#C9A84C", letterSpacing: "0.06em" }}>Access portal →</span>
+            <span style={{ fontSize: "12px", fontWeight: 500, color: "#E30000", letterSpacing: "0.06em" }}>Access portal →</span>
           </a>
 
           {/* Team card */}
           <a href="/login" style={{
             display: "block", padding: "36px 40px",
-            background: "#F5F2EE", border: "0.5px solid rgba(26,26,26,0.10)",
+            background: "#F5F5F5", border: "0.5px solid rgba(26,26,26,0.10)",
             textDecoration: "none", color: "inherit",
             transition: "border-color 0.25s",
           }}
@@ -3409,7 +3447,7 @@ function LandingPage() {
           >
             <div style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(26,26,26,0.35)", marginBottom: "12px" }}>02</div>
             <div style={{
-              fontFamily: "var(--font-cormorant, var(--font-playfair, Georgia, serif))",
+              fontFamily: "var(--font-raleway), sans-serif",
               fontSize: "24px", fontWeight: 400, color: "#1A1A1A", marginBottom: "8px",
             }}>Content Studio</div>
             <p style={{ fontSize: "14px", fontWeight: 300, color: "rgba(26,26,26,0.55)", lineHeight: 1.6, marginBottom: "20px" }}>
@@ -3421,7 +3459,7 @@ function LandingPage() {
       </section>
 
       {/* ── Footer ── */}
-      <footer style={{ background: "#1A1814", color: "#F5F2EE", padding: "64px 48px 40px" }}>
+      <footer style={{ background: "#1A1814", color: "#F5F5F5", padding: "64px 48px 40px" }}>
         <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: "48px", marginBottom: "48px" }}>
           <div>
             <div style={{ marginBottom: "20px" }}>
@@ -3429,7 +3467,7 @@ function LandingPage() {
               <img src="/linkwright-logo.png" alt="Linkwright" style={{ height: "32px", objectFit: "contain", filter: "brightness(0) invert(1)" }} />
             </div>
             <p style={{
-              fontFamily: "var(--font-cormorant, var(--font-playfair, Georgia, serif))",
+              fontFamily: "var(--font-raleway), sans-serif",
               fontSize: "17px", fontWeight: 300, fontStyle: "italic",
               color: "rgba(244,241,236,0.55)", lineHeight: 1.6, maxWidth: "280px",
             }}>
@@ -3441,7 +3479,7 @@ function LandingPage() {
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               {[["Client Portal", "/portal/login"], ["Team Login", "/login"]].map(([label, href]) => (
                 <a key={label} href={href} style={{ fontSize: "14px", fontWeight: 300, color: "rgba(244,241,236,0.60)", textDecoration: "none", transition: "color 0.2s" }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "#F5F2EE"; }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "#F5F5F5"; }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "rgba(244,241,236,0.60)"; }}
                 >{label}</a>
               ))}
@@ -3483,15 +3521,15 @@ function ServiceCard({ num, title, desc }: { num: string; title: string; desc: s
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{
-        background: hover ? "#1A1814" : "#F5F2EE",
+        background: hover ? "#1A1814" : "#F5F5F5",
         padding: "48px 40px", position: "relative", overflow: "hidden",
         cursor: "default", transition: "background 0.3s",
       }}
     >
-      <span style={{ display: "block", fontFamily: "var(--font-cormorant, Georgia, serif)", fontSize: "13px", color: hover ? "rgba(244,241,236,0.35)" : "rgba(26,26,26,0.30)", marginBottom: "48px", transition: "color 0.3s" }}>{num}</span>
+      <span style={{ display: "block", fontFamily: "var(--font-raleway), sans-serif", fontSize: "13px", color: hover ? "rgba(244,241,236,0.35)" : "rgba(26,26,26,0.30)", marginBottom: "48px", transition: "color 0.3s" }}>{num}</span>
       <h3 style={{
-        fontFamily: "var(--font-cormorant, var(--font-playfair, Georgia, serif))",
-        fontSize: "24px", fontWeight: 400, color: hover ? "#F5F2EE" : "#1A1A1A",
+        fontFamily: "var(--font-raleway), sans-serif",
+        fontSize: "24px", fontWeight: 400, color: hover ? "#F5F5F5" : "#1A1A1A",
         marginBottom: "14px", lineHeight: 1.2, transition: "color 0.3s",
       }}>{title}</h3>
       <p style={{ fontSize: "14px", fontWeight: 300, lineHeight: 1.7, color: hover ? "rgba(244,241,236,0.60)" : "rgba(26,26,26,0.55)", transition: "color 0.3s" }}>{desc}</p>
@@ -3501,6 +3539,450 @@ function ServiceCard({ num, title, desc }: { num: string; title: string; desc: s
         transition: "color 0.3s, transform 0.3s",
         transform: hover ? "translate(4px,-4px)" : "none",
       }}>↗</span>
+    </div>
+  );
+}
+
+// ── Client Users Tab ──────────────────────────────────────────────────────────
+function ClientUsersTab({ clients, notify, onCompanyAdded }: {
+  clients: Company[];
+  notify: (m: string, t?: "default" | "success" | "error") => void;
+  onCompanyAdded: () => void;
+}) {
+  const [users, setUsers] = useState<ClientUser[]>([]);
+  const [threads, setThreads] = useState<MessageThread[]>([]);
+  const [activeThreadId, setActiveThreadId] = useState<number | null>(null);
+  const [threadMessages, setThreadMessages] = useState<ClientMessage[]>([]);
+  const [replyText, setReplyText] = useState("");
+  const [sendingReply, setSendingReply] = useState(false);
+  const [submittingUser, setSubmittingUser] = useState(false);
+  const [submittingCompany, setSubmittingCompany] = useState(false);
+
+  const emptyUserForm = {
+    first_name: "", last_name: "", email: "", job_title: "",
+    phone: "", role: "user", company_id: "", notes: "",
+  };
+  const [userForm, setUserForm] = useState({ ...emptyUserForm });
+
+  const emptyCompanyForm = {
+    company_name: "", first_name: "", last_name: "",
+    email: "", job_title: "", phone: "", notes: "",
+  };
+  const [companyForm, setCompanyForm] = useState({ ...emptyCompanyForm });
+
+  const fetchUsers = useCallback(async () => {
+    try {
+      const r = await fetch("/api/client-users");
+      const d = await r.json();
+      setUsers(d.users || []);
+    } catch { /* ignore */ }
+  }, []);
+
+  const fetchThreads = useCallback(async () => {
+    try {
+      const r = await fetch("/api/client-messages");
+      const d = await r.json();
+      setThreads(d.threads || []);
+    } catch { /* ignore */ }
+  }, []);
+
+  useEffect(() => { fetchUsers(); fetchThreads(); }, [fetchUsers, fetchThreads]);
+
+  // Poll threads while this tab is mounted (tab is only mounted when active).
+  useEffect(() => {
+    const iv = setInterval(() => { fetchThreads(); }, 15000);
+    return () => clearInterval(iv);
+  }, [fetchThreads]);
+
+  const openThread = useCallback(async (userId: number) => {
+    setActiveThreadId(userId);
+    try {
+      const r = await fetch(`/api/client-messages?userId=${userId}&markRead=1`);
+      const d = await r.json();
+      setThreadMessages(d.messages || []);
+      // Refresh threads so the unread badge clears after marking read.
+      fetchThreads();
+    } catch { setThreadMessages([]); }
+  }, [fetchThreads]);
+
+  // Per-company role counts among active users.
+  const companyRoleCounts: Record<string, Record<string, number>> = {};
+  for (const u of users) {
+    if (!u.active) continue;
+    companyRoleCounts[u.company_id] = companyRoleCounts[u.company_id] || {};
+    companyRoleCounts[u.company_id][u.role] = (companyRoleCounts[u.company_id][u.role] || 0) + 1;
+  }
+  const roleDisabled = (role: string): boolean => {
+    if (!userForm.company_id) return false;
+    const used = companyRoleCounts[userForm.company_id]?.[role] || 0;
+    return used >= (ROLE_LIMITS[role] ?? Infinity);
+  };
+
+  const submitUser = async () => {
+    if (!userForm.first_name.trim() || !userForm.last_name.trim() || !userForm.email.trim()) {
+      notify("First name, last name and email are required", "error"); return;
+    }
+    if (!userForm.company_id) { notify("Please select a company", "error"); return; }
+    setSubmittingUser(true);
+    try {
+      const r = await fetch("/api/client-users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          first_name: userForm.first_name, last_name: userForm.last_name,
+          email: userForm.email, job_title: userForm.job_title, phone: userForm.phone,
+          role: userForm.role, company_id: userForm.company_id, notes: userForm.notes,
+        }),
+      });
+      const d = await r.json();
+      if (!r.ok) { notify(d.error || "Failed to add user", "error"); setSubmittingUser(false); return; }
+      if (d.emailSent === false) notify(`User added, but welcome email failed. ${d.emailError || ""}`, "error");
+      else notify("User added and welcome email sent", "success");
+      setUserForm({ ...emptyUserForm });
+      fetchUsers();
+    } catch { notify("Error adding user", "error"); }
+    setSubmittingUser(false);
+  };
+
+  const submitCompany = async () => {
+    if (!companyForm.company_name.trim()) { notify("Company name is required", "error"); return; }
+    if (!companyForm.first_name.trim() || !companyForm.last_name.trim() || !companyForm.email.trim()) {
+      notify("Owner first name, last name and email are required", "error"); return;
+    }
+    setSubmittingCompany(true);
+    try {
+      const r = await fetch("/api/client-users/create-company", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          company: { name: companyForm.company_name },
+          owner: {
+            first_name: companyForm.first_name, last_name: companyForm.last_name,
+            email: companyForm.email, job_title: companyForm.job_title,
+            phone: companyForm.phone, notes: companyForm.notes,
+          },
+        }),
+      });
+      const d = await r.json();
+      if (!r.ok) { notify(d.error || "Failed to create company", "error"); setSubmittingCompany(false); return; }
+      if (d.emailSent === false) notify(`Company created, but welcome email failed. ${d.emailError || ""}`, "error");
+      else notify(`Company ${d.companyName || companyForm.company_name} created with owner`, "success");
+      setCompanyForm({ ...emptyCompanyForm });
+      fetchUsers();
+      onCompanyAdded();
+    } catch { notify("Error creating company", "error"); }
+    setSubmittingCompany(false);
+  };
+
+  const resendWelcome = async (id: number) => {
+    try {
+      const r = await fetch(`/api/client-users/${id}/resend`, { method: "POST" });
+      const d = await r.json();
+      if (d.success) notify("Welcome email resent", "success");
+      else notify(d.error || "Failed to resend email", "error");
+    } catch { notify("Failed to resend email", "error"); }
+  };
+
+  const toggleActive = async (u: ClientUser) => {
+    const next = !u.active;
+    try {
+      const r = await fetch(`/api/client-users/${u.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ active: next }),
+      });
+      if (!r.ok) { const d = await r.json().catch(() => ({})); notify(d.error || "Failed to update", "error"); return; }
+      notify(next ? "User reactivated" : "User deactivated", "success");
+      fetchUsers();
+    } catch { notify("Failed to update user", "error"); }
+  };
+
+  const deleteUser = async (u: ClientUser) => {
+    if (typeof window !== "undefined" && !window.confirm(`Permanently delete ${u.first_name} ${u.last_name}? This frees their email to be invited again.`)) return;
+    try {
+      const r = await fetch(`/api/client-users/${u.id}`, { method: "DELETE" });
+      if (!r.ok) { const d = await r.json().catch(() => ({})); notify(d.error || "Failed to delete", "error"); return; }
+      notify("User deleted. Their email is now free.", "success");
+      fetchUsers();
+    } catch { notify("Failed to delete user", "error"); }
+  };
+
+  const changeRole = async (u: ClientUser, role: string) => {
+    if (role === u.role) return;
+    try {
+      const r = await fetch(`/api/client-users/${u.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role }),
+      });
+      if (!r.ok) { const d = await r.json().catch(() => ({})); notify(d.error || "Failed to change role", "error"); return; }
+      notify("Role updated", "success");
+      fetchUsers();
+    } catch { notify("Failed to change role", "error"); }
+  };
+
+  const sendReply = async () => {
+    if (!activeThreadId || !replyText.trim()) return;
+    setSendingReply(true);
+    try {
+      const r = await fetch("/api/client-messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: activeThreadId, body: replyText }),
+      });
+      if (!r.ok) { const d = await r.json().catch(() => ({})); notify(d.error || "Failed to send reply", "error"); setSendingReply(false); return; }
+      setReplyText("");
+      openThread(activeThreadId);
+    } catch { notify("Failed to send reply", "error"); }
+    setSendingReply(false);
+  };
+
+  const labelStyle: React.CSSProperties = { fontSize: "11px", fontWeight: 500, letterSpacing: "0.04em", color: T2, marginBottom: "5px", display: "block", textTransform: "uppercase" as const };
+  const fieldWrap: React.CSSProperties = { marginBottom: "12px" };
+
+  const statusLabel = (u: ClientUser) =>
+    !u.active ? "Deactivated" : u.must_reset_password ? "Pending password reset" : "Active";
+  const statusColor = (u: ClientUser) =>
+    !u.active ? T3 : u.must_reset_password ? GOLD : "#2BBFB0";
+
+  const fmtDate = (s: string | null) => {
+    if (!s) return "—";
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? "—" : d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  };
+
+  return (
+    <div>
+      <div style={{ marginBottom: "28px" }}>
+        <h1 style={{ fontSize: "22px", fontWeight: 400, letterSpacing: "-0.01em", margin: 0 }}>Client Users</h1>
+        <div style={{ fontSize: "11px", color: T3, marginTop: "4px" }}>{users.length} users · manage portal access and messages</div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "24px" }}>
+        {/* FORM 1 — Add user to existing company */}
+        <div style={glass({ padding: "22px" })}>
+          <h2 style={{ fontSize: "15px", fontWeight: 500, margin: "0 0 4px" }}>Add user to existing company</h2>
+          <div style={{ fontSize: "11px", color: T3, marginBottom: "18px" }}>Invite a person to an existing client company.</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+            <div style={fieldWrap}>
+              <label style={labelStyle}>First name</label>
+              <input style={INPUT} value={userForm.first_name} onChange={e => setUserForm(f => ({ ...f, first_name: e.target.value }))} />
+            </div>
+            <div style={fieldWrap}>
+              <label style={labelStyle}>Last name</label>
+              <input style={INPUT} value={userForm.last_name} onChange={e => setUserForm(f => ({ ...f, last_name: e.target.value }))} />
+            </div>
+          </div>
+          <div style={fieldWrap}>
+            <label style={labelStyle}>Email</label>
+            <input type="email" style={INPUT} value={userForm.email} onChange={e => setUserForm(f => ({ ...f, email: e.target.value }))} />
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+            <div style={fieldWrap}>
+              <label style={labelStyle}>Job title</label>
+              <input style={INPUT} value={userForm.job_title} onChange={e => setUserForm(f => ({ ...f, job_title: e.target.value }))} />
+            </div>
+            <div style={fieldWrap}>
+              <label style={labelStyle}>Phone</label>
+              <input style={INPUT} value={userForm.phone} onChange={e => setUserForm(f => ({ ...f, phone: e.target.value }))} />
+            </div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+            <div style={fieldWrap}>
+              <label style={labelStyle}>Company</label>
+              <select style={INPUT} value={userForm.company_id} onChange={e => setUserForm(f => ({ ...f, company_id: e.target.value }))}>
+                <option value="">Select a company</option>
+                {clients.map(c => (<option key={c.id} value={c.id}>{c.name}</option>))}
+              </select>
+            </div>
+            <div style={fieldWrap}>
+              <label style={labelStyle}>Role</label>
+              <select style={INPUT} value={userForm.role} onChange={e => setUserForm(f => ({ ...f, role: e.target.value }))}>
+                {(["owner", "administrator", "user"] as const).map(role => {
+                  const disabled = roleDisabled(role);
+                  return (
+                    <option key={role} value={role} disabled={disabled} style={disabled ? { color: T3 } : undefined}>
+                      {role.charAt(0).toUpperCase() + role.slice(1)}{disabled ? " (limit reached)" : ""}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+          </div>
+          <div style={fieldWrap}>
+            <label style={labelStyle}>Notes (internal only)</label>
+            <textarea style={{ ...INPUT, minHeight: "60px", resize: "vertical" as const }} value={userForm.notes} onChange={e => setUserForm(f => ({ ...f, notes: e.target.value }))} />
+          </div>
+          <button onClick={submitUser} disabled={submittingUser}
+            style={{ marginTop: "6px", padding: "10px 20px", borderRadius: "8px", border: "none", background: GOLD, color: "#fff", fontSize: "13px", fontWeight: 500, cursor: submittingUser ? "default" : "pointer", opacity: submittingUser ? 0.6 : 1, fontFamily: "inherit" }}>
+            {submittingUser ? "Adding…" : "Add user"}
+          </button>
+        </div>
+
+        {/* FORM 2 — New company + owner */}
+        <div style={glass({ padding: "22px" })}>
+          <h2 style={{ fontSize: "15px", fontWeight: 500, margin: "0 0 4px" }}>New company + owner</h2>
+          <div style={{ fontSize: "11px", color: T3, marginBottom: "18px" }}>Create a brand new company and its owner account in one step.</div>
+          <div style={fieldWrap}>
+            <label style={labelStyle}>Company name</label>
+            <input style={INPUT} value={companyForm.company_name} onChange={e => setCompanyForm(f => ({ ...f, company_name: e.target.value }))} />
+          </div>
+          <div style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.08em", color: T3, textTransform: "uppercase" as const, margin: "8px 0 12px" }}>Owner details</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+            <div style={fieldWrap}>
+              <label style={labelStyle}>First name</label>
+              <input style={INPUT} value={companyForm.first_name} onChange={e => setCompanyForm(f => ({ ...f, first_name: e.target.value }))} />
+            </div>
+            <div style={fieldWrap}>
+              <label style={labelStyle}>Last name</label>
+              <input style={INPUT} value={companyForm.last_name} onChange={e => setCompanyForm(f => ({ ...f, last_name: e.target.value }))} />
+            </div>
+          </div>
+          <div style={fieldWrap}>
+            <label style={labelStyle}>Email</label>
+            <input type="email" style={INPUT} value={companyForm.email} onChange={e => setCompanyForm(f => ({ ...f, email: e.target.value }))} />
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+            <div style={fieldWrap}>
+              <label style={labelStyle}>Job title</label>
+              <input style={INPUT} value={companyForm.job_title} onChange={e => setCompanyForm(f => ({ ...f, job_title: e.target.value }))} />
+            </div>
+            <div style={fieldWrap}>
+              <label style={labelStyle}>Phone</label>
+              <input style={INPUT} value={companyForm.phone} onChange={e => setCompanyForm(f => ({ ...f, phone: e.target.value }))} />
+            </div>
+          </div>
+          <div style={fieldWrap}>
+            <label style={labelStyle}>Notes (internal only)</label>
+            <textarea style={{ ...INPUT, minHeight: "60px", resize: "vertical" as const }} value={companyForm.notes} onChange={e => setCompanyForm(f => ({ ...f, notes: e.target.value }))} />
+          </div>
+          <button onClick={submitCompany} disabled={submittingCompany}
+            style={{ marginTop: "6px", padding: "10px 20px", borderRadius: "8px", border: "none", background: GOLD, color: "#fff", fontSize: "13px", fontWeight: 500, cursor: submittingCompany ? "default" : "pointer", opacity: submittingCompany ? 0.6 : 1, fontFamily: "inherit" }}>
+            {submittingCompany ? "Creating…" : "Create company + owner"}
+          </button>
+        </div>
+      </div>
+
+      {/* Lower grid: users table + messages inbox */}
+      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "20px" }}>
+        {/* USERS TABLE */}
+        <div style={glass({ padding: "22px" })}>
+          <h2 style={{ fontSize: "15px", fontWeight: 500, margin: "0 0 16px" }}>All client users</h2>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
+              <thead>
+                <tr style={{ textAlign: "left", color: T3, fontSize: "10px", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>
+                  <th style={{ padding: "8px 10px 8px 0", fontWeight: 500 }}>Name</th>
+                  <th style={{ padding: "8px 10px", fontWeight: 500 }}>Email</th>
+                  <th style={{ padding: "8px 10px", fontWeight: 500 }}>Role</th>
+                  <th style={{ padding: "8px 10px", fontWeight: 500 }}>Company</th>
+                  <th style={{ padding: "8px 10px", fontWeight: 500 }}>Status</th>
+                  <th style={{ padding: "8px 10px", fontWeight: 500 }}>Last login</th>
+                  <th style={{ padding: "8px 0 8px 10px", fontWeight: 500 }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.length === 0 && (
+                  <tr><td colSpan={7} style={{ padding: "20px 0", color: T3, textAlign: "center" }}>No client users yet.</td></tr>
+                )}
+                {users.map((u, i) => (
+                  <tr key={u.id} style={{ borderTop: i === 0 ? "1px solid rgba(26,26,26,0.10)" : "1px solid rgba(26,26,26,0.06)" }}>
+                    <td style={{ padding: "10px 10px 10px 0", color: T }}>{u.first_name} {u.last_name}</td>
+                    <td style={{ padding: "10px", color: T2 }}>{u.email}</td>
+                    <td style={{ padding: "10px", color: T2 }}>
+                      <select value={u.role} onChange={e => changeRole(u, e.target.value)}
+                        style={{ background: "transparent", border: "1px solid rgba(26,26,26,0.14)", borderRadius: "6px", padding: "4px 6px", fontSize: "12px", color: T2, fontFamily: "inherit", textTransform: "capitalize" as const, cursor: "pointer" }}>
+                        {(["owner", "administrator", "user"] as const).map(r => (
+                          <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>
+                        ))}
+                      </select>
+                    </td>
+                    <td style={{ padding: "10px", color: T2 }}>{u.company_name}</td>
+                    <td style={{ padding: "10px" }}>
+                      <span style={{ color: statusColor(u), fontWeight: 500 }}>{statusLabel(u)}</span>
+                    </td>
+                    <td style={{ padding: "10px", color: T2 }}>{fmtDate(u.last_login)}</td>
+                    <td style={{ padding: "10px 0 10px 10px", whiteSpace: "nowrap" as const }}>
+                      <button onClick={() => resendWelcome(u.id)}
+                        style={{ fontSize: "11px", color: GOLD, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", marginRight: "12px" }}>
+                        Resend welcome email
+                      </button>
+                      <button onClick={() => toggleActive(u)}
+                        style={{ fontSize: "11px", color: u.active ? "#C0392B" : "#2BBFB0", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}>
+                        {u.active ? "Deactivate" : "Reactivate"}
+                      </button>
+                      {!u.active && (
+                        <button onClick={() => deleteUser(u)}
+                          style={{ fontSize: "11px", color: "#C0392B", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", marginLeft: "12px", fontWeight: 600 }}>
+                          Delete
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* MESSAGES INBOX */}
+        <div style={glass({ padding: "22px" })}>
+          <h2 style={{ fontSize: "15px", fontWeight: 500, margin: "0 0 16px" }}>Messages</h2>
+          {activeThreadId === null ? (
+            <div>
+              {threads.length === 0 && <div style={{ color: T3, fontSize: "12px" }}>No messages yet.</div>}
+              {threads.map((t, i) => (
+                <div key={t.client_user_id} onClick={() => openThread(t.client_user_id)}
+                  style={{ padding: "12px 4px", borderTop: i === 0 ? "none" : "1px solid rgba(26,26,26,0.06)", cursor: "pointer", display: "flex", alignItems: "flex-start", gap: "8px" }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <span style={{ fontSize: "13px", color: T, fontWeight: 500 }}>{t.first_name} {t.last_name}</span>
+                      {t.unread > 0 && (
+                        <span style={{ fontSize: "10px", fontWeight: 600, color: "#fff", background: GOLD, borderRadius: "10px", padding: "1px 7px" }}>{t.unread}</span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: "11px", color: T3, marginTop: "1px" }}>{t.company_name}</div>
+                    <div style={{ fontSize: "12px", color: T2, marginTop: "4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{t.last_body}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", height: "440px" }}>
+              <button onClick={() => { setActiveThreadId(null); setThreadMessages([]); setReplyText(""); fetchThreads(); }}
+                style={{ fontSize: "11px", color: GOLD, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", textAlign: "left", padding: "0 0 12px" }}>
+                ← Back to inbox
+              </button>
+              <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "10px" }}>
+                {threadMessages.length === 0 && <div style={{ color: T3, fontSize: "12px" }}>No messages in this thread.</div>}
+                {threadMessages.map(m => {
+                  const isAdmin = m.sender === "admin";
+                  return (
+                    <div key={m.id} style={{ alignSelf: isAdmin ? "flex-end" : "flex-start", maxWidth: "85%" }}>
+                      <div style={{
+                        background: isAdmin ? GOLD : "#F5F5F5",
+                        color: isAdmin ? "#fff" : T,
+                        border: isAdmin ? "none" : "1px solid rgba(26,26,26,0.10)",
+                        borderRadius: "10px", padding: "8px 12px", fontSize: "12px", lineHeight: 1.5, whiteSpace: "pre-wrap" as const,
+                      }}>{m.body}</div>
+                      <div style={{ fontSize: "9px", color: T3, marginTop: "3px", textAlign: isAdmin ? "right" : "left" }}>{fmtDate(m.created_at)}</div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ marginTop: "12px", display: "flex", gap: "8px" }}>
+                <input style={{ ...INPUT, flex: 1 }} placeholder="Type a reply…" value={replyText}
+                  onChange={e => setReplyText(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendReply(); } }} />
+                <button onClick={sendReply} disabled={sendingReply || !replyText.trim()}
+                  style={{ padding: "0 18px", borderRadius: "8px", border: "none", background: GOLD, color: "#fff", fontSize: "13px", fontWeight: 500, cursor: (sendingReply || !replyText.trim()) ? "default" : "pointer", opacity: (sendingReply || !replyText.trim()) ? 0.6 : 1, fontFamily: "inherit" }}>
+                  {sendingReply ? "…" : "Send"}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -3533,6 +4015,7 @@ const [loadingClients, setLoadingClients] = useState(true);
   const [imgPrompt, setImgPrompt]     = useState("");
   const [isImgGen, setIsImgGen]       = useState(false);
   const [bellOpen, setBellOpen]       = useState(false);
+  const [clientUsersUnread, setClientUsersUnread] = useState(0);
 
   const notify = useCallback((m: string, t: "default"|"success"|"error" = "default") => {
     setNote(m); setNoteType(t);
@@ -3582,6 +4065,22 @@ useEffect(() => {
     if (params.get("linkedin_connected")) { notify("LinkedIn connected successfully ✓", "success"); window.history.replaceState({}, "", window.location.pathname); }
     if (params.get("linkedin_error")) { notify(`LinkedIn connection failed: ${params.get("linkedin_error")}`, "error"); window.history.replaceState({}, "", window.location.pathname); }
   }, [notify]);
+
+  const fetchClientUsersUnread = useCallback(async () => {
+    try {
+      const r = await fetch("/api/client-messages");
+      const d = await r.json();
+      const threads: { unread?: number }[] = d.threads || [];
+      setClientUsersUnread(threads.reduce((sum, t) => sum + (t.unread || 0), 0));
+    } catch { /* ignore */ }
+  }, []);
+
+  useEffect(() => {
+    fetchClientUsersUnread();
+    if (tab !== "clientusers") return;
+    const iv = setInterval(() => { fetchClientUsersUnread(); }, 15000);
+    return () => clearInterval(iv);
+  }, [tab, fetchClientUsersUnread]);
 
   const switchCompany = (c: Company) => {
     setAc(c); setAp(c.pillars[0]); setPost(""); setSvg(""); setImgUrl(""); setImgProvider(""); setImgPrompt("");
@@ -3673,17 +4172,17 @@ useEffect(() => {
     notify("SVG downloaded", "success");
   };
 if (authRole === undefined) {
-  return <div style={{ minHeight: "100vh", background: "#F5F2EE" }} />;
+  return <div style={{ minHeight: "100vh", background: "#F5F5F5" }} />;
 }
 if (authRole === null) {
   window.location.replace("/landing");
-  return <div style={{ minHeight: "100vh", background: "#F5F2EE" }} />;
+  return <div style={{ minHeight: "100vh", background: "#F5F5F5" }} />;
 }
 if (loadingClients || !ac || !ap) {
   return (
     <div style={{
       minHeight: "100vh",
-      background: "#F5F2EE",
+      background: "#F5F5F5",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
@@ -3708,10 +4207,11 @@ if (loadingClients || !ac || !ap) {
     { id: "reports",   label: "Reports"   },
     { id: "invoices",  label: "Invoices"  },
     { id: "clients",   label: "Clients"   },
+    { id: "clientusers", label: "Client Users", badge: clientUsersUnread },
   ];
 
   return (
-    <div style={{ minHeight: "100vh", background: "#F5F2EE", color: "#1A1A1A", paddingTop: "64px" }}>
+    <div style={{ minHeight: "100vh", background: "#F5F5F5", color: "#1A1A1A", paddingTop: "64px" }}>
 
       {/* Toast */}
       {note && <Toast message={note} type={noteType} />}
@@ -3732,7 +4232,7 @@ if (loadingClients || !ac || !ap) {
             <img src="/linkwright-logo.png" alt="Linkwright" style={{ height: "170px", objectFit: "contain" }} />
             <div style={{ width: "0.5px", height: "28px", background: "rgba(26,24,20,0.15)" }} />
             <span style={{
-              fontFamily: "var(--font-cormorant, var(--font-playfair, Georgia, serif))",
+              fontFamily: "var(--font-raleway), sans-serif",
               fontSize: "13px", fontWeight: 300, fontStyle: "italic",
               color: "rgba(26,24,20,0.45)", letterSpacing: "0.01em", whiteSpace: "nowrap",
             }}>
@@ -3755,13 +4255,13 @@ if (loadingClients || !ac || !ap) {
                   color: tab === t.id ? T : T3,
                   cursor: "pointer",
                   transition: "color 0.15s ease, border-color 0.15s ease",
-                  fontFamily: "var(--font-inter, system-ui, sans-serif)",
+                  fontFamily: "Helvetica, Arial, sans-serif",
                   display: "inline-flex", alignItems: "center", gap: "6px",
                   marginBottom: "-1px",
                 }}>
                 {t.label}
                 {t.badge && t.badge > 0 ? (
-                  <span style={{ minWidth: "16px", height: "16px", borderRadius: "8px", background: "rgba(201,168,76,0.15)", color: GOLD, border: "1px solid rgba(201,168,76,0.3)", fontSize: "9px", fontWeight: 600, display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "0 4px" }}>
+                  <span style={{ minWidth: "16px", height: "16px", borderRadius: "8px", background: "rgba(227,0,0,0.15)", color: GOLD, border: "1px solid rgba(227,0,0,0.3)", fontSize: "9px", fontWeight: 600, display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "0 4px" }}>
                     {t.badge}
                   </span>
                 ) : null}
@@ -3780,7 +4280,7 @@ if (loadingClients || !ac || !ap) {
               background: "transparent",
               border: "1px solid rgba(26,26,26,0.12)",
               borderRadius: "6px",
-              fontFamily: "var(--font-dm-sans, system-ui, sans-serif)",
+              fontFamily: "Helvetica, Arial, sans-serif",
               transition: "all 0.15s ease",
             }}
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(26,26,26,0.22)"; (e.currentTarget as HTMLElement).style.color = T2; }}
@@ -3798,7 +4298,7 @@ if (loadingClients || !ac || !ap) {
               textDecoration: "none",
               fontSize: "11px",
               letterSpacing: "0.06em",
-              fontFamily: "var(--font-inter, system-ui, sans-serif)",
+              fontFamily: "Helvetica, Arial, sans-serif",
               transition: "all 0.15s ease",
             }}
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(26,26,26,0.22)"; (e.currentTarget as HTMLElement).style.color = T2; }}
@@ -3810,12 +4310,12 @@ if (loadingClients || !ac || !ap) {
             {/* Notifications bell */}
             <div style={{ position: "relative" }}>
               <button onClick={() => setBellOpen(o => !o)}
-                style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center", width: "32px", height: "32px", background: bellOpen ? "rgba(201,168,76,0.08)" : "transparent", border: `1px solid ${bellOpen ? "rgba(201,168,76,0.3)" : "rgba(26,26,26,0.12)"}`, borderRadius: "6px", color: bellOpen ? GOLD : T3, cursor: "pointer", transition: "all 0.15s ease", fontFamily: "inherit" }}>
+                style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center", width: "32px", height: "32px", background: bellOpen ? "rgba(227,0,0,0.08)" : "transparent", border: `1px solid ${bellOpen ? "rgba(227,0,0,0.3)" : "rgba(26,26,26,0.12)"}`, borderRadius: "6px", color: bellOpen ? GOLD : T3, cursor: "pointer", transition: "all 0.15s ease", fontFamily: "inherit" }}>
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                   <path d="M7 1.5a4 4 0 0 1 4 4v2.5l1 1.5H2l1-1.5V5.5a4 4 0 0 1 4-4zM5.5 11.5a1.5 1.5 0 0 0 3 0" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
                 </svg>
                 {bellCount > 0 && (
-                  <span style={{ position: "absolute", top: "-4px", right: "-4px", minWidth: "14px", height: "14px", borderRadius: "7px", background: "#cc3333", color: "#fff", fontSize: "8px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px", border: "1.5px solid #F5F2EE" }}>
+                  <span style={{ position: "absolute", top: "-4px", right: "-4px", minWidth: "14px", height: "14px", borderRadius: "7px", background: "#cc3333", color: "#fff", fontSize: "8px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px", border: "1.5px solid #F5F5F5" }}>
                     {bellCount}
                   </span>
                 )}
@@ -3837,7 +4337,7 @@ if (loadingClients || !ac || !ap) {
                             onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(26,26,26,0.02)"; }}
                             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
                             <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "4px" }}>
-                              <span style={{ fontSize: "9px", fontWeight: 700, padding: "2px 7px", background: "rgba(201,168,76,0.10)", color: "#9C7A2A", border: "1px solid rgba(201,168,76,0.25)", borderRadius: "4px", letterSpacing: "0.08em" }}>PENDING</span>
+                              <span style={{ fontSize: "9px", fontWeight: 700, padding: "2px 7px", background: "rgba(227,0,0,0.10)", color: "#B00000", border: "1px solid rgba(227,0,0,0.25)", borderRadius: "4px", letterSpacing: "0.08em" }}>PENDING</span>
                               <span style={{ fontSize: "11px", color: T3 }}>{p.company_name}</span>
                             </div>
                             <div style={{ fontSize: "12px", color: T2, lineHeight: 1.5, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const }}>{p.content.slice(0, 100)}</div>
@@ -3901,7 +4401,7 @@ if (loadingClients || !ac || !ap) {
               padding: "0 40px",
               fontSize: "10px", letterSpacing: "0.14em", textTransform: "uppercase",
               color: T3,
-              fontFamily: "var(--font-inter, system-ui, sans-serif)",
+              fontFamily: "Helvetica, Arial, sans-serif",
               whiteSpace: "nowrap",
             }}>
               <span style={{ width: "4px", height: "4px", borderRadius: "50%", background: c.color, display: "inline-block", flexShrink: 0 }} />
@@ -3916,16 +4416,16 @@ if (loadingClients || !ac || !ap) {
       </div>
 
       {/* Light image banner — services.png with cream overlay, matching landing page split section */}
-      <div style={{ position: "relative", height: "160px", overflow: "hidden", background: "#EDE8E0" }}>
+      <div style={{ position: "relative", height: "160px", overflow: "hidden", background: "#ECECEC" }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/images/services.png" alt="" aria-hidden="true" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", filter: "brightness(1.05) contrast(1.05) saturate(0.6)" }} />
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(244,241,236,0.80) 0%, rgba(244,241,236,0.60) 100%)" }} />
         <div style={{ position: "relative", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: "10px" }}>
-          <div style={{ width: "28px", height: "1px", background: "#C9A84C" }} />
-          <p style={{ fontFamily: "var(--font-cormorant, Georgia, serif)", fontSize: "clamp(18px, 2vw, 28px)", fontWeight: 300, fontStyle: "italic", color: "#1A1814", letterSpacing: "-0.01em" }}>
+          <div style={{ width: "28px", height: "1px", background: "#E30000" }} />
+          <p style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "clamp(18px, 2vw, 28px)", fontWeight: 300, fontStyle: "italic", color: "#1A1814", letterSpacing: "-0.01em" }}>
             {ac ? ac.name : "Content Studio"}
           </p>
-          <div style={{ width: "28px", height: "1px", background: "#C9A84C" }} />
+          <div style={{ width: "28px", height: "1px", background: "#E30000" }} />
         </div>
       </div>
 
@@ -3963,6 +4463,17 @@ if (loadingClients || !ac || !ap) {
       }
     });
 }} />}
+        {tab === "clientusers" && (
+          <ClientUsersTab
+            clients={clients}
+            notify={notify}
+            onCompanyAdded={() => {
+              fetch("/api/clients")
+                .then(r => r.json())
+                .then(d => { if (d.clients && d.clients.length > 0) setClients(d.clients); });
+            }}
+          />
+        )}
       </main>
 
       <style>{`

@@ -1,55 +1,82 @@
 import { NextRequest, NextResponse } from "next/server";
 
+const PUBLIC_PATHS = new Set([
+  "/",
+  "/landing",
+  "/contact",
+  "/blog",
+  "/login",
+  "/portal/login",
+  "/client/login",
+  "/client/set-password",
+  "/client/forgot-password",
+]);
+
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Always allow static assets, auth APIs, and the public landing page
+  // Always allow static assets, marketing pages, and public auth endpoints.
   if (
-    pathname === "/" ||
-    pathname === "/landing" ||
-    pathname === "/contact" ||
-    pathname === "/blog" ||
+    PUBLIC_PATHS.has(pathname) ||
     pathname.startsWith("/blog/") ||
-    pathname === "/login" ||
-    pathname === "/portal/login" ||
     pathname.startsWith("/api/auth") ||
+    pathname.startsWith("/api/client/") || // client login / set-password / forgot / logout
     pathname === "/api/contact"
   ) {
     return NextResponse.next();
   }
 
+  // Admin session (unchanged from before).
   const agencyAuth = req.cookies.get("auth")?.value === "gorlin_authenticated";
-  const sessionCookie = req.cookies.get("user_session")?.value;
-
-  let sessionRole: string | null = null;
-  let sessionClientId: string | null = null;
-  if (sessionCookie) {
+  const userSession = req.cookies.get("user_session")?.value;
+  let userRole: string | null = null;
+  if (userSession) {
     try {
-      const data = JSON.parse(Buffer.from(sessionCookie, "base64").toString("utf8"));
-      sessionRole = data.role ?? null;
-      sessionClientId = data.clientId ?? null;
+      userRole = JSON.parse(Buffer.from(userSession, "base64").toString("utf8")).role ?? null;
     } catch {
       // invalid cookie
     }
   }
 
-  const isAuthenticated = agencyAuth || !!sessionRole;
-
-  if (!isAuthenticated) {
-    // Portal routes go to portal login, everything else to main login
-    if (pathname.startsWith("/portal")) {
-      return NextResponse.redirect(new URL("/portal/login", req.url));
+  // New per-client portal session.
+  const clientSession = req.cookies.get("client_session")?.value;
+  let clientValid = false;
+  if (clientSession) {
+    try {
+      const data = JSON.parse(Buffer.from(clientSession, "base64").toString("utf8"));
+      clientValid = data?.role === "client" && Boolean(data?.clientId);
+    } catch {
+      // invalid cookie
     }
+  }
+
+  const isAdmin = agencyAuth || userRole === "agency";
+  const isClient = clientValid || userRole === "client";
+  const isAuthenticated = isAdmin || isClient;
+
+  // Client portal: clients and admins may view it; everyone else to client login.
+  if (pathname === "/portal" || pathname.startsWith("/portal/")) {
+    if (isClient || isAdmin) return NextResponse.next();
+    return NextResponse.redirect(new URL("/client/login", req.url));
+  }
+
+  // Studio / admin: admins only. Client sessions are never allowed in.
+  if (pathname === "/studio" || pathname.startsWith("/studio/")) {
+    if (isAdmin) return NextResponse.next();
+    if (isClient) return NextResponse.redirect(new URL("/portal", req.url));
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
-  // Client users should only access /portal, not the agency studio
-  if (sessionRole === "client" && !pathname.startsWith("/portal") && !pathname.startsWith("/api") && pathname !== "/" && pathname !== "/landing") {
-    return NextResponse.redirect(new URL("/portal", req.url));
+  // API routes self-authorize; allow any authenticated session through.
+  if (pathname.startsWith("/api/")) {
+    if (isAuthenticated) return NextResponse.next();
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  // Agency users (session or cookie) can access everything
-  return NextResponse.next();
+  // Any other protected route: admins through; clients back to the portal.
+  if (isAdmin) return NextResponse.next();
+  if (isClient) return NextResponse.redirect(new URL("/portal", req.url));
+  return NextResponse.redirect(new URL("/login", req.url));
 }
 
 export const config = {

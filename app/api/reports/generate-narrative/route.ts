@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
     const { reportId, force } = await req.json();
     if (!reportId) return NextResponse.json({ error: "reportId required" }, { status: 400 });
 
-    const report = db.prepare("SELECT * FROM reports WHERE id = ?").get(reportId) as Report | null;
+    const report = await db.prepare("SELECT * FROM reports WHERE id = ?").get(reportId) as Report | null;
     if (!report) return NextResponse.json({ error: "Report not found" }, { status: 404 });
     if (!report.extracted_data) return NextResponse.json({ error: "No extracted data" }, { status: 422 });
 
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
     }
 
     const data = JSON.parse(report.extracted_data);
-    const clientRow = db.prepare("SELECT name FROM clients WHERE id = ?").get(report.client_id) as { name: string } | null;
+    const clientRow = await db.prepare("SELECT name FROM clients WHERE id = ?").get(report.client_id) as { name: string } | null;
     const clientName = clientRow?.name ?? "your company";
 
     const [agencyRes, clientRes] = await Promise.all([
@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
     const narrativeAgency = agencyRes.content.find(c => c.type === "text")?.text?.trim() ?? "";
     const narrativeClient = clientRes.content.find(c => c.type === "text")?.text?.trim() ?? "";
 
-    db.prepare(
+    await db.prepare(
       `UPDATE reports SET narrative_agency = ?, narrative_client = ?, updated_at = datetime('now') WHERE id = ?`
     ).run(narrativeAgency, narrativeClient, reportId);
 

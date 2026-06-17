@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
     const rawPdfUrl = `/files/${fileName}`;
 
     // Create stub report first
-    const insertResult = db.prepare(
+    const insertResult = await db.prepare(
       `INSERT INTO reports (client_id, type, period_start, period_end, status, raw_pdf_url)
        VALUES (?, ?, ?, ?, 'draft', ?)`
     ).run(clientId, type, periodStart, periodEnd, rawPdfUrl);
@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (extractedData) {
-      db.prepare("UPDATE reports SET extracted_data = ?, updated_at = datetime('now') WHERE id = ?")
+      await db.prepare("UPDATE reports SET extracted_data = ?, updated_at = datetime('now') WHERE id = ?")
         .run(extractedData, reportId);
     }
 
@@ -117,7 +117,7 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({ reportId }),
     }).catch(() => {});
 
-    const report = db.prepare("SELECT * FROM reports WHERE id = ?").get(reportId);
+    const report = await db.prepare("SELECT * FROM reports WHERE id = ?").get(reportId);
     return NextResponse.json({ report });
   } catch (error) {
     console.error("[upload-pdf] error:", error);

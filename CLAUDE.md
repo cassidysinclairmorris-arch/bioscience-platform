@@ -76,6 +76,30 @@ Client-facing read-only view: see approved posts, request changes, view analytic
 
 `lib/companies.ts` contains a hardcoded company array used for type definitions and any non-DB fallbacks. The live source of truth for clients is the SQLite DB — `lib/companies.ts` is mostly used for TypeScript types (`Company`, `Pillar`).
 
+## Brand & Style
+
+The canonical Linkwright brand, applied across the marketing site, the client portal (`/portal`), and the agency studio (`/studio`). Follow this for every new page, component, form, and email.
+
+**Colors**
+- Red (primary accent): `#E30000`
+- Black (text / dark surfaces): `#0A0A0A`
+- White: `#FFFFFF`
+- Light gray (surfaces / app background): `#F5F5F5`
+- Borders: `#E5E5E5`
+- Muted text: `#999999`; secondary body text: `#666666` / `#444444`
+
+**Typography**
+- Body / UI text: **Helvetica** (`Helvetica, Arial, sans-serif`).
+- Large or special / display text (headlines, wordmark, section titles): **Raleway** (`var(--font-raleway), sans-serif`), loaded in `app/layout.tsx`. The wordmark is Raleway weight 100, wide letter-spacing.
+- Do not use the older serif (Cormorant/Playfair) or gold (`#C9A84C`) treatment; those have been replaced by this brand.
+
+**Logo**: white wordmark at `public/linkwright-logo-white.png`. Use as-is on dark backgrounds; apply `filter: brightness(0)` on light backgrounds.
+
+**Other**
+- 100% inline React styles, no CSS classes or new UI libraries.
+- Section labels render as `( LABEL )` in red `#E30000`, Raleway, ~11px, letter-spacing `0.25em`, uppercase.
+- No em dashes anywhere in any copy, label, email, or comment.
+
 ## Key conventions
 
 - **No em dashes** in any AI-generated post text. Both `/api/generate` and `/api/refine` post-process output with `.replace(/—/g, ",").replace(/–/g, ",")`.

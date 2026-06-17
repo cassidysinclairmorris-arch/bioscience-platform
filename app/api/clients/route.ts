@@ -1,19 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
+import { getClientSession } from "@/lib/client-session";
+import { isAdminRequest } from "@/lib/admin-auth";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const db = getDb();
 
-  const clients = db.prepare(`
-    SELECT * FROM clients WHERE active = 1 ORDER BY created_at ASC
-  `).all() as Record<string, unknown>[];
+  // A client session may only ever receive its own company. Agency/admin sees all.
+  const clientSession = getClientSession(req);
+  const scopeToCompany = clientSession && !isAdminRequest(req) ? clientSession.clientId : null;
 
-  const result = clients.map((client) => {
-    const kit = db.prepare(`
+  const clients = (scopeToCompany
+    ? await db.prepare(`SELECT * FROM clients WHERE active = 1 AND id = ? ORDER BY created_at ASC`).all(scopeToCompany)
+    : await db.prepare(`SELECT * FROM clients WHERE active = 1 ORDER BY created_at ASC`).all()) as Record<string, unknown>[];
+
+  const result = await Promise.all(clients.map(async (client) => {
+    const kit = await db.prepare(`
       SELECT * FROM brand_kits WHERE client_id = ?
     `).get(client.id);
 
-    const pillars = db.prepare(`
+    const pillars = await db.prepare(`
       SELECT * FROM pillars WHERE client_id = ? ORDER BY sort_order ASC
     `).all(client.id) as Record<string, unknown>[];
 
@@ -47,7 +53,7 @@ export async function GET() {
         sort_order: p.sort_order,
       })),
     };
-  });
+  }));
 
   return NextResponse.json({ clients: result });
 }
@@ -62,7 +68,7 @@ export async function POST(req: NextRequest) {
     brand, pillars,
   } = body;
 
-  db.prepare(`
+  await db.prepare(`
     INSERT INTO clients
       (id, name, tagline, color, timezone, audience, voice, posting_days, best_post_times)
     VALUES
@@ -75,7 +81,7 @@ export async function POST(req: NextRequest) {
   );
 
   if (brand) {
-    db.prepare(`
+    await db.prepare(`
       INSERT INTO brand_kits
         (client_id, palette, visual_mood, logo_text, accent_color, dark_color, light_color, key_phrases, badges, primary_font, secondary_font, headline_font, body_font, brand_prompt, invert_logo)
       VALUES
@@ -104,12 +110,13 @@ export async function POST(req: NextRequest) {
       INSERT INTO pillars (client_id, day, type, color, example, sort_order)
       VALUES (?, ?, ?, ?, ?, ?)
     `);
-    pillars.forEach((p: Record<string, unknown>, i: number) => {
-      insertPillar.run(id, p.day, p.type, p.color, p.example, i);
-    });
+    for (let i = 0; i < pillars.length; i++) {
+      const p = pillars[i] as Record<string, unknown>;
+      await insertPillar.run(id, p.day, p.type, p.color, p.example, i);
+    }
   }
 
-  const client = db.prepare("SELECT * FROM clients WHERE id = ?").get(id);
+  const client = await db.prepare("SELECT * FROM clients WHERE id = ?").get(id);
   return NextResponse.json({ client });
 }
 
@@ -126,11 +133,11 @@ export async function PATCH(req: NextRequest) {
   if (updates.length > 0) {
     const setClause = updates.map(k => `${k} = ?`).join(", ");
     const values = updates.map(k => fields[k]);
-    db.prepare(`UPDATE clients SET ${setClause} WHERE id = ?`).run(...values, id);
+    await db.prepare(`UPDATE clients SET ${setClause} WHERE id = ?`).run(...values, id);
   }
 
   if (fields.brand) {
-    db.prepare(`
+    await db.prepare(`
       UPDATE brand_kits SET
         palette = ?, visual_mood = ?, logo_text = ?,
         accent_color = ?, dark_color = ?, light_color = ?,
@@ -159,7 +166,7 @@ export async function PATCH(req: NextRequest) {
     );
   }
 
-  const client = db.prepare("SELECT * FROM clients WHERE id = ?").get(id);
+  const client = await db.prepare("SELECT * FROM clients WHERE id = ?").get(id);
   return NextResponse.json({ client });
 }
 
@@ -170,6 +177,6 @@ export async function DELETE(req: NextRequest) {
 
   if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
 
-  db.prepare("DELETE FROM clients WHERE id = ?").run(id);
+  await db.prepare("DELETE FROM clients WHERE id = ?").run(id);
   return NextResponse.json({ success: true });
 }

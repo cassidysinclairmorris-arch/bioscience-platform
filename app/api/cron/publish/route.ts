@@ -69,7 +69,7 @@ export async function GET(req: NextRequest) {
   const now = new Date().toISOString();
 
   // Find all scheduled posts whose scheduled_at is in the past
-  const due = db.prepare(`
+  const due = await db.prepare(`
     SELECT p.*, c.linkedin_access_token, c.linkedin_urn
     FROM posts p
     JOIN clients c ON c.id = p.company_id
@@ -89,7 +89,7 @@ export async function GET(req: NextRequest) {
     try {
       const accessToken = decryptToken(row.linkedin_access_token as string);
       const liPostId    = await postToLinkedIn(accessToken, row.linkedin_urn as string, row.content as string, row.image_url as string | null);
-      db.prepare("UPDATE posts SET status = 'posted', posted_at = datetime('now'), linkedin_post_id = ?, updated_at = datetime('now') WHERE id = ?")
+      await db.prepare("UPDATE posts SET status = 'posted', posted_at = datetime('now'), linkedin_post_id = ?, updated_at = datetime('now') WHERE id = ?")
         .run(liPostId, row.id);
       results.push({ postId: row.id, status: "posted" });
     } catch (err) {

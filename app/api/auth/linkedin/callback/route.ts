@@ -76,7 +76,7 @@ export async function GET(req: NextRequest) {
   }
 
   const db = getDb();
-  db.prepare(`UPDATE clients SET
+  await db.prepare(`UPDATE clients SET
     linkedin_access_token = ?,
     linkedin_urn = ?,
     linkedin_name = ?,
