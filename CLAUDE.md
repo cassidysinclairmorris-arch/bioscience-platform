@@ -32,15 +32,15 @@ Next.js 16 App Router platform for a LinkedIn content agency (Linkwright). Manag
 | Role | Login route | Cookie | Primary UI |
 |------|-------------|--------|------------|
 | Agency (internal) | `/login` password `#M0llydog!` | `auth=gorlin_authenticated` | `/studio` |
-| Client | `/portal/login` email+password | `user_session` (base64 JSON) | `/portal` |
+| Client | `/client/login` email+password | `client_session` (base64 JSON) | `/portal` |
 
 `middleware.ts` enforces this split on every request. `/api/*` routes always allowed through for authenticated users.
 
 ### Database
 
-SQLite via `better-sqlite3`, file at `data/posts.db`. All schema + migrations in `lib/db.ts` — fire-and-forget `ALTER TABLE` wrapped in try/catch. No migration framework. When adding a column, add an `ALTER TABLE` migration block there.
+libSQL via `@libsql/client`, behind a small better-sqlite3-style async wrapper in `lib/db.ts` (call sites use `await db.prepare(sql).get/all/run(...)` and `await db.exec(...)`). Local dev uses a file (`file:data/posts.db`); production uses Turso when `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN` are set. All schema + migrations in `lib/db.ts` — fire-and-forget `ALTER TABLE` wrapped in try/catch. No migration framework. When adding a column, add an `ALTER TABLE` migration block there.
 
-Tables: `clients`, `brand_kits` (1:1 with clients), `pillars` (4 per client), `posts`, `post_analytics`, `invoices`, `users`.
+Tables: `clients`, `brand_kits` (1:1 with clients), `pillars` (4 per client), `posts`, `post_analytics`, `invoices`, `users`, `client_users` (per-client portal accounts, roles owner/administrator/user with per-company limits), `messages` (client and agency message threads).
 
 `/api/clients` GET returns clients with `brand_kits` row merged into a `brand` object and `pillars` array attached. `brand` uses snake_case keys (`accent_color`, `dark_color`, `headline_font`, etc.).
 
@@ -146,7 +146,7 @@ White wordmark at `public/linkwright-logo-white.png`. Use as-is on dark backgrou
 - `app/contact/page.tsx` — contact page
 - `app/blog/page.tsx` — blog index
 - `app/blog/[slug]/page.tsx` — individual blog post
-- `lib/blog-posts.ts` — blog content data (edit to add/update posts)
+- `lib/blog.ts` — blog content data and types (edit to add/update posts)
 - `public/images/` — all marketing images (1.png through 20.png)
 - `public/files/` — client logos
 - `public/linkwright-logo-white.png` — Linkwright logo
