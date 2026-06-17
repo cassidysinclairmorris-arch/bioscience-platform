@@ -1004,16 +1004,21 @@ export default function PortalPage() {
       </header>
 
       {/* Banner */}
-      <div style={{ position: "relative", height: "200px", overflow: "hidden", background: "#FFFFFF", borderBottom: "1px solid #E5E5E5" }}>
+      <div style={{ position: "relative", height: "240px", overflow: "hidden", background: "#0A0A0A", borderBottom: "1px solid #E5E5E5" }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/images/1.png" alt="" aria-hidden="true" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+        <div aria-hidden="true" style={{ position: "absolute", inset: 0, background: "linear-gradient(90deg, rgba(10,10,10,0.82) 0%, rgba(10,10,10,0.50) 100%)" }} />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/images/red-circle.png" alt="" aria-hidden="true" style={{ position: "absolute", top: "-100px", right: "-90px", width: "340px", height: "340px", opacity: 0.6, mixBlendMode: "screen", pointerEvents: "none" }} />
         <div style={{ position: "relative", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "0 48px" }}>
-          <div style={{ width: "28px", height: "2px", background: accentColor, marginBottom: "20px" }} />
-          <p style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "clamp(22px, 3vw, 42px)", fontWeight: 700, fontStyle: "normal", color: "#0A0A0A", lineHeight: 1.2, maxWidth: "600px", letterSpacing: "-0.01em" }}>
+          <div style={{ width: "28px", height: "2px", background: "#E30000", marginBottom: "20px" }} />
+          <p style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "clamp(22px, 3vw, 42px)", fontWeight: 700, fontStyle: "normal", color: "#FFFFFF", lineHeight: 1.2, maxWidth: "600px", letterSpacing: "-0.01em", margin: 0 }}>
             {client.name}
           </p>
           {client.tagline && (
-            <p style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", color: "#999999", marginTop: "10px", letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 600 }}>{client.tagline}</p>
+            <p style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", color: "rgba(255,255,255,0.7)", marginTop: "10px", letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 600 }}>{client.tagline}</p>
           )}
-          <div style={{ width: "28px", height: "2px", background: accentColor, marginTop: "20px" }} />
+          <div style={{ width: "28px", height: "2px", background: "#E30000", marginTop: "20px" }} />
         </div>
       </div>
 
