@@ -7,7 +7,8 @@ const RED = "#E30000";
 const BLACK = "#0A0A0A";
 const WHITE = "#FFFFFF";
 const BORDER = "#E5E5E5";
-const FONT = "var(--font-raleway), sans-serif";
+const FONT = "Helvetica, Arial, sans-serif";
+const DISPLAY = "var(--font-raleway), sans-serif";
 
 export default function ClientLoginPage() {
   const [email, setEmail] = useState("");
@@ -47,9 +48,7 @@ export default function ClientLoginPage() {
         window.location.href = `/client/set-password?token=${data.token}`;
         return;
       }
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || "Could not sign in.");
-      }
+      if (!res.ok || !data.success) throw new Error(data.error || "Could not sign in.");
       window.location.href = data.redirect || "/portal";
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not sign in.");
@@ -58,36 +57,66 @@ export default function ClientLoginPage() {
   };
 
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        background: "#F5F5F5",
-        fontFamily: FONT,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 24,
-      }}
-    >
-      <div style={{ width: "100%", maxWidth: 420 }}>
-        <Link href="/" style={{ display: "flex", justifyContent: "center", marginBottom: 36 }}>
+    <div style={{ minHeight: "100vh", display: "flex", fontFamily: FONT, background: WHITE }}>
+      {/* Left: red hero panel (matches the homepage hero) */}
+      <div
+        className="login-hero"
+        style={{ flex: 1, background: RED, display: "none", position: "relative", overflow: "hidden", padding: 48 }}
+      >
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            inset: 0,
+            backgroundImage: "radial-gradient(#C40000 1.5px, transparent 1.5px)",
+            backgroundSize: "20px 20px",
+            opacity: 0.5,
+          }}
+        />
+        <div style={{ position: "relative", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+          <img src="/linkwright-logo-white.png" alt="Linkwright" style={{ height: 26, width: "auto", display: "block" }} />
+          <div>
+            <h1
+              style={{
+                fontFamily: DISPLAY,
+                fontWeight: 100,
+                fontSize: "clamp(56px, 8vw, 104px)",
+                letterSpacing: "0.15em",
+                color: WHITE,
+                lineHeight: 1,
+                margin: 0,
+              }}
+            >
+              LINKWRIGHT
+            </h1>
+            <p style={{ fontFamily: FONT, fontSize: 14, color: "rgba(255,255,255,0.85)", marginTop: 20, letterSpacing: "0.04em" }}>
+              Your content, reports, and team. In one place.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Right: form */}
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 32, position: "relative" }}>
+        <a href="/" style={{ position: "fixed", top: 20, left: 24, fontFamily: FONT, fontSize: 13, color: "#666666", textDecoration: "none" }}>
+          ← Back to main site
+        </a>
+
+        <div style={{ width: "100%", maxWidth: 400 }}>
           <img
             src="/linkwright-logo-white.png"
             alt="Linkwright"
-            style={{ height: 30, width: "auto", filter: "brightness(0)" }}
+            style={{ height: 26, width: "auto", display: "block", filter: "brightness(0)", marginBottom: 36 }}
           />
-        </Link>
 
-        <div style={{ background: WHITE, borderRadius: 16, padding: 40, border: `1px solid ${BORDER}` }}>
-          <h1 style={{ fontFamily: FONT, fontWeight: 400, fontSize: 24, color: BLACK, margin: "0 0 6px" }}>
-            Client Sign In
-          </h1>
-          <p style={{ fontFamily: FONT, fontSize: 14, color: "#666666", margin: "0 0 28px" }}>
-            Access your portal to review content and reports.
-          </p>
+          <span style={{ fontFamily: DISPLAY, fontWeight: 400, fontSize: 11, letterSpacing: "0.25em", textTransform: "uppercase", color: RED }}>
+            ( Client )
+          </span>
+          <h2 style={{ fontFamily: DISPLAY, fontWeight: 400, fontSize: 28, color: BLACK, margin: "12px 0 6px" }}>Sign In</h2>
+          <p style={{ fontFamily: FONT, fontSize: 14, color: "#666666", margin: "0 0 28px" }}>Access your portal to review content and reports.</p>
 
           <div style={{ marginBottom: 18 }}>
-            <div style={{ fontSize: 14, color: BLACK, marginBottom: 8 }}>Email</div>
+            <div style={{ fontFamily: FONT, fontSize: 14, color: BLACK, marginBottom: 8 }}>Email</div>
             <input
               type="email"
               value={email}
@@ -101,7 +130,7 @@ export default function ClientLoginPage() {
           </div>
 
           <div style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 14, color: BLACK, marginBottom: 8 }}>Password</div>
+            <div style={{ fontFamily: FONT, fontSize: 14, color: BLACK, marginBottom: 8 }}>Password</div>
             <input
               type="password"
               value={password}
@@ -114,9 +143,7 @@ export default function ClientLoginPage() {
             />
           </div>
 
-          {error && (
-            <p style={{ fontFamily: FONT, fontSize: 14, color: RED, margin: "0 0 18px" }}>{error}</p>
-          )}
+          {error && <p style={{ fontFamily: FONT, fontSize: 14, color: RED, margin: "0 0 18px" }}>{error}</p>}
 
           <button
             type="button"
@@ -139,16 +166,15 @@ export default function ClientLoginPage() {
             {busy ? "Signing in..." : "Sign In"}
           </button>
 
-          <div style={{ textAlign: "center", marginTop: 18 }}>
-            <Link
-              href="/client/forgot-password"
-              style={{ fontFamily: FONT, fontSize: 13, color: "#666666", textDecoration: "none" }}
-            >
+          <div style={{ marginTop: 18 }}>
+            <Link href="/client/forgot-password" style={{ fontFamily: FONT, fontSize: 13, color: "#666666", textDecoration: "none" }}>
               Forgot password
             </Link>
           </div>
         </div>
       </div>
-    </main>
+
+      <style>{`@media (min-width: 900px) { .login-hero { display: block !important; } }`}</style>
+    </div>
   );
 }

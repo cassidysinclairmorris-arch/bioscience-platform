@@ -409,7 +409,7 @@ function OverviewTab({ ac, clients, posts, allPosts }: { ac: Company; clients: C
               <div className="label" style={{ marginBottom: "6px" }}>Active portfolio</div>
               <div style={{
                 fontFamily: "var(--font-raleway), sans-serif",
-                fontSize: "28px", fontWeight: 300, fontStyle: "italic",
+                fontSize: "28px", fontWeight: 300, fontStyle: "normal",
                 letterSpacing: "-0.02em", color: T, lineHeight: 1,
               }}>
                 {clients.length} Companies
@@ -515,7 +515,7 @@ function ComposeTab({
             <CompanyLogo company={ac} />
             <div style={{
               fontFamily: "var(--font-raleway), sans-serif",
-              fontSize: "13px", fontStyle: "italic", fontWeight: 300,
+              fontSize: "13px", fontStyle: "normal", fontWeight: 300,
               color: T3, marginTop: "10px", letterSpacing: "0.02em",
             }}>{ac.tagline}</div>
           </div>
@@ -575,7 +575,7 @@ function ComposeTab({
               <div className="label" style={{ marginBottom: "6px" }}>Generating for</div>
               <div style={{
                 fontFamily: "var(--font-raleway), sans-serif",
-                fontSize: "22px", fontWeight: 300, fontStyle: "italic",
+                fontSize: "22px", fontWeight: 300, fontStyle: "normal",
                 color: T, letterSpacing: "-0.01em", lineHeight: 1,
               }}>
                 {ap.type}
@@ -656,12 +656,12 @@ function ComposeTab({
             ) : isGen ? (
               <div style={{ height: "200px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "16px" }}>
                 <Spinner />
-                <p style={{ color: T3, fontFamily: "var(--font-raleway), sans-serif", fontStyle: "italic", fontSize: "16px" } as React.CSSProperties}>Writing in {ac.name}&apos;s voice…</p>
+                <p style={{ color: T3, fontFamily: "var(--font-raleway), sans-serif", fontStyle: "normal", fontSize: "16px" } as React.CSSProperties}>Writing in {ac.name}&apos;s voice…</p>
               </div>
             ) : (
               <div style={{ height: "180px", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid rgba(26,26,26,0.08)", borderRadius: "8px", flexDirection: "column", gap: "12px" }}>
                 <div style={{ width: "32px", height: "1px", background: GOLD, opacity: 0.4 }} />
-                <p style={{ fontSize: "13px", color: T3, fontFamily: "var(--font-raleway), sans-serif", fontStyle: "italic" }}>Select a pillar and generate</p>
+                <p style={{ fontSize: "13px", color: T3, fontFamily: "var(--font-raleway), sans-serif", fontStyle: "normal" }}>Select a pillar and generate</p>
               </div>
             )}
           </div>
@@ -978,7 +978,7 @@ function LibraryTab({
       {posts.length === 0 ? (
         <div style={{ textAlign: "center", padding: "100px 0" }}>
           <div style={{ width: "32px", height: "1px", background: GOLD, opacity: 0.3, margin: "0 auto 20px" }} />
-          <p style={{ fontSize: "14px", color: T3, fontFamily: "var(--font-raleway), sans-serif", fontStyle: "italic" }}>No posts yet for {ac.name}</p>
+          <p style={{ fontSize: "14px", color: T3, fontFamily: "var(--font-raleway), sans-serif", fontStyle: "normal" }}>No posts yet for {ac.name}</p>
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "0" }}>
@@ -1123,7 +1123,7 @@ function CalendarTab({ ac, clients, allPosts }: { ac: Company; clients: Company[
             <div className="label" style={{ marginBottom: "10px" }}>{s.day}</div>
             <div style={{
               fontFamily: "var(--font-raleway), sans-serif",
-              fontSize: "18px", fontWeight: 300, fontStyle: "italic",
+              fontSize: "18px", fontWeight: 300, fontStyle: "normal",
               color: T, marginBottom: "6px", lineHeight: 1.2,
             }}>{s.role}</div>
             <p style={{ fontSize: "11px", color: T3, lineHeight: 1.6 }}>{s.desc}</p>
@@ -1187,7 +1187,7 @@ function CalendarTab({ ac, clients, allPosts }: { ac: Company; clients: Company[
       <div style={glass()}>
         <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(26,26,26,0.08)" }}>
           <div className="label" style={{ marginBottom: "6px" }}>Master schedule</div>
-          <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "22px", fontWeight: 300, fontStyle: "italic", color: T, lineHeight: 1 }}>Posting Calendar</div>
+          <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "22px", fontWeight: 300, fontStyle: "normal", color: T, lineHeight: 1 }}>Posting Calendar</div>
           <p style={{ fontSize: "11px", color: T3, marginTop: "4px" }}>{clients.length} active clients · {activeDays.length} posting days</p>
         </div>
         <div style={{ overflowX: "auto" }}>
@@ -1457,7 +1457,7 @@ function ReportsTab({ ac }: { ac: Company }) {
           <button onClick={() => setUploadOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: T3, padding: "4px", display: "flex", alignItems: "center" }}>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 12L6 8l4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </button>
-          <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "24px", fontWeight: 300, fontStyle: "italic", color: T }}>Upload LinkedIn Report</div>
+          <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "24px", fontWeight: 300, fontStyle: "normal", color: T }}>Upload LinkedIn Report</div>
         </div>
 
         <div style={glass({ padding: "24px", display: "flex", flexDirection: "column", gap: "20px" })}>
@@ -1531,7 +1531,7 @@ function ReportsTab({ ac }: { ac: Company }) {
         <div style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(227,0,0,0.08)", border: "1px solid rgba(227,0,0,0.20)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "8px" }}>
           <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><path d="M4 22V6a2 2 0 012-2h12l6 6v12a2 2 0 01-2 2H6a2 2 0 01-2-2z" stroke={GOLD} strokeWidth="1.5"/><path d="M18 4v6h6M9 13h10M9 17h7" stroke={GOLD} strokeWidth="1.5" strokeLinecap="round"/></svg>
         </div>
-        <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "24px", fontWeight: 300, fontStyle: "italic", color: T }}>No reports yet for {ac.name}</div>
+        <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "24px", fontWeight: 300, fontStyle: "normal", color: T }}>No reports yet for {ac.name}</div>
         <div style={{ fontSize: "13px", color: T2, maxWidth: 360 }}>Upload a LinkedIn analytics PDF to generate AI-powered insights, metrics, and narratives.</div>
         <GlassBtn variant="primary" onClick={() => setUploadOpen(true)} style={{ marginTop: "8px", gap: "8px" }}>
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M3 5l4-4 4 4M2 11h10v2H2z" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -1590,7 +1590,7 @@ function ReportsTab({ ac }: { ac: Company }) {
                   <span style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", padding: "2px 8px", borderRadius: "100px", background: "rgba(26,26,26,0.06)", color: T2 }}>{selectedReport.type}</span>
                   <span style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", padding: "2px 8px", borderRadius: "100px", background: selectedReport.status === "published" ? "rgba(43,191,176,0.12)" : "rgba(26,26,26,0.06)", color: selectedReport.status === "published" ? "#2BBFB0" : T2 }}>{selectedReport.status}</span>
                 </div>
-                <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "28px", fontWeight: 300, fontStyle: "italic", color: T, marginBottom: "4px" }}>{ac.name}</div>
+                <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "28px", fontWeight: 300, fontStyle: "normal", color: T, marginBottom: "4px" }}>{ac.name}</div>
                 <div style={{ fontSize: "12px", color: T3 }}>{selectedReport.period_start} – {selectedReport.period_end}</div>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
@@ -1634,7 +1634,7 @@ function ReportsTab({ ac }: { ac: Company }) {
               <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                 <div style={glass({ padding: "24px" })}>
                   <div className="label" style={{ marginBottom: "6px" }}>Impressions Over Time</div>
-                  <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "18px", fontWeight: 300, fontStyle: "italic", color: T, marginBottom: "16px" }}>{trendData.length} monthly reports</div>
+                  <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "18px", fontWeight: 300, fontStyle: "normal", color: T, marginBottom: "16px" }}>{trendData.length} monthly reports</div>
                   {mounted && <ResponsiveContainer width="100%" height={200}>
                     <LineChart data={trendData}>
                       <CartesianGrid stroke={chartGrid} vertical={false} />
@@ -1730,7 +1730,7 @@ function ReportsTab({ ac }: { ac: Company }) {
                     {impressionsLine.length > 0 && (
                       <div style={glass({ padding: "20px 24px" })}>
                         <div className="label" style={{ marginBottom: "6px" }}>Impressions</div>
-                        <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "16px", fontWeight: 300, fontStyle: "italic", color: T, marginBottom: "14px" }}>Per post over period</div>
+                        <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "16px", fontWeight: 300, fontStyle: "normal", color: T, marginBottom: "14px" }}>Per post over period</div>
                         {mounted && <ResponsiveContainer width="100%" height={170}>
                           <LineChart data={impressionsLine}>
                             <CartesianGrid stroke={chartGrid} vertical={false} />
@@ -1747,7 +1747,7 @@ function ReportsTab({ ac }: { ac: Company }) {
                     {engagementPie.length > 0 && (
                       <div style={glass({ padding: "20px 24px" })}>
                         <div className="label" style={{ marginBottom: "6px" }}>Engagement Breakdown</div>
-                        <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "16px", fontWeight: 300, fontStyle: "italic", color: T, marginBottom: "14px" }}>Reactions, comments, shares, clicks</div>
+                        <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "16px", fontWeight: 300, fontStyle: "normal", color: T, marginBottom: "14px" }}>Reactions, comments, shares, clicks</div>
                         {mounted && <ResponsiveContainer width="100%" height={170}>
                           <PieChart>
                             <Pie data={engagementPie} cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={3} dataKey="value">
@@ -1764,7 +1764,7 @@ function ReportsTab({ ac }: { ac: Company }) {
                     {postTypeBar.length > 0 && (
                       <div style={glass({ padding: "20px 24px" })}>
                         <div className="label" style={{ marginBottom: "6px" }}>Post Types</div>
-                        <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "16px", fontWeight: 300, fontStyle: "italic", color: T, marginBottom: "14px" }}>Count by format</div>
+                        <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "16px", fontWeight: 300, fontStyle: "normal", color: T, marginBottom: "14px" }}>Count by format</div>
                         {mounted && <ResponsiveContainer width="100%" height={170}>
                           <BarChart data={postTypeBar} barSize={24}>
                             <CartesianGrid stroke={chartGrid} vertical={false} />
@@ -1781,7 +1781,7 @@ function ReportsTab({ ac }: { ac: Company }) {
                     {extracted.followerCount != null && (
                       <div style={glass({ padding: "20px 24px" })}>
                         <div className="label" style={{ marginBottom: "6px" }}>Follower Summary</div>
-                        <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "16px", fontWeight: 300, fontStyle: "italic", color: T, marginBottom: "20px" }}>End of period</div>
+                        <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "16px", fontWeight: 300, fontStyle: "normal", color: T, marginBottom: "20px" }}>End of period</div>
                         <div style={{ display: "flex", gap: "24px", alignItems: "flex-end" }}>
                           <div>
                             <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "48px", fontWeight: 300, color: T, lineHeight: 1, letterSpacing: "-0.02em" }}>{fmtN(extracted.followerCount)}</div>
@@ -1810,7 +1810,7 @@ function ReportsTab({ ac }: { ac: Company }) {
                   <div style={glass()}>
                     <div style={{ padding: "16px 20px", borderBottom: "1px solid rgba(26,26,26,0.08)" }}>
                       <div className="label" style={{ marginBottom: "4px" }}>Post Performance</div>
-                      <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "18px", fontWeight: 300, fontStyle: "italic", color: T }}>Sortable by any metric</div>
+                      <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "18px", fontWeight: 300, fontStyle: "normal", color: T }}>Sortable by any metric</div>
                     </div>
                     <table style={{ width: "100%", borderCollapse: "collapse" }}>
                       <thead>
@@ -1859,7 +1859,7 @@ function ReportsTab({ ac }: { ac: Company }) {
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
                     <div>
                       <div className="label" style={{ marginBottom: "4px" }}>Narrative</div>
-                      <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "18px", fontWeight: 300, fontStyle: "italic", color: T }}>AI-generated analysis</div>
+                      <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "18px", fontWeight: 300, fontStyle: "normal", color: T }}>AI-generated analysis</div>
                     </div>
                     <div style={{ display: "flex", gap: "4px" }}>
                       {(["agency", "client"] as const).map(t => (
@@ -2265,7 +2265,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
         <div>
           <div className="label" style={{ marginBottom: "6px" }}>Portfolio</div>
-          <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "32px", fontWeight: 300, fontStyle: "italic", color: T, lineHeight: 1 }}>Clients</div>
+          <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "32px", fontWeight: 300, fontStyle: "normal", color: T, lineHeight: 1 }}>Clients</div>
           <div style={{ fontSize: "11px", color: T3, marginTop: "4px" }}>{clients.length} active clients</div>
         </div>
         <GlassBtn variant="primary" onClick={() => { setShowForm(s => !s); setSelectedClient(null); setEditForm(null); }}>
@@ -2306,7 +2306,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
             <div style={{ marginBottom: "12px" }}>
               <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "18px", fontWeight: 300, color: T, letterSpacing: "-0.01em" }}>{c.name}</div>
             </div>
-            <div style={{ fontSize: "12px", fontStyle: "italic", color: T3, marginBottom: "12px", fontFamily: "var(--font-raleway), sans-serif" }}>{c.tagline}</div>
+            <div style={{ fontSize: "12px", fontStyle: "normal", color: T3, marginBottom: "12px", fontFamily: "var(--font-raleway), sans-serif" }}>{c.tagline}</div>
             <div style={{ fontSize: "10px", color: T3, marginBottom: "12px", letterSpacing: "0.08em", textTransform: "uppercase" as const }}>{c.timezone}</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
               {(Array.isArray(c.pillars) ? c.pillars : []).slice(0, 4).map((p: Record<string, unknown>, i: number) => (
@@ -2325,7 +2325,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
           <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: "24px" }}>
             <div>
               <div className="label" style={{ marginBottom: "4px" }}>Editing</div>
-              <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "22px", fontWeight: 300, fontStyle: "italic", color: T }}>
+              <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "22px", fontWeight: 300, fontStyle: "normal", color: T }}>
                 {selectedClient.name}
               </div>
             </div>
@@ -2614,7 +2614,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
         <div className="fade-up" style={glass({ padding: "32px" })}>
           <div style={{ marginBottom: "20px" }}>
             <div className="label" style={{ marginBottom: "4px" }}>Add</div>
-            <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "22px", fontWeight: 300, fontStyle: "italic", color: T }}>New Client</div>
+            <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "22px", fontWeight: 300, fontStyle: "normal", color: T }}>New Client</div>
           </div>
 
 {/* URL extractor */}
@@ -2979,7 +2979,7 @@ const [editSaving, setEditSaving] = useState(false);
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
         <div>
           <div className="label" style={{ marginBottom: "6px" }}>Billing</div>
-          <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "32px", fontWeight: 300, fontStyle: "italic", color: T, lineHeight: 1 }}>Invoices</div>
+          <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "32px", fontWeight: 300, fontStyle: "normal", color: T, lineHeight: 1 }}>Invoices</div>
           <div style={{ fontSize: "11px", color: T3, marginTop: "4px" }}>{invoices.length} invoices total</div>
         </div>
         <GlassBtn variant="primary" onClick={() => { setShowForm(true); setEditId(null); }}>
@@ -2993,7 +2993,7 @@ const [editSaving, setEditSaving] = useState(false);
           <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: "24px" }}>
             <div>
               <div className="label" style={{ marginBottom: "4px" }}>{editId ? "Edit" : "New"}</div>
-              <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "20px", fontWeight: 300, fontStyle: "italic", color: T }}>Invoice</div>
+              <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "20px", fontWeight: 300, fontStyle: "normal", color: T }}>Invoice</div>
             </div>
             <GlassBtn onClick={() => setShowForm(false)} variant="ghost">✕</GlassBtn>
           </div>
@@ -3101,7 +3101,7 @@ const [editSaving, setEditSaving] = useState(false);
       {invoices.length === 0 && !showForm ? (
         <div style={{ textAlign: "center", padding: "100px 0" }}>
           <div style={{ width: "32px", height: "1px", background: GOLD, opacity: 0.3, margin: "0 auto 20px" }} />
-          <p style={{ fontSize: "14px", color: T3, fontFamily: "var(--font-raleway), sans-serif", fontStyle: "italic" }}>No invoices yet. Create your first one above.</p>
+          <p style={{ fontSize: "14px", color: T3, fontFamily: "var(--font-raleway), sans-serif", fontStyle: "normal" }}>No invoices yet. Create your first one above.</p>
         </div>
       ) : (
         <div style={glass()}>
@@ -3171,7 +3171,7 @@ function LandingPage() {
       }}>
         {/* Logo left */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/linkwright-logo.png" alt="Linkwright" style={{ height: "170px", objectFit: "contain" }} />
+        <img src="/linkwright-logo-white.png" alt="Linkwright" style={{ height: "26px", width: "auto", objectFit: "contain", filter: "brightness(0)" }} />
 
         {/* Nav right */}
         <div style={{ display: "flex", alignItems: "center", gap: "32px" }}>
@@ -3230,7 +3230,7 @@ function LandingPage() {
             marginBottom: "32px",
           }}>
             Build influence.<br/>
-            <em style={{ fontStyle: "italic", color: "rgba(26,26,26,0.50)" }}>Generate pipeline.</em><br/>
+            <em style={{ fontStyle: "normal", color: "rgba(26,26,26,0.50)" }}>Generate pipeline.</em><br/>
             Stay authentic.
           </h1>
 
@@ -3291,14 +3291,14 @@ function LandingPage() {
             <div style={{ width: "1px", height: "40px", background: "rgba(244,241,236,0.20)", marginBottom: "20px" }} />
             <p style={{
               fontFamily: "var(--font-raleway), sans-serif",
-              fontSize: "20px", fontWeight: 300, fontStyle: "italic",
+              fontSize: "20px", fontWeight: 300, fontStyle: "normal",
               color: "rgba(244,241,236,0.70)", lineHeight: 1.5, maxWidth: "320px",
             }}>
               "Your LinkedIn profile is your most valuable real estate in professional media."
             </p>
             <div style={{ marginTop: "24px" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/linkwright-logo.png" alt="Linkwright" style={{ height: "20px", objectFit: "contain", filter: "brightness(0) invert(1)", opacity: 0.35 }} />
+              <img src="/linkwright-logo-white.png" alt="Linkwright" style={{ height: "20px", objectFit: "contain", filter: "brightness(0) invert(1)", opacity: 0.35 }} />
             </div>
           </div>
         </div>
@@ -3314,7 +3314,7 @@ function LandingPage() {
           {taglineItems.map((t, i) => (
             <span key={i} style={{
               fontFamily: "var(--font-raleway), sans-serif",
-              fontSize: "17px", fontWeight: 300, fontStyle: "italic",
+              fontSize: "17px", fontWeight: 300, fontStyle: "normal",
               color: t === "·" ? "rgba(244,241,236,0.25)" : "rgba(244,241,236,0.80)",
               flexShrink: 0,
             }}>{t}</span>
@@ -3365,7 +3365,7 @@ function LandingPage() {
       <section style={{ background: "#1A1814", padding: "100px 48px" }}>
         <h2 style={{
           fontFamily: "var(--font-raleway), sans-serif",
-          fontSize: "clamp(36px, 5vw, 68px)", fontWeight: 300, fontStyle: "italic",
+          fontSize: "clamp(36px, 5vw, 68px)", fontWeight: 300, fontStyle: "normal",
           lineHeight: 1.1, color: "rgba(244,241,236,0.90)",
           maxWidth: "800px", margin: "0 auto 64px", textAlign: "center",
         }}>
@@ -3406,7 +3406,7 @@ function LandingPage() {
             lineHeight: 1.1, letterSpacing: "-0.02em", color: "#1A1A1A",
             marginBottom: "24px",
           }}>
-            Two ways<br/><em style={{ fontStyle: "italic", color: "rgba(26,26,26,0.50)" }}>into the platform.</em>
+            Two ways<br/><em style={{ fontStyle: "normal", color: "rgba(26,26,26,0.50)" }}>into the platform.</em>
           </h2>
           <p style={{ fontSize: "15px", fontWeight: 300, lineHeight: 1.8, color: "rgba(26,26,26,0.55)", maxWidth: "400px" }}>
             Clients review and approve content through the dedicated portal. Our internal team manages production in the studio.
@@ -3464,11 +3464,11 @@ function LandingPage() {
           <div>
             <div style={{ marginBottom: "20px" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/linkwright-logo.png" alt="Linkwright" style={{ height: "32px", objectFit: "contain", filter: "brightness(0) invert(1)" }} />
+              <img src="/linkwright-logo-white.png" alt="Linkwright" style={{ height: "32px", objectFit: "contain", filter: "brightness(0) invert(1)" }} />
             </div>
             <p style={{
               fontFamily: "var(--font-raleway), sans-serif",
-              fontSize: "17px", fontWeight: 300, fontStyle: "italic",
+              fontSize: "17px", fontWeight: 300, fontStyle: "normal",
               color: "rgba(244,241,236,0.55)", lineHeight: 1.6, maxWidth: "280px",
             }}>
               Engineered for LinkedIn. Optimised for 2026.
@@ -4229,11 +4229,11 @@ if (loadingClients || !ac || !ap) {
           {/* Logo + tagline */}
           <a href="/" style={{ flexShrink: 0, textDecoration: "none", display: "flex", alignItems: "center", gap: "20px" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/linkwright-logo.png" alt="Linkwright" style={{ height: "170px", objectFit: "contain" }} />
+            <img src="/linkwright-logo-white.png" alt="Linkwright" style={{ height: "26px", width: "auto", objectFit: "contain", filter: "brightness(0)" }} />
             <div style={{ width: "0.5px", height: "28px", background: "rgba(26,24,20,0.15)" }} />
             <span style={{
               fontFamily: "var(--font-raleway), sans-serif",
-              fontSize: "13px", fontWeight: 300, fontStyle: "italic",
+              fontSize: "13px", fontWeight: 300, fontStyle: "normal",
               color: "rgba(26,24,20,0.45)", letterSpacing: "0.01em", whiteSpace: "nowrap",
             }}>
               Engineered for LinkedIn. Optimised for 2026.
@@ -4422,7 +4422,7 @@ if (loadingClients || !ac || !ap) {
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(244,241,236,0.80) 0%, rgba(244,241,236,0.60) 100%)" }} />
         <div style={{ position: "relative", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: "10px" }}>
           <div style={{ width: "28px", height: "1px", background: "#E30000" }} />
-          <p style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "clamp(18px, 2vw, 28px)", fontWeight: 300, fontStyle: "italic", color: "#1A1814", letterSpacing: "-0.01em" }}>
+          <p style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "clamp(18px, 2vw, 28px)", fontWeight: 300, fontStyle: "normal", color: "#1A1814", letterSpacing: "-0.01em" }}>
             {ac ? ac.name : "Content Studio"}
           </p>
           <div style={{ width: "28px", height: "1px", background: "#E30000" }} />

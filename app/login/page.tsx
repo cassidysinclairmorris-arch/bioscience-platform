@@ -2,13 +2,20 @@
 
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { companies } from "@/lib/companies";
+
+const RED = "#E30000";
+const BLACK = "#0A0A0A";
+const WHITE = "#FFFFFF";
+const BORDER = "#E5E5E5";
+const FONT = "Helvetica, Arial, sans-serif";
+const DISPLAY = "var(--font-raleway), sans-serif";
 
 export default function LoginPage() {
-  const [email, setEmail]       = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError]       = useState("");
-  const [loading, setLoading]   = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [focus, setFocus] = useState("");
   const router = useRouter();
 
   const handleSubmit = async (e: FormEvent) => {
@@ -29,261 +36,131 @@ export default function LoginPage() {
     }
   };
 
+  const input = (k: string): React.CSSProperties => ({
+    width: "100%",
+    background: WHITE,
+    border: `1px solid ${error && k === "password" ? RED : focus === k ? BLACK : BORDER}`,
+    borderRadius: 10,
+    padding: "14px 16px",
+    fontFamily: FONT,
+    fontSize: 15,
+    color: BLACK,
+    outline: "none",
+    boxSizing: "border-box",
+  });
+
   return (
-    <div style={{ minHeight: "100vh", background: "#F5F2EE", display: "flex", alignItems: "stretch" }}>
-
-      {/* Back to main site */}
-      <a href="/" style={{
-        position: "fixed", top: "20px", left: "24px", zIndex: 100,
-        fontSize: "12px", fontWeight: 500,
-        color: "rgba(26,26,26,0.45)",
-        textDecoration: "none",
-        display: "inline-flex", alignItems: "center", gap: "6px",
-        fontFamily: "var(--font-dm-sans, system-ui, sans-serif)",
-        transition: "color 0.15s ease",
-      }}
-        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "#1A1A1A"; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "rgba(26,26,26,0.45)"; }}
+    <div style={{ minHeight: "100vh", display: "flex", fontFamily: FONT, background: WHITE }}>
+      {/* Left: red hero panel (matches the homepage hero) */}
+      <div
+        className="login-hero"
+        style={{ flex: 1, background: RED, display: "none", position: "relative", overflow: "hidden", padding: 48 }}
       >
-        ← Back to main site
-      </a>
-
-      {/* ── Left panel — editorial image ──────────────────────────────────── */}
-      <div style={{
-        flex: "1 1 0",
-        position: "relative",
-        display: "none",
-        overflow: "hidden",
-      }} className="login-left">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/images/login.png"
-          alt=""
-          aria-hidden="true"
+        <div
+          aria-hidden
           style={{
-            position: "absolute", inset: 0,
-            width: "100%", height: "100%",
-            objectFit: "cover",
-            filter: "brightness(0.48) contrast(1.2) saturate(0.7)",
+            position: "absolute",
+            inset: 0,
+            backgroundImage: "radial-gradient(#C40000 1.5px, transparent 1.5px)",
+            backgroundSize: "20px 20px",
+            opacity: 0.5,
           }}
         />
-        <div style={{
-          position: "absolute", inset: 0,
-          background: "linear-gradient(135deg, rgba(245,242,238,0.15) 0%, rgba(26,26,26,0.55) 100%)",
-        }} />
-        {/* Caption */}
-        <div style={{
-          position: "absolute", bottom: "48px", left: "48px", right: "48px",
-          color: "#F5F2EE",
-        }}>
-          <div style={{
-            width: "32px", height: "1px",
-            background: "#C9A84C",
-            marginBottom: "16px",
-          }} />
-          <div style={{
-            fontFamily: "var(--font-playfair, var(--font-cormorant, Georgia, serif))",
-            fontSize: "28px",
-            fontWeight: 400,
-            fontStyle: "italic",
-            letterSpacing: "-0.02em",
-            lineHeight: 1.2,
-            marginBottom: "8px",
-          }}>
-            Content that moves markets.
-          </div>
-          <div style={{
-            fontSize: "13px",
-            color: "rgba(245,242,238,0.55)",
-            letterSpacing: "0.06em",
-          }}>
-            Linkwright Studios · Bioscience Portfolio
+        <div style={{ position: "relative", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+          <img src="/linkwright-logo-white.png" alt="Linkwright" style={{ height: 26, width: "auto", display: "block" }} />
+          <div>
+            <h1
+              style={{
+                fontFamily: DISPLAY,
+                fontWeight: 100,
+                fontSize: "clamp(56px, 8vw, 104px)",
+                letterSpacing: "0.15em",
+                color: WHITE,
+                lineHeight: 1,
+                margin: 0,
+              }}
+            >
+              LINKWRIGHT
+            </h1>
+            <p style={{ fontFamily: FONT, fontSize: 14, color: "rgba(255,255,255,0.85)", marginTop: 20, letterSpacing: "0.04em" }}>
+              Content Studio. Internal access.
+            </p>
           </div>
         </div>
       </div>
 
-      {/* ── Right panel — login form ────────────────────────────────────────── */}
-      <div style={{
-        width: "100%",
-        maxWidth: "700px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "32px 40px",
-        background: "#F5F2EE",
-        position: "relative",
-      }}>
+      {/* Right: form */}
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 32, position: "relative" }}>
+        <a href="/" style={{ position: "fixed", top: 20, left: 24, fontFamily: FONT, fontSize: 13, color: "#666666", textDecoration: "none" }}>
+          ← Back to main site
+        </a>
 
-        {/* Gold top accent line */}
-        <div style={{
-          position: "absolute", top: 0, left: 0, right: 0,
-          height: "2px",
-          background: "linear-gradient(90deg, #C9A84C 0%, transparent 100%)",
-        }} />
+        <div style={{ width: "100%", maxWidth: 400 }}>
+          <img
+            src="/linkwright-logo-white.png"
+            alt="Linkwright"
+            style={{ height: 26, width: "auto", display: "block", filter: "brightness(0)", marginBottom: 36 }}
+          />
 
-        <div className="fade-up" style={{ width: "100%", maxWidth: "640px", textAlign: "center" }}>
+          <span style={{ fontFamily: DISPLAY, fontWeight: 400, fontSize: 11, letterSpacing: "0.25em", textTransform: "uppercase", color: RED }}>
+            ( Agency )
+          </span>
+          <h2 style={{ fontFamily: DISPLAY, fontWeight: 400, fontSize: 28, color: BLACK, margin: "12px 0 6px" }}>Sign In</h2>
+          <p style={{ fontFamily: FONT, fontSize: 14, color: "#666666", margin: "0 0 28px" }}>Access the content studio.</p>
 
-          {/* Wordmark */}
-          <div style={{ marginBottom: "28px" }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/linkwright-logo.png" alt="Linkwright" style={{ width: "300px", maxWidth: "100%", height: "auto", objectFit: "contain", marginBottom: "12px", display: "block", marginLeft: "auto", marginRight: "auto" }} />
-            <div style={{
-              width: "28px", height: "1px",
-              background: "#C9A84C",
-              marginBottom: "8px",
-              marginLeft: "auto", marginRight: "auto",
-            }} />
-            <div style={{
-              fontSize: "11px",
-              color: "rgba(26,26,26,0.40)",
-              letterSpacing: "0.14em",
-              textTransform: "uppercase",
-              fontFamily: "var(--font-inter, system-ui, sans-serif)",
-            }}>
-              {companies.length} Companies · Content Studio
-            </div>
-          </div>
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-
-            <div>
-              <label style={{
-                display: "block",
-                fontSize: "10px", fontWeight: 500,
-                letterSpacing: "0.14em", textTransform: "uppercase",
-                color: "rgba(26,26,26,0.45)",
-                marginBottom: "8px",
-                fontFamily: "var(--font-inter, system-ui, sans-serif)",
-              }}>
-                Email address
-              </label>
+          <form onSubmit={handleSubmit}>
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ fontFamily: FONT, fontSize: 14, color: BLACK, marginBottom: 8 }}>Email</div>
               <input
                 type="email"
                 value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="you@linkwright.com"
+                onChange={(e) => setEmail(e.target.value)}
+                onFocus={() => setFocus("email")}
+                onBlur={() => setFocus("")}
+                placeholder="you@linkwrightstudio.com"
                 autoFocus
-                style={{
-                  width: "100%",
-                  background: "#FFFFFF",
-                  border: "1px solid rgba(26,26,26,0.12)",
-                  borderRadius: "5px",
-                  padding: "12px 16px",
-                  fontSize: "14px",
-                  color: "#1A1A1A",
-                  outline: "none",
-                  fontFamily: "inherit",
-                  transition: "border-color 0.2s",
-                }}
-                onFocus={e => e.target.style.borderColor = "rgba(201,168,76,0.55)"}
-                onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
+                style={input("email")}
               />
             </div>
-
-            <div>
-              <label style={{
-                display: "block",
-                fontSize: "10px", fontWeight: 500,
-                letterSpacing: "0.14em", textTransform: "uppercase",
-                color: "rgba(26,26,26,0.45)",
-                marginBottom: "8px",
-                fontFamily: "var(--font-inter, system-ui, sans-serif)",
-              }}>
-                Password
-              </label>
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontFamily: FONT, fontSize: 14, color: BLACK, marginBottom: 8 }}>Password</div>
               <input
                 type="password"
                 value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="••••••••••••"
-                style={{
-                  width: "100%",
-                  background: "#FFFFFF",
-                  border: `1px solid ${error ? "rgba(204,51,51,0.40)" : "rgba(26,26,26,0.12)"}`,
-                  borderRadius: "5px",
-                  padding: "12px 16px",
-                  fontSize: "14px",
-                  color: "#1A1A1A",
-                  outline: "none",
-                  fontFamily: "inherit",
-                  transition: "border-color 0.2s",
-                }}
-                onFocus={e => e.target.style.borderColor = error ? "rgba(204,51,51,0.60)" : "rgba(201,168,76,0.55)"}
-                onBlur={e => e.target.style.borderColor = error ? "rgba(204,51,51,0.40)" : "rgba(26,26,26,0.12)"}
+                onChange={(e) => setPassword(e.target.value)}
+                onFocus={() => setFocus("password")}
+                onBlur={() => setFocus("")}
+                placeholder="Your password"
+                style={input("password")}
               />
             </div>
 
-            {error && (
-              <div className="fade-up" style={{
-                fontSize: "13px", color: "#cc3333",
-                padding: "10px 14px",
-                background: "rgba(204,51,51,0.06)",
-                border: "1px solid rgba(204,51,51,0.18)",
-                borderRadius: "5px",
-              }}>
-                {error}
-              </div>
-            )}
+            {error && <p style={{ fontFamily: FONT, fontSize: 14, color: RED, margin: "0 0 18px" }}>{error}</p>}
 
             <button
               type="submit"
               disabled={loading || !password}
               style={{
-                marginTop: "4px",
-                padding: "13px 20px",
-                background: loading || !password ? "rgba(26,26,26,0.04)" : "#1A1A1A",
-                border: `1px solid ${loading || !password ? "rgba(26,26,26,0.10)" : "#1A1A1A"}`,
-                borderRadius: "5px",
-                fontSize: "12px",
-                fontWeight: 500,
-                letterSpacing: "0.10em",
-                textTransform: "uppercase",
-                color: loading || !password ? "rgba(26,26,26,0.30)" : "#F5F2EE",
-                cursor: loading || !password ? "not-allowed" : "pointer",
-                transition: "all 0.2s ease",
-                fontFamily: "var(--font-inter, system-ui, sans-serif)",
-                display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+                width: "100%",
+                background: BLACK,
+                color: WHITE,
+                fontFamily: FONT,
+                fontWeight: 600,
+                fontSize: 15,
+                border: "none",
+                borderRadius: 999,
+                padding: "15px 0",
+                cursor: loading || !password ? "default" : "pointer",
+                opacity: loading || !password ? 0.55 : 1,
               }}
-              onMouseEnter={e => { if (!loading && password) (e.currentTarget as HTMLElement).style.background = "#2a2a2a"; }}
-              onMouseLeave={e => { if (!loading && password) (e.currentTarget as HTMLElement).style.background = "#1A1A1A"; }}
             >
-              {loading ? (
-                <>
-                  <span style={{ width: "13px", height: "13px", border: "1.5px solid rgba(245,242,238,0.25)", borderTopColor: "#F5F2EE", borderRadius: "50%", animation: "spin 0.7s linear infinite", display: "inline-block", flexShrink: 0 }} />
-                  Signing in
-                </>
-              ) : "Sign in →"}
+              {loading ? "Signing in..." : "Sign In"}
             </button>
           </form>
-
-          {/* Footer */}
-          <div style={{
-            marginTop: "24px",
-            paddingTop: "16px",
-            borderTop: "1px solid rgba(26,26,26,0.08)",
-            fontSize: "11px",
-            color: "rgba(26,26,26,0.30)",
-            letterSpacing: "0.06em",
-            textAlign: "center",
-            fontFamily: "var(--font-inter, system-ui, sans-serif)",
-          }}>
-            Gorlin Companies · Internal Studio
-          </div>
         </div>
       </div>
 
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(18px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        .fade-up { animation: fadeUp 0.45s cubic-bezier(0.16,1,0.3,1) both; }
-        @media (min-width: 900px) {
-          .login-left { display: block !important; }
-        }
-      `}</style>
+      <style>{`@media (min-width: 900px) { .login-hero { display: block !important; } }`}</style>
     </div>
   );
 }

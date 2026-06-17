@@ -113,7 +113,7 @@ function DashboardTab({ client, pendingPosts, postedPosts, accentColor, onNaviga
           <span style={{ display: "block", width: "24px", height: "0.5px", background: "#E30000", flexShrink: 0 }} />
           Client Portal
         </p>
-        <h2 style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "clamp(26px, 2.5vw, 40px)", fontWeight: 300, fontStyle: "italic", lineHeight: 1.15, letterSpacing: "-0.01em", color: "#1A1A1A", marginBottom: "12px" }}>
+        <h2 style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "clamp(26px, 2.5vw, 40px)", fontWeight: 300, fontStyle: "normal", lineHeight: 1.15, letterSpacing: "-0.01em", color: "#1A1A1A", marginBottom: "12px" }}>
           Welcome back, {client.name}
         </h2>
         {client.tagline && (
@@ -150,7 +150,7 @@ function DashboardTab({ client, pendingPosts, postedPosts, accentColor, onNaviga
       {pendingPosts.length > 0 && (
         <div style={glass({ padding: "0", overflow: "hidden" })}>
           <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(26,26,26,0.08)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "24px", fontWeight: 300, fontStyle: "italic", letterSpacing: "-0.01em" }}>Needs Your Review</div>
+            <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "24px", fontWeight: 300, fontStyle: "normal", letterSpacing: "-0.01em" }}>Needs Your Review</div>
             <StatusPill status="pending_approval" />
           </div>
           <div style={{ display: "flex", flexDirection: "column" }}>
@@ -216,7 +216,7 @@ function ApprovalTab({ client, pendingPosts, accentColor, onRefresh, onToast }: 
             <path d="M5 13l4 4L19 7" stroke="#E30000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </div>
-        <div style={{ fontSize: "30px", fontWeight: 300, fontStyle: "italic", color: "#1A1A1A", marginBottom: "8px", fontFamily: "var(--font-raleway), sans-serif" }}>All caught up!</div>
+        <div style={{ fontSize: "30px", fontWeight: 300, fontStyle: "normal", color: "#1A1A1A", marginBottom: "8px", fontFamily: "var(--font-raleway), sans-serif" }}>All caught up!</div>
         <p style={{ fontSize: "14px", color: "rgba(26,26,26,0.40)" }}>No posts are waiting for your approval right now.</p>
       </div>
     );
@@ -225,7 +225,7 @@ function ApprovalTab({ client, pendingPosts, accentColor, onRefresh, onToast }: 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
-        <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "32px", fontWeight: 300, fontStyle: "italic", letterSpacing: "-0.02em" }}>Approval Queue</div>
+        <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "32px", fontWeight: 300, fontStyle: "normal", letterSpacing: "-0.02em" }}>Approval Queue</div>
         <span style={{ fontSize: "12px", fontWeight: 600, padding: "3px 10px", background: "rgba(227,0,0,0.10)", border: "1px solid rgba(227,0,0,0.30)", color: "#B00000", borderRadius: "20px" }}>
           {pendingPosts.length} pending
         </span>
@@ -331,7 +331,7 @@ function HistoryTab({ postedPosts, analytics, accentColor }: {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-      <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "32px", fontWeight: 300, fontStyle: "italic", letterSpacing: "-0.02em", marginBottom: "8px" }}>
+      <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "32px", fontWeight: 300, fontStyle: "normal", letterSpacing: "-0.02em", marginBottom: "8px" }}>
         Post History
       </div>
       {postedPosts.map((p, i) => {
@@ -435,7 +435,7 @@ function ReportsTab({ client, accentColor }: {
         <div style={{ width: 56, height: 56, borderRadius: "50%", background: `${accentColor}12`, border: `1px solid ${accentColor}30`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "8px" }}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M4 18V6a2 2 0 012-2h9l5 5v9a2 2 0 01-2 2H6a2 2 0 01-2-2z" stroke={accentColor} strokeWidth="1.5"/><path d="M14 4v5h5M8 12h8M8 16h5" stroke={accentColor} strokeWidth="1.5" strokeLinecap="round"/></svg>
         </div>
-        <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "22px", fontWeight: 300, fontStyle: "italic", color: "#1A1A1A" }}>No published reports yet</div>
+        <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "22px", fontWeight: 300, fontStyle: "normal", color: "#1A1A1A" }}>No published reports yet</div>
         <div style={{ fontSize: "13px", color: "rgba(26,26,26,0.50)" }}>Your Linkwright team will publish performance reports here.</div>
       </div>
     );
@@ -465,14 +465,14 @@ function ReportsTab({ client, accentColor }: {
           {/* Brand header */}
           <div style={{ background: `linear-gradient(135deg, ${accentColor}18, ${accentColor}08)`, border: `1px solid ${accentColor}30`, borderRadius: "16px", padding: "24px 28px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div>
-              <div style={{ fontSize: "32px", fontWeight: 300, fontStyle: "italic", fontFamily: "var(--font-raleway), sans-serif", color: "#1A1A1A", letterSpacing: "-0.02em", marginBottom: "4px" }}>{client.name}</div>
+              <div style={{ fontSize: "32px", fontWeight: 300, fontStyle: "normal", fontFamily: "var(--font-raleway), sans-serif", color: "#1A1A1A", letterSpacing: "-0.02em", marginBottom: "4px" }}>{client.name}</div>
               <div style={{ fontSize: "12px", color: "rgba(26,26,26,0.45)" }}>{selectedReport.period_start} – {selectedReport.period_end}</div>
               {selectedReport.published_at && <div style={{ fontSize: "11px", color: "rgba(26,26,26,0.35)", marginTop: "4px" }}>Published {new Date(selectedReport.published_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</div>}
             </div>
             <div style={{ textAlign: "right" }}>
               <div style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(26,26,26,0.35)", marginBottom: "6px" }}>Prepared by</div>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/linkwright-logo.png" alt="Linkwright" style={{ height: "20px", objectFit: "contain" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+              <img src="/linkwright-logo-white.png" alt="Linkwright" style={{ height: "20px", width: "auto", objectFit: "contain", filter: "brightness(0)" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
             </div>
           </div>
 
@@ -499,7 +499,7 @@ function ReportsTab({ client, accentColor }: {
           {extracted?.posts && extracted.posts.length > 0 && (
             <div style={glass({ overflow: "hidden" })}>
               <div style={{ padding: "16px 22px", borderBottom: "1px solid rgba(26,26,26,0.08)" }}>
-                <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "22px", fontWeight: 300, fontStyle: "italic" }}>Top Posts This Period</div>
+                <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "22px", fontWeight: 300, fontStyle: "normal" }}>Top Posts This Period</div>
               </div>
               <div>
                 {extracted.posts.slice(0, 5).map((p, i) => (
@@ -524,7 +524,7 @@ function ReportsTab({ client, accentColor }: {
           {/* Client narrative — NEVER show agency narrative */}
           {selectedReport.narrative_client && (
             <div style={glass({ padding: "24px 28px" })}>
-              <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "22px", fontWeight: 300, fontStyle: "italic", marginBottom: "16px" }}>Performance Summary</div>
+              <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "22px", fontWeight: 300, fontStyle: "normal", marginBottom: "16px" }}>Performance Summary</div>
               <p style={{ fontSize: "14px", lineHeight: 1.8, color: "rgba(26,26,26,0.75)", whiteSpace: "pre-wrap" }}>{selectedReport.narrative_client}</p>
             </div>
           )}
@@ -615,7 +615,7 @@ function TeamTab({ myRole, accentColor, onToast }: {
 
   return (
     <div style={{ maxWidth: "980px", margin: "0 auto" }}>
-      <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "26px", fontWeight: 300, fontStyle: "italic", marginBottom: "6px" }}>Team</div>
+      <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "26px", fontWeight: 300, fontStyle: "normal", marginBottom: "6px" }}>Team</div>
       <p style={{ fontSize: "13px", color: "rgba(26,26,26,0.55)", marginBottom: "24px" }}>
         Manage administrators and users for your company.
       </p>
@@ -750,7 +750,7 @@ function MessagesTab({ accentColor, onViewed }: { accentColor: string; onViewed:
 
   return (
     <div style={{ maxWidth: "760px", margin: "0 auto" }}>
-      <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "26px", fontWeight: 300, fontStyle: "italic", marginBottom: "6px" }}>Messages</div>
+      <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "26px", fontWeight: 300, fontStyle: "normal", marginBottom: "6px" }}>Messages</div>
       <p style={{ fontSize: "13px", color: "rgba(26,26,26,0.55)", marginBottom: "24px" }}>Message your team at Linkwright. We reply here.</p>
 
       <div style={{ background: "#FFFFFF", border: "1px solid rgba(26,26,26,0.10)", borderRadius: "16px", padding: "24px", minHeight: "320px", display: "flex", flexDirection: "column", gap: "14px" }}>
@@ -951,11 +951,11 @@ export default function PortalPage() {
           {/* Logo + tagline */}
           <a href="/" style={{ flexShrink: 0, textDecoration: "none", display: "flex", alignItems: "center", gap: "20px" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/linkwright-logo.png" alt="Linkwright" style={{ height: "170px", objectFit: "contain" }} />
+            <img src="/linkwright-logo-white.png" alt="Linkwright" style={{ height: "26px", width: "auto", objectFit: "contain", filter: "brightness(0)" }} />
             <div style={{ width: "0.5px", height: "28px", background: "rgba(26,24,20,0.15)" }} />
             <span style={{
               fontFamily: "var(--font-raleway), sans-serif",
-              fontSize: "13px", fontWeight: 300, fontStyle: "italic",
+              fontSize: "13px", fontWeight: 300, fontStyle: "normal",
               color: "rgba(26,24,20,0.45)", letterSpacing: "0.01em", whiteSpace: "nowrap",
             }}>
               Engineered for LinkedIn. Optimised for 2026.
@@ -1019,7 +1019,7 @@ export default function PortalPage() {
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(244,241,236,0.78) 0%, rgba(244,241,236,0.58) 100%)" }} />
         <div style={{ position: "relative", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "0 48px" }}>
           <div style={{ width: "28px", height: "1px", background: accentColor, marginBottom: "20px", opacity: 0.8 }} />
-          <p style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "clamp(22px, 3vw, 42px)", fontWeight: 300, fontStyle: "italic", color: "#1A1814", lineHeight: 1.2, maxWidth: "600px", letterSpacing: "-0.01em" }}>
+          <p style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "clamp(22px, 3vw, 42px)", fontWeight: 300, fontStyle: "normal", color: "#1A1814", lineHeight: 1.2, maxWidth: "600px", letterSpacing: "-0.01em" }}>
             {client.name}
           </p>
           {client.tagline && (
