@@ -73,18 +73,18 @@ export default function ClientLoginPage() {
             opacity: 0.5,
           }}
         />
-        <div style={{ position: "relative", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-          <img src="/linkwright-logo-white.png" alt="Linkwright" style={{ height: 26, width: "auto", display: "block" }} />
+        <div style={{ position: "relative", height: "100%", display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
           <div>
             <h1
               style={{
                 fontFamily: DISPLAY,
                 fontWeight: 100,
-                fontSize: "clamp(56px, 8vw, 104px)",
-                letterSpacing: "0.15em",
+                fontSize: "clamp(34px, 5vw, 64px)",
+                letterSpacing: "0.08em",
                 color: WHITE,
                 lineHeight: 1,
                 margin: 0,
+                whiteSpace: "nowrap",
               }}
             >
               LINKWRIGHT
