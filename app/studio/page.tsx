@@ -136,37 +136,37 @@ const LOGO_FILES: Record<string, string> = {
 
 
 // ── Style helpers ─────────────────────────────────────────────────────────────
-const T = "#1A1A1A";           // primary text
-const T2 = "rgba(26,26,26,0.55)";
-const T3 = "rgba(26,26,26,0.35)";
+const T = "#0A0A0A";           // primary text
+const T2 = "#666666";          // secondary text
+const T3 = "#999999";          // muted text
 const GOLD = "#E30000";
 
 const glass = (extra?: React.CSSProperties): React.CSSProperties => ({
   background: "#FFFFFF",
-  border: "1px solid rgba(26,26,26,0.08)",
-  borderRadius: "8px",
+  border: "1px solid #E5E5E5",
+  borderRadius: "12px",
   ...extra,
 });
 
 const glassElevated = (extra?: React.CSSProperties): React.CSSProperties => ({
   background: "#F5F5F5",
-  border: "1px solid rgba(26,26,26,0.08)",
-  borderRadius: "8px",
+  border: "1px solid #E5E5E5",
+  borderRadius: "12px",
   ...extra,
 });
 
 const INPUT: React.CSSProperties = {
   width: "100%",
   background: "#FFFFFF",
-  border: "1px solid rgba(26,26,26,0.12)",
-  borderRadius: "6px",
-  padding: "11px 14px",
+  border: "1px solid #E5E5E5",
+  borderRadius: "8px",
+  padding: "10px 12px",
   fontSize: "14px",
-  color: "#1A1A1A",
+  color: "#0A0A0A",
   outline: "none",
-  fontFamily: "inherit",
-  lineHeight: 1.7,
-  transition: "border-color 0.2s",
+  fontFamily: "Helvetica, Arial, sans-serif",
+  lineHeight: 1.6,
+  transition: "all 0.15s ease",
 };
 
 // ── Sub-components ────────────────────────────────────────────────────────────
@@ -191,20 +191,20 @@ function CompanyLogo({ company, overlay }: { company: Company; overlay?: boolean
 
 function StatusBadge({ status }: { status: string }) {
   const cfg: Record<string, { bg: string; color: string; border: string }> = {
-    draft:            { bg: "rgba(26,26,26,0.04)",    color: T2,        border: "rgba(26,26,26,0.12)"     },
-    pending_approval: { bg: "rgba(227,0,0,0.08)",  color: "#B00000", border: "rgba(227,0,0,0.30)"   },
-    approved:         { bg: "rgba(34,85,204,0.08)",   color: "#2255CC", border: "rgba(34,85,204,0.25)"    },
-    scheduled:        { bg: "rgba(102,51,204,0.08)",  color: "#6633CC", border: "rgba(102,51,204,0.25)"   },
-    posted:           { bg: "rgba(43,191,176,0.08)",  color: "#1D8A7F", border: "rgba(43,191,176,0.28)"   },
-    paid:             { bg: "rgba(43,191,176,0.08)",  color: "#1D8A7F", border: "rgba(43,191,176,0.28)"   },
-    pending:          { bg: "rgba(227,0,0,0.08)",  color: "#B00000", border: "rgba(227,0,0,0.30)"   },
-    overdue:          { bg: "rgba(204,51,51,0.08)",   color: "#cc3333", border: "rgba(204,51,51,0.25)"    },
+    draft:            { bg: "#F5F5F5",          color: "#666666", border: "#E5E5E5"          },
+    pending_approval: { bg: "#F5F5F5",          color: "#666666", border: "#E5E5E5"          },
+    approved:         { bg: "rgba(10,10,10,0.10)", color: "#0A0A0A", border: "rgba(10,10,10,0.15)" },
+    scheduled:        { bg: "rgba(10,10,10,0.10)", color: "#0A0A0A", border: "rgba(10,10,10,0.15)" },
+    posted:           { bg: "rgba(227,0,0,0.10)",  color: "#E30000", border: "rgba(227,0,0,0.25)"  },
+    paid:             { bg: "rgba(227,0,0,0.10)",  color: "#E30000", border: "rgba(227,0,0,0.25)"  },
+    pending:          { bg: "#F5F5F5",          color: "#666666", border: "#E5E5E5"          },
+    overdue:          { bg: "rgba(227,0,0,0.10)",  color: "#E30000", border: "rgba(227,0,0,0.25)"  },
   };
   const s = cfg[status] ?? cfg.draft;
   return (
     <span style={{
-      fontSize: "9px", fontWeight: 500, letterSpacing: "0.12em", textTransform: "uppercase",
-      padding: "3px 8px", borderRadius: "4px",
+      fontSize: "12px", fontWeight: 500, letterSpacing: "0.04em", textTransform: "capitalize",
+      padding: "4px 12px", borderRadius: "999px",
       background: s.bg, color: s.color, border: `1px solid ${s.border}`,
       fontFamily: "Helvetica, Arial, sans-serif",
     }}>
@@ -214,7 +214,7 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 function Spinner() {
-  return <span style={{ width: "14px", height: "14px", border: "1.5px solid rgba(26,26,26,0.14)", borderTopColor: T, borderRadius: "50%", animation: "spin 0.7s linear infinite", display: "inline-block", flexShrink: 0 }} />;
+  return <span style={{ width: "14px", height: "14px", border: "1.5px solid #E5E5E5", borderTopColor: GOLD, borderRadius: "50%", animation: "spin 0.7s linear infinite", display: "inline-block", flexShrink: 0 }} />;
 }
 
 function GlassBtn({
@@ -227,10 +227,10 @@ function GlassBtn({
   children: React.ReactNode;
 }) {
   const variants: Record<string, React.CSSProperties> = {
-    ghost:   { background: "transparent",            border: "1px solid rgba(26,26,26,0.14)",   color: T2 },
-    primary: { background: "rgba(26,26,26,0.07)",    border: "1px solid rgba(26,26,26,0.20)",   color: T  },
-    teal:    { background: "rgba(43,191,176,0.08)",  border: "1px solid rgba(43,191,176,0.30)", color: "#2BBFB0" },
-    danger:  { background: "rgba(204,68,68,0.08)",   border: "1px solid rgba(204,68,68,0.25)",  color: "#cc3333" },
+    ghost:   { background: "#F5F5F5",            border: "1px solid #E5E5E5",   color: "#666666" },
+    primary: { background: "#E30000",            border: "1px solid #E30000",   color: "#FFFFFF"  },
+    teal:    { background: "#FFFFFF",            border: "1px solid #E5E5E5",   color: "#0A0A0A" },
+    danger:  { background: "rgba(227,0,0,0.08)", border: "1px solid rgba(227,0,0,0.25)",  color: "#E30000" },
   };
   return (
     <button
@@ -238,19 +238,19 @@ function GlassBtn({
       disabled={disabled}
       style={{
         display: "inline-flex", alignItems: "center", gap: "6px",
-        padding: "7px 16px",
-        borderRadius: "6px",
-        fontSize: "12px", fontWeight: 500,
+        padding: "8px 16px",
+        borderRadius: "999px",
+        fontSize: "13px", fontWeight: 500,
         letterSpacing: "0.01em",
         cursor: disabled ? "not-allowed" : "pointer",
         opacity: disabled ? 0.4 : 1,
         transition: "all 0.15s ease",
-        fontFamily: "inherit",
+        fontFamily: "Helvetica, Arial, sans-serif",
         ...variants[variant],
         ...style,
       }}
-      onMouseEnter={e => { if (!disabled) { (e.currentTarget as HTMLElement).style.borderColor = "rgba(26,26,26,0.30)"; } }}
-      onMouseLeave={e => { if (!disabled) { (e.currentTarget as HTMLElement).style.borderColor = (variants[variant].border as string).replace("1px solid ", ""); } }}
+      onMouseEnter={e => { if (!disabled) { (e.currentTarget as HTMLElement).style.opacity = "0.85"; } }}
+      onMouseLeave={e => { if (!disabled) { (e.currentTarget as HTMLElement).style.opacity = "1"; } }}
     >
       {children}
     </button>
@@ -274,20 +274,20 @@ function CompanySwitcher({ ac, clients, onChange }: { ac: Company; clients: Comp
         onClick={() => setOpen(o => !o)}
         style={{
           display: "flex", alignItems: "center", gap: "8px",
-          padding: "6px 12px 6px 10px",
+          padding: "8px 14px 8px 12px",
           background: "transparent",
-          border: "1px solid rgba(26,26,26,0.12)",
-          borderRadius: "6px",
+          border: "1px solid rgba(255,255,255,0.4)",
+          borderRadius: "999px",
           cursor: "pointer",
-          transition: "border-color 0.15s ease",
-          fontFamily: "inherit",
+          transition: "all 0.15s ease",
+          fontFamily: "var(--font-raleway), sans-serif",
         }}
-        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(26,26,26,0.22)"; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(26,26,26,0.12)"; }}
+        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "#FFFFFF"; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.4)"; }}
       >
         <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: ac.color, flexShrink: 0 }} />
-        <span style={{ fontSize: "12px", fontWeight: 400, color: T2, maxWidth: "120px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ac.name}</span>
-        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" style={{ opacity: 0.4, transition: "transform 0.2s", transform: open ? "rotate(180deg)" : "rotate(0deg)", flexShrink: 0 }}>
+        <span style={{ fontSize: "13px", fontWeight: 400, color: "#FFFFFF", maxWidth: "120px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ac.name}</span>
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" style={{ color: "#FFFFFF", opacity: 0.7, transition: "transform 0.2s", transform: open ? "rotate(180deg)" : "rotate(0deg)", flexShrink: 0 }}>
           <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
       </button>
@@ -297,7 +297,7 @@ function CompanySwitcher({ ac, clients, onChange }: { ac: Company; clients: Comp
           position: "absolute", top: "calc(100% + 6px)", right: 0,
           minWidth: "200px",
           background: "#FFFFFF",
-          border: "1px solid rgba(26,26,26,0.10)",
+          border: "1px solid #E5E5E5",
           borderRadius: "8px",
           padding: "4px",
           zIndex: 100,
@@ -310,13 +310,13 @@ function CompanySwitcher({ ac, clients, onChange }: { ac: Company; clients: Comp
               style={{
                 width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: "10px",
                 padding: "9px 12px",
-                background: ac.id === c.id ? "rgba(26,26,26,0.05)" : "transparent",
+                background: ac.id === c.id ? "#F5F5F5" : "transparent",
                 border: "none", borderRadius: "5px",
                 cursor: "pointer", transition: "background 0.1s ease",
                 fontFamily: "inherit",
               }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(26,26,26,0.05)"; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = ac.id === c.id ? "rgba(26,26,26,0.05)" : "transparent"; }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#F5F5F5"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = ac.id === c.id ? "#F5F5F5" : "transparent"; }}
             >
               <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: c.color, flexShrink: 0 }} />
               <div style={{ flex: 1 }}>
@@ -339,8 +339,8 @@ function CompanySwitcher({ ac, clients, onChange }: { ac: Company; clients: Comp
 // ── Toast ─────────────────────────────────────────────────────────────────────
 function Toast({ message, type = "default" }: { message: string; type?: "default" | "success" | "error" }) {
   const configs = {
-    default: { bg: "#FFFFFF", border: "rgba(26,26,26,0.12)",    color: T2,        icon: "·" },
-    success: { bg: "#FFFFFF", border: "rgba(43,191,176,0.30)",  color: "#1D8A7F", icon: "✓" },
+    default: { bg: "#FFFFFF", border: "#E5E5E5",    color: T2,        icon: "·" },
+    success: { bg: "#FFFFFF", border: "rgba(227,0,0,0.25)",  color: "#E30000", icon: "✓" },
     error:   { bg: "#FFFFFF", border: "rgba(204,51,51,0.30)",   color: "#cc3333", icon: "✕" },
   };
   const cfg = configs[type];
@@ -370,10 +370,10 @@ function OverviewTab({ ac, clients, posts, allPosts }: { ac: Company; clients: C
   };
 
   const statCards = [
-    { label: "Posts Scheduled", value: stats.scheduled, color: "#2255CC" },
-    { label: "Posts Published",  value: stats.published,  color: "#2BBFB0" },
-    { label: "In Draft",         value: stats.drafts,     color: GOLD      },
-    { label: "Total Posts",      value: stats.total,      color: ac.color  },
+    { label: "Posts Scheduled", value: stats.scheduled, color: GOLD },
+    { label: "Posts Published",  value: stats.published,  color: GOLD },
+    { label: "In Draft",         value: stats.drafts,     color: GOLD },
+    { label: "Total Posts",      value: stats.total,      color: GOLD },
   ];
 
   const recent = allPosts.slice(0, 8);
@@ -389,12 +389,12 @@ function OverviewTab({ ac, clients, posts, allPosts }: { ac: Company; clients: C
             position: "relative", overflow: "hidden",
           })}>
             {/* Colored top accent line */}
-            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: s.color, opacity: 0.7 }} />
-            <div className="label" style={{ marginBottom: "16px" }}>{s.label}</div>
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: s.color }} />
+            <div style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "13px", color: "#999999", marginBottom: "16px" }}>{s.label}</div>
             <div style={{
               fontFamily: "var(--font-raleway), sans-serif",
-              fontSize: "48px", fontWeight: 300,
-              color: T, letterSpacing: "-0.02em", lineHeight: 1,
+              fontSize: "36px", fontWeight: 700,
+              color: "#0A0A0A", letterSpacing: "-0.02em", lineHeight: 1,
             }}>{s.value}</div>
           </div>
         ))}
@@ -421,7 +421,7 @@ function OverviewTab({ ac, clients, posts, allPosts }: { ac: Company; clients: C
               <div key={c.id} style={{
                 display: "flex", alignItems: "center", gap: "14px",
                 padding: "13px 0",
-                borderBottom: i < clients.length - 1 ? "1px solid rgba(26,26,26,0.07)" : "none",
+                borderBottom: i < clients.length - 1 ? "1px solid #E5E5E5" : "none",
               }}>
                 <div style={{ width: "3px", height: "28px", borderRadius: "2px", background: c.color, flexShrink: 0, opacity: ac.id === c.id ? 1 : 0.35 }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -447,16 +447,16 @@ function OverviewTab({ ac, clients, posts, allPosts }: { ac: Company; clients: C
                 <div key={p.id} style={{
                   display: "flex", gap: "12px", alignItems: "flex-start",
                   padding: "12px 0",
-                  borderBottom: i < recent.length - 1 ? "1px solid rgba(26,26,26,0.07)" : "none",
+                  borderBottom: i < recent.length - 1 ? "1px solid #E5E5E5" : "none",
                 }}>
-                  <div style={{ width: "5px", height: "5px", borderRadius: "50%", background: p.status === "posted" ? "#2BBFB0" : p.status === "approved" ? "#2255CC" : p.status === "pending_approval" ? GOLD : T3, marginTop: "6px", flexShrink: 0 }} />
+                  <div style={{ width: "5px", height: "5px", borderRadius: "50%", background: p.status === "posted" ? "#E30000" : p.status === "approved" ? "#0A0A0A" : p.status === "pending_approval" ? GOLD : T3, marginTop: "6px", flexShrink: 0 }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: "12px", color: T2, lineHeight: 1.5, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const }}>
                       {p.content.slice(0, 80)}…
                     </div>
                     <div style={{ display: "flex", gap: "8px", alignItems: "center", marginTop: "5px" }}>
                       <span style={{ fontSize: "10px", color: T3 }}>{p.company_name}</span>
-                      <span style={{ fontSize: "10px", color: "rgba(26,26,26,0.18)" }}>·</span>
+                      <span style={{ fontSize: "10px", color: "#E5E5E5" }}>·</span>
                       <StatusBadge status={p.status} />
                     </div>
                   </div>
@@ -501,7 +501,7 @@ function ComposeTab({
   const charCount = post.length;
   const charLimit = 3000;
   const charPct = Math.min(charCount / charLimit, 1);
-  const charColor = charCount > 2800 ? "#cc3333" : charCount > 2500 ? "#E30000" : "#2BBFB0";
+  const charColor = charCount > 2800 ? "#cc3333" : charCount > 2500 ? "#E30000" : "#E30000";
 
   return (
     <div className="fade-up" style={{ display: "grid", gridTemplateColumns: "280px 1fr", gap: "20px" }}>
@@ -511,7 +511,7 @@ function ComposeTab({
 
         {/* Company card */}
         <div style={glass({ overflow: "hidden" })}>
-          <div style={{ padding: "20px", borderBottom: "1px solid rgba(26,26,26,0.08)" }}>
+          <div style={{ padding: "20px", borderBottom: "1px solid #E5E5E5" }}>
             <CompanyLogo company={ac} />
             <div style={{
               fontFamily: "var(--font-raleway), sans-serif",
@@ -521,7 +521,7 @@ function ComposeTab({
           </div>
           <div style={{ padding: "14px", display: "flex", flexWrap: "wrap", gap: "5px" }}>
             {((ac.brand as Record<string,unknown> & {badges?: string[]})?.badges ?? []).map((b: string) => (
-              <span key={b} style={{ fontSize: "9px", fontWeight: 500, padding: "3px 8px", background: "rgba(26,26,26,0.04)", border: "1px solid rgba(26,26,26,0.09)", color: T3, borderRadius: "4px", letterSpacing: "0.08em", textTransform: "uppercase" as const }}>{b}</span>
+              <span key={b} style={{ fontSize: "9px", fontWeight: 500, padding: "3px 8px", background: "#F5F5F5", border: "1px solid #E5E5E5", color: T3, borderRadius: "4px", letterSpacing: "0.08em", textTransform: "uppercase" as const }}>{b}</span>
             ))}
           </div>
         </div>
@@ -535,7 +535,7 @@ function ComposeTab({
 
         {/* Pillars */}
         <div style={glass()}>
-          <div style={{ padding: "14px 16px", borderBottom: "1px solid rgba(26,26,26,0.08)" }}>
+          <div style={{ padding: "14px 16px", borderBottom: "1px solid #E5E5E5" }}>
             <div className="label">Content pillars</div>
           </div>
           <div style={{ padding: "8px" }}>
@@ -544,10 +544,10 @@ function ComposeTab({
                 style={{
                   width: "100%", textAlign: "left",
                   padding: "10px 12px",
-                  background: ap.type === p.type ? "rgba(26,26,26,0.05)" : "transparent",
+                  background: ap.type === p.type ? "#F5F5F5" : "transparent",
                   border: "none",
                   borderBottom: `none`,
-                  borderRadius: "6px",
+                  borderRadius: "8px",
                   cursor: "pointer", transition: "all 0.15s ease", marginBottom: "2px",
                   fontFamily: "inherit",
                   position: "relative" as const,
@@ -570,7 +570,7 @@ function ComposeTab({
 
         {/* Generator */}
         <div style={glass()}>
-          <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(26,26,26,0.08)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ padding: "20px 24px", borderBottom: "1px solid #E5E5E5", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div>
               <div className="label" style={{ marginBottom: "6px" }}>Generating for</div>
               <div style={{
@@ -599,12 +599,12 @@ function ComposeTab({
                       rows={11}
                       style={{ ...INPUT, resize: "none" }}
                       onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
-                      onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
+                      onBlur={e => e.target.style.borderColor = "#E5E5E5"}
                     />
                     {/* Char counter */}
                     <div style={{ position: "absolute", bottom: "12px", right: "14px", display: "flex", alignItems: "center", gap: "6px" }}>
                       <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                        <circle cx="12" cy="12" r="10" stroke="rgba(26,26,26,0.12)" strokeWidth="2.5" fill="none" />
+                        <circle cx="12" cy="12" r="10" stroke="#E5E5E5" strokeWidth="2.5" fill="none" />
                         <circle cx="12" cy="12" r="10" stroke={charColor} strokeWidth="2.5" fill="none"
                           strokeDasharray={`${charPct * 62.8} 62.8`}
                           strokeLinecap="round"
@@ -612,7 +612,7 @@ function ComposeTab({
                           style={{ transition: "stroke-dasharray 0.3s ease" }}
                         />
                       </svg>
-                      <span style={{ fontSize: "11px", color: charCount > 2800 ? charColor : "rgba(26,26,26,0.35)", fontWeight: 500 }}>
+                      <span style={{ fontSize: "11px", color: charCount > 2800 ? charColor : "#999999", fontWeight: 500 }}>
                         {charLimit - charCount}
                       </span>
                     </div>
@@ -632,7 +632,7 @@ function ComposeTab({
                 </div>
 
                 {/* LinkedIn Preview */}
-                <div style={{ background: "#f3f2ef", borderRadius: "12px", overflow: "hidden", border: "1px solid rgba(26,26,26,0.08)" }}>
+                <div style={{ background: "#f3f2ef", borderRadius: "12px", overflow: "hidden", border: "1px solid #E5E5E5" }}>
                   <div style={{ padding: "16px", background: "#fff" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
                       <div style={{ width: "40px", height: "40px", borderRadius: "50%", background: `linear-gradient(135deg, ${ac.color}cc, ${ac.color}55)`, flexShrink: 0 }} />
@@ -659,7 +659,7 @@ function ComposeTab({
                 <p style={{ color: T3, fontFamily: "var(--font-raleway), sans-serif", fontStyle: "normal", fontSize: "16px" } as React.CSSProperties}>Writing in {ac.name}&apos;s voice…</p>
               </div>
             ) : (
-              <div style={{ height: "180px", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid rgba(26,26,26,0.08)", borderRadius: "8px", flexDirection: "column", gap: "12px" }}>
+              <div style={{ height: "180px", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #E5E5E5", borderRadius: "8px", flexDirection: "column", gap: "12px" }}>
                 <div style={{ width: "32px", height: "1px", background: GOLD, opacity: 0.4 }} />
                 <p style={{ fontSize: "13px", color: T3, fontFamily: "var(--font-raleway), sans-serif", fontStyle: "normal" }}>Select a pillar and generate</p>
               </div>
@@ -677,8 +677,8 @@ function ComposeTab({
                   style={{
                     fontSize: "12px", padding: "6px 12px",
                     background: refineRequest === s ? "rgba(227,0,0,0.08)" : "transparent",
-                    border: refineRequest === s ? "1px solid rgba(227,0,0,0.3)" : "1px solid rgba(26,26,26,0.09)",
-                    borderRadius: "6px", color: refineRequest === s ? GOLD : T3,
+                    border: refineRequest === s ? "1px solid rgba(227,0,0,0.3)" : "1px solid #E5E5E5",
+                    borderRadius: "8px", color: refineRequest === s ? GOLD : T3,
                     cursor: "pointer", transition: "all 0.15s ease", fontFamily: "inherit", fontWeight: 500,
                   }}>
                   {s}
@@ -693,7 +693,7 @@ function ComposeTab({
                 placeholder="Or describe any change…"
                 style={{ ...INPUT, flex: 1, padding: "9px 14px" }}
                 onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
-                onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
+                onBlur={e => e.target.style.borderColor = "#E5E5E5"}
               />
               <GlassBtn onClick={refinePost} disabled={isRefining || !refineRequest.trim()} variant="primary">
                 {isRefining ? <><Spinner /> Refining…</> : "Apply ↗"}
@@ -709,13 +709,13 @@ function ComposeTab({
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               <div className="label">Generate visual</div>
               {/* Generate-from toggle */}
-              <div style={{ display: "flex", gap: "2px", background: "rgba(26,26,26,0.04)", border: "1px solid rgba(26,26,26,0.12)", borderRadius: "9px", padding: "3px" }}>
+              <div style={{ display: "flex", gap: "2px", background: "#F5F5F5", border: "1px solid #E5E5E5", borderRadius: "9px", padding: "3px" }}>
                 {(["post", "standalone"] as const).map(m => (
                   <button key={m} onClick={() => setGenMode(m)}
                     style={{
                       fontSize: "11px", fontWeight: 600, padding: "4px 11px",
-                      background: genMode === m ? "rgba(26,26,26,0.08)" : "transparent",
-                      border: "none", borderRadius: "6px",
+                      background: genMode === m ? "#E5E5E5" : "transparent",
+                      border: "none", borderRadius: "8px",
                       color: genMode === m ? T : T3,
                       cursor: "pointer", letterSpacing: "0.04em",
                       transition: "all 0.15s ease", fontFamily: "inherit", whiteSpace: "nowrap",
@@ -726,13 +726,13 @@ function ComposeTab({
               </div>
             </div>
             {/* AI/SVG toggle */}
-            <div style={{ display: "flex", gap: "2px", background: "rgba(26,26,26,0.04)", border: "1px solid rgba(26,26,26,0.12)", borderRadius: "9px", padding: "3px" }}>
+            <div style={{ display: "flex", gap: "2px", background: "#F5F5F5", border: "1px solid #E5E5E5", borderRadius: "9px", padding: "3px" }}>
               {(["ai", "svg"] as const).map(m => (
                 <button key={m} onClick={() => setImageMode(m)}
                   style={{
                     fontSize: "11px", fontWeight: 600, padding: "4px 12px",
-                    background: imageMode === m ? "rgba(26,26,26,0.08)" : "transparent",
-                    border: "none", borderRadius: "6px",
+                    background: imageMode === m ? "#E5E5E5" : "transparent",
+                    border: "none", borderRadius: "8px",
                     color: imageMode === m ? T : T3,
                     cursor: "pointer", textTransform: "uppercase", letterSpacing: "0.06em",
                     transition: "all 0.15s ease", fontFamily: "inherit",
@@ -753,8 +753,8 @@ function ComposeTab({
                 style={{
                   fontSize: "11px", fontWeight: 600, padding: "5px 12px",
                   background: vizType === t ? "rgba(227,0,0,0.08)" : "transparent",
-                  border: vizType === t ? `1px solid rgba(227,0,0,0.3)` : "1px solid rgba(26,26,26,0.09)",
-                  borderRadius: "6px", color: vizType === t ? GOLD : T3,
+                  border: vizType === t ? `1px solid rgba(227,0,0,0.3)` : "1px solid #E5E5E5",
+                  borderRadius: "8px", color: vizType === t ? GOLD : T3,
                   cursor: "pointer", textTransform: "uppercase", letterSpacing: "0.06em",
                   transition: "all 0.15s ease", fontFamily: "inherit",
                 }}>
@@ -772,7 +772,7 @@ function ComposeTab({
               placeholder="What should this visual be about? e.g. A bold statement about ambient protection technology, showing the invisible shield concept..."
               style={{ ...INPUT, resize: "vertical", marginBottom: "14px", fontSize: "13px", lineHeight: 1.6 }}
               onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
-              onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
+              onBlur={e => e.target.style.borderColor = "#E5E5E5"}
             />
           )}
 
@@ -786,7 +786,7 @@ function ComposeTab({
                   <GlassBtn onClick={() => generateAiImage(undefined, genMode === "standalone" ? standaloneBrief : undefined)} disabled={isImgGen}>{isImgGen ? <><Spinner /> Regenerating…</> : "Regenerate"}</GlassBtn>
                   <GlassBtn onClick={clearImgUrl} variant="ghost">Clear</GlassBtn>
                 </div>
-                <div style={{ borderTop: "1px solid rgba(26,26,26,0.08)", paddingTop: "16px" }}>
+                <div style={{ borderTop: "1px solid #E5E5E5", paddingTop: "16px" }}>
                   <div className="label" style={{ marginBottom: "10px" }}>Edit this image</div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", marginBottom: "10px" }}>
                     {["Change the color scheme","Make it more minimal","Bolder typography","Add more contrast","Brighter background","Darker mood","More whitespace","Stronger visual hierarchy"].map(s => {
@@ -802,8 +802,8 @@ function ComposeTab({
                           style={{
                             fontSize: "11px", padding: "5px 10px",
                             background: imgEditRequest === s ? "rgba(227,0,0,0.08)" : "transparent",
-                            border: imgEditRequest === s ? "1px solid rgba(227,0,0,0.3)" : "1px solid rgba(26,26,26,0.09)",
-                            borderRadius: "6px", color: imgEditRequest === s ? GOLD : T3,
+                            border: imgEditRequest === s ? "1px solid rgba(227,0,0,0.3)" : "1px solid #E5E5E5",
+                            borderRadius: "8px", color: imgEditRequest === s ? GOLD : T3,
                             cursor: "pointer", transition: "all 0.15s ease", fontFamily: "inherit", fontWeight: 500,
                           }}>
                           {s}
@@ -819,7 +819,7 @@ function ComposeTab({
                       placeholder="Describe your edit…"
                       style={{ ...INPUT, flex: 1, padding: "9px 14px" }}
                       onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
-                      onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
+                      onBlur={e => e.target.style.borderColor = "#E5E5E5"}
                     />
                     <GlassBtn onClick={() => { if (imgEditRequest.trim()) { generateAiImage(imgEditRequest, genMode === "standalone" ? standaloneBrief : undefined); setImgEditRequest(""); } }} disabled={isImgGen || !imgEditRequest.trim()} variant="primary">
                       {isImgGen ? <><Spinner /> Applying…</> : "Apply ↗"}
@@ -841,7 +841,7 @@ function ComposeTab({
             /* ── SVG mode ── */
             svg ? (
               <>
-                <div style={{ border: "1px solid rgba(26,26,26,0.09)", borderRadius: "8px", overflow: "hidden", marginBottom: "12px", position: "relative" }}>
+                <div style={{ border: "1px solid #E5E5E5", borderRadius: "8px", overflow: "hidden", marginBottom: "12px", position: "relative" }}>
                   <div dangerouslySetInnerHTML={{ __html: svg }} />
                   <div style={{ position: "absolute", bottom: "16px", left: "16px" }}>
                     <CompanyLogo company={ac} overlay />
@@ -852,16 +852,16 @@ function ComposeTab({
                   <GlassBtn onClick={() => generateVisual(genMode === "standalone" ? standaloneBrief : undefined)} disabled={isVisual}>Regenerate</GlassBtn>
                   <GlassBtn onClick={() => setSvg("")} variant="ghost">Clear</GlassBtn>
                 </div>
-                <div style={{ borderTop: "1px solid rgba(26,26,26,0.08)", paddingTop: "16px" }}>
+                <div style={{ borderTop: "1px solid #E5E5E5", paddingTop: "16px" }}>
                   <div className="label" style={{ marginBottom: "10px" }}>Edit this image</div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", marginBottom: "10px" }}>
                     {["Make the background darker","Use larger headline text","Add more white space","Make it more minimal","Increase contrast","Bolder typography","Lighter background","More padding"].map(s => (
                       <button key={s} onClick={() => setSvgRefineRequest(s)}
                         style={{
                           fontSize: "11px", padding: "5px 10px",
-                          background: svgRefineRequest === s ? "rgba(43,191,176,0.08)" : "transparent",
-                          border: svgRefineRequest === s ? "1px solid rgba(43,191,176,0.3)" : "1px solid rgba(26,26,26,0.09)",
-                          borderRadius: "6px", color: svgRefineRequest === s ? "#2BBFB0" : T3,
+                          background: svgRefineRequest === s ? "rgba(227,0,0,0.08)" : "transparent",
+                          border: svgRefineRequest === s ? "1px solid rgba(227,0,0,0.25)" : "1px solid #E5E5E5",
+                          borderRadius: "8px", color: svgRefineRequest === s ? "#E30000" : T3,
                           cursor: "pointer", transition: "all 0.15s ease", fontFamily: "inherit", fontWeight: 500,
                         }}>
                         {s}
@@ -875,8 +875,8 @@ function ComposeTab({
                       onKeyDown={e => e.key === "Enter" && refineVisual()}
                       placeholder="Describe your edit request…"
                       style={{ ...INPUT, flex: 1, padding: "9px 14px" }}
-                      onFocus={e => e.target.style.borderColor = "rgba(43,191,176,0.3)"}
-                      onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
+                      onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.25)"}
+                      onBlur={e => e.target.style.borderColor = "#E5E5E5"}
                     />
                     <GlassBtn onClick={refineVisual} disabled={isVisualRefining || !svgRefineRequest.trim()} variant="teal">
                       {isVisualRefining ? <><Spinner /> Applying…</> : "Apply ↗"}
@@ -954,25 +954,23 @@ function LibraryTab({
   return (
     <div className="fade-up">
       {/* Filter bar */}
-      <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "24px", borderBottom: "1px solid rgba(26,26,26,0.08)", paddingBottom: "16px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "24px", background: "#FFFFFF", border: "1px solid #E5E5E5", borderRadius: "8px", padding: "10px 12px" }}>
         {(["all","draft","pending_approval","approved","posted"] as const).map(s => (
           <button key={s} onClick={() => setFilterStatus(s)}
             style={{
-              fontSize: "10px", fontWeight: 500, padding: "5px 14px",
-              background: "transparent",
+              fontSize: "13px", fontWeight: 500, padding: "6px 14px",
+              background: filterStatus === s ? "#E30000" : "#F5F5F5",
               border: "none",
-              borderBottom: filterStatus === s ? `1px solid ${GOLD}` : "1px solid transparent",
-              color: filterStatus === s ? T : T3,
-              borderRadius: "0",
+              color: filterStatus === s ? "#FFFFFF" : "#666666",
+              borderRadius: "999px",
               cursor: "pointer",
               transition: "all 0.15s ease", fontFamily: "Helvetica, Arial, sans-serif",
-              textTransform: "uppercase" as const, letterSpacing: "0.1em",
-              marginBottom: "-17px", paddingBottom: "16px",
+              textTransform: "capitalize" as const, letterSpacing: "0.02em",
             }}>
             {s.replace("_", " ")}
           </button>
         ))}
-        <span style={{ marginLeft: "auto", fontSize: "11px", color: T3 }}>{posts.length} posts</span>
+        <span style={{ marginLeft: "auto", fontSize: "13px", color: "#999999", fontFamily: "Helvetica, Arial, sans-serif" }}>{posts.length} posts</span>
       </div>
 
       {posts.length === 0 ? (
@@ -981,17 +979,20 @@ function LibraryTab({
           <p style={{ fontSize: "14px", color: T3, fontFamily: "var(--font-raleway), sans-serif", fontStyle: "normal" }}>No posts yet for {ac.name}</p>
         </div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "0" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           {posts.map((p, i) => (
             <div key={p.id} className={`fade-up fade-up-${Math.min(i, 3) + 1 as 1|2|3|4}`} style={{
-              borderBottom: "1px solid rgba(26,26,26,0.08)",
+              background: "#FFFFFF",
+              border: "1px solid #E5E5E5",
+              borderRadius: "12px",
+              padding: "20px",
             }}>
               {editPost?.id === p.id ? (
                 <div style={{ padding: "20px 0" }}>
                   <textarea value={editContent} onChange={e => setEditContent(e.target.value)} rows={10}
                     style={{ ...INPUT, resize: "none" }}
                     onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
-                    onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
+                    onBlur={e => e.target.style.borderColor = "#E5E5E5"}
                   />
                   <div style={{ display: "flex", gap: "8px", marginTop: "12px" }}>
                     <GlassBtn onClick={saveEdit} variant="teal">Save changes</GlassBtn>
@@ -1000,29 +1001,29 @@ function LibraryTab({
                 </div>
               ) : (
                 <>
-                  <div style={{ padding: "16px 0 10px", display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+                  <div style={{ padding: "0 0 12px", display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
                     <div style={{ width: "3px", height: "14px", borderRadius: "2px", background: ac.color, flexShrink: 0 }} />
-                    <span style={{ fontSize: "10px", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: T3 }}>{p.post_type}</span>
-                    <span style={{ color: "rgba(26,26,26,0.18)" }}>·</span>
-                    <span style={{ fontSize: "10px", letterSpacing: "0.06em", textTransform: "uppercase" as const, color: T3 }}>{p.scheduled_day}</span>
+                    <span style={{ fontSize: "12px", fontWeight: 500, letterSpacing: "0.04em", color: "#999999", fontFamily: "Helvetica, Arial, sans-serif" }}>{p.post_type}</span>
+                    <span style={{ color: "#E5E5E5" }}>·</span>
+                    <span style={{ fontSize: "12px", letterSpacing: "0.02em", color: "#999999", fontFamily: "Helvetica, Arial, sans-serif" }}>{p.scheduled_day}</span>
                     <div style={{ marginLeft: "auto" }}><StatusBadge status={p.status} /></div>
                   </div>
-                  <div style={{ padding: "0 0 16px 15px" }}>
+                  <div>
                     {p.image_url && (
-                      <div style={{ marginBottom: "14px", borderRadius: "8px", overflow: "hidden", border: "1px solid rgba(26,26,26,0.09)" }}>
+                      <div style={{ marginBottom: "14px", borderRadius: "8px", overflow: "hidden", border: "1px solid #E5E5E5" }}>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={p.image_url} alt="Post visual" style={{ width: "100%", maxHeight: "280px", objectFit: "cover", display: "block" }} />
                       </div>
                     )}
-                    <p style={{ fontSize: "14px", lineHeight: 1.8, color: T2, whiteSpace: "pre-wrap" }}>{p.content}</p>
+                    <p style={{ fontSize: "14px", lineHeight: 1.6, color: "#0A0A0A", whiteSpace: "pre-wrap", fontFamily: "Helvetica, Arial, sans-serif" }}>{p.content}</p>
                     {p.notes && (
-                      <div style={{ marginTop: "14px", padding: "10px 14px", background: "rgba(204,68,68,0.05)", border: "1px solid rgba(204,68,68,0.15)", borderRadius: "6px", display: "flex", gap: "10px", alignItems: "flex-start" }}>
+                      <div style={{ marginTop: "14px", padding: "10px 14px", background: "rgba(204,68,68,0.05)", border: "1px solid rgba(204,68,68,0.15)", borderRadius: "8px", display: "flex", gap: "10px", alignItems: "flex-start" }}>
                         <span style={{ fontSize: "9px", fontWeight: 600, color: "#cc3333", letterSpacing: "0.12em", textTransform: "uppercase" as const, flexShrink: 0, marginTop: "2px" }}>Change request</span>
                         <p style={{ fontSize: "12px", color: "rgba(208,112,112,0.8)", lineHeight: 1.6, margin: 0 }}>{p.notes}</p>
                       </div>
                     )}
                     {p.scheduled_at && (
-                      <div style={{ marginTop: "10px", display: "inline-flex", alignItems: "center", gap: "6px", padding: "4px 10px", background: "rgba(26,26,26,0.04)", border: "1px solid rgba(26,26,26,0.09)", borderRadius: "6px" }}>
+                      <div style={{ marginTop: "10px", display: "inline-flex", alignItems: "center", gap: "6px", padding: "4px 10px", background: "#F5F5F5", border: "1px solid #E5E5E5", borderRadius: "8px" }}>
                         <span style={{ fontSize: "10px", color: T3, letterSpacing: "0.06em", textTransform: "uppercase" as const }}>Scheduled</span>
                         <span style={{ fontSize: "11px", color: T2, fontWeight: 500 }}>{new Date(p.scheduled_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
                       </div>
@@ -1032,7 +1033,7 @@ function LibraryTab({
                         <input type="datetime-local" value={scheduleAt} onChange={e => setScheduleAt(e.target.value)}
                           style={{ ...INPUT, width: "auto", flex: "none", padding: "7px 11px", fontSize: "12px" }}
                           onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
-                          onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
+                          onBlur={e => e.target.style.borderColor = "#E5E5E5"}
                         />
                         <GlassBtn onClick={() => schedulePost(p)} disabled={!scheduleAt} variant="teal">Confirm</GlassBtn>
                         <GlassBtn onClick={() => { setSchedulingId(null); setScheduleAt(""); }}>Cancel</GlassBtn>
@@ -1051,8 +1052,8 @@ function LibraryTab({
                           </button>
                         ))}
                         {p.status === "draft"    && <button onClick={() => updateStatus(p,"pending_approval")} style={{ fontSize: "11px", color: GOLD, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>Submit for Approval</button>}
-                        {p.status === "draft"    && <button onClick={() => updateStatus(p,"approved")} style={{ fontSize: "11px", color: "#2255CC", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>Approve</button>}
-                        {p.status === "pending_approval" && <button onClick={() => updateStatus(p,"approved")} style={{ fontSize: "11px", color: "#2255CC", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>Approve</button>}
+                        {p.status === "draft"    && <button onClick={() => updateStatus(p,"approved")} style={{ fontSize: "11px", color: "#0A0A0A", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>Approve</button>}
+                        {p.status === "pending_approval" && <button onClick={() => updateStatus(p,"approved")} style={{ fontSize: "11px", color: "#0A0A0A", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>Approve</button>}
                         {(p.status === "approved" || p.status === "scheduled") && (
                           <button onClick={() => { setSchedulingId(p.id); setScheduleAt(p.scheduled_at?.slice(0,16) || ""); }} style={{ fontSize: "11px", color: GOLD, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>
                             {p.scheduled_at ? "Reschedule" : "Schedule"}
@@ -1064,7 +1065,7 @@ function LibraryTab({
                             {postingToLinkedIn === p.id ? <><Spinner /> Posting…</> : "Post to LinkedIn"}
                           </button>
                         )}
-                        {p.status === "approved" && <button onClick={() => updateStatus(p,"posted")} style={{ fontSize: "11px", color: "#2BBFB0", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>Mark posted</button>}
+                        {p.status === "approved" && <button onClick={() => updateStatus(p,"posted")} style={{ fontSize: "11px", color: "#E30000", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>Mark posted</button>}
                         <button onClick={() => deletePost(p.id)} style={{ fontSize: "11px", color: "rgba(204,68,68,0.5)", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", marginLeft: "auto", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>Delete</button>
                       </div>
                     )}
@@ -1133,18 +1134,18 @@ function CalendarTab({ ac, clients, allPosts }: { ac: Company; clients: Company[
 
       {/* Calendar grid */}
       <div style={glass()}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", borderBottom: "1px solid rgba(26,26,26,0.08)" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", borderBottom: "1px solid #E5E5E5" }}>
           {DAY_ORDER.map(d => (
-            <div key={d} style={{ textAlign: "center", fontSize: "10px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: activeDays.includes(d) ? "rgba(26,26,26,0.55)" : "rgba(26,26,26,0.25)", padding: "14px 0", borderRight: "1px solid rgba(26,26,26,0.06)" }}>{d.slice(0,3)}</div>
+            <div key={d} style={{ textAlign: "center", fontSize: "10px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: activeDays.includes(d) ? "#666666" : "#999999", padding: "14px 0", borderRight: "1px solid #E5E5E5" }}>{d.slice(0,3)}</div>
           ))}
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)" }}>
           {DAY_ORDER.map(day => {
             const dayCompanies = clients.filter(c => getPostingDays(c).includes(day));
             const dayPosts = allPosts.filter(p => p.scheduled_day === day && (p.status === "scheduled" || p.status === "approved" || p.status === "posted"));
-            const postStatusColor: Record<string, string> = { approved: "#2255CC", scheduled: GOLD, posted: "#2BBFB0" };
+            const postStatusColor: Record<string, string> = { approved: "#0A0A0A", scheduled: GOLD, posted: "#E30000" };
             return (
-              <div key={day} style={{ minHeight: "160px", padding: "12px 10px", borderRight: "1px solid rgba(26,26,26,0.06)", borderBottom: "1px solid rgba(26,26,26,0.06)", background: !activeDays.includes(day) ? "rgba(26,26,26,0.03)" : "transparent" }}>
+              <div key={day} style={{ minHeight: "160px", padding: "12px 10px", borderRight: "1px solid #E5E5E5", borderBottom: "1px solid #E5E5E5", background: !activeDays.includes(day) ? "#F5F5F5" : "transparent" }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                   {dayCompanies.map(c => {
                     const pil = (Array.isArray(c.pillars) ? c.pillars : []).find((p: Record<string,unknown>) => p.day === day) as Record<string,unknown> | undefined;
@@ -1153,13 +1154,13 @@ function CalendarTab({ ac, clients, allPosts }: { ac: Company; clients: Company[
                     return (
                       <div key={c.id} style={{
                         padding: "8px 10px",
-                        background: isActive ? `${c.color}14` : "rgba(26,26,26,0.03)",
-                        border: `1px solid ${isActive ? `${c.color}40` : "rgba(26,26,26,0.08)"}`,
+                        background: isActive ? `${c.color}14` : "#F5F5F5",
+                        border: `1px solid ${isActive ? `${c.color}40` : "#E5E5E5"}`,
                         borderLeft: `3px solid ${c.color}`,
                         borderRadius: "8px",
                       }}>
                         <div style={{ fontSize: "10px", fontWeight: 600, color: c.color, marginBottom: "3px", letterSpacing: "0.01em" }}>{c.name.split(" ")[0]}</div>
-                        {pil && <div style={{ fontSize: "10px", color: "rgba(26,26,26,0.45)" }}>{pil.type as string}</div>}
+                        {pil && <div style={{ fontSize: "10px", color: "#999999" }}>{pil.type as string}</div>}
                         {bestTime && <div style={{ fontSize: "10px", color: c.color, marginTop: "4px", fontWeight: 600 }}>◷ {bestTime}</div>}
                       </div>
                     );
@@ -1170,7 +1171,7 @@ function CalendarTab({ ac, clients, allPosts }: { ac: Company; clients: Company[
                       background: `${postStatusColor[p.status] || T3}10`,
                       border: `1px solid ${postStatusColor[p.status] || T3}30`,
                       borderLeft: `3px solid ${postStatusColor[p.status] || T3}`,
-                      borderRadius: "6px",
+                      borderRadius: "8px",
                     }}>
                       <div style={{ fontSize: "9px", fontWeight: 600, color: postStatusColor[p.status] || T3, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "2px" }}>{p.status}</div>
                       <div style={{ fontSize: "10px", color: T2, lineHeight: 1.4, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const }}>{p.content.slice(0, 60)}</div>
@@ -1185,7 +1186,7 @@ function CalendarTab({ ac, clients, allPosts }: { ac: Company; clients: Company[
 
       {/* Schedule table */}
       <div style={glass()}>
-        <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(26,26,26,0.08)" }}>
+        <div style={{ padding: "20px 24px", borderBottom: "1px solid #E5E5E5" }}>
           <div className="label" style={{ marginBottom: "6px" }}>Master schedule</div>
           <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "22px", fontWeight: 300, fontStyle: "normal", color: T, lineHeight: 1 }}>Posting Calendar</div>
           <p style={{ fontSize: "11px", color: T3, marginTop: "4px" }}>{clients.length} active clients · {activeDays.length} posting days</p>
@@ -1193,9 +1194,9 @@ function CalendarTab({ ac, clients, allPosts }: { ac: Company; clients: Company[
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
-              <tr style={{ borderBottom: "1px solid rgba(26,26,26,0.08)" }}>
+              <tr style={{ borderBottom: "1px solid #E5E5E5" }}>
                 {["Company", ...activeDays, "TZ"].map(h => (
-                  <th key={h} style={{ textAlign: "left", padding: "11px 20px", fontSize: "10px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(26,26,26,0.40)", whiteSpace: "nowrap" }}>{h}</th>
+                  <th key={h} style={{ textAlign: "left", padding: "11px 20px", fontSize: "10px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#999999", whiteSpace: "nowrap" }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -1203,23 +1204,23 @@ function CalendarTab({ ac, clients, allPosts }: { ac: Company; clients: Company[
               {clients.map((c, i) => {
                 const times = getBestTimes(c);
                 return (
-                  <tr key={c.id} style={{ borderBottom: i < clients.length - 1 ? "1px solid rgba(26,26,26,0.06)" : "none", background: ac.id === c.id ? "rgba(26,26,26,0.03)" : "transparent" }}>
+                  <tr key={c.id} style={{ borderBottom: i < clients.length - 1 ? "1px solid #E5E5E5" : "none", background: ac.id === c.id ? "#F5F5F5" : "transparent" }}>
                     <td style={{ padding: "14px 20px" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                         <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: c.color, flexShrink: 0 }} />
-                        <span style={{ fontSize: "13px", fontWeight: 500, color: "#1A1A1A", whiteSpace: "nowrap" }}>{c.name}</span>
+                        <span style={{ fontSize: "13px", fontWeight: 500, color: "#0A0A0A", whiteSpace: "nowrap" }}>{c.name}</span>
                       </div>
                     </td>
                     {activeDays.map(day => {
                       const posts = getPostingDays(c).includes(day);
                       return (
-                        <td key={day} style={{ padding: "14px 20px", fontSize: "13px", color: times[day] ? "#1A1A1A" : posts ? "rgba(26,26,26,0.45)" : "rgba(26,26,26,0.20)", fontWeight: times[day] ? 500 : 400, whiteSpace: "nowrap" }}>
+                        <td key={day} style={{ padding: "14px 20px", fontSize: "13px", color: times[day] ? "#0A0A0A" : posts ? "#999999" : "#E5E5E5", fontWeight: times[day] ? 500 : 400, whiteSpace: "nowrap" }}>
                           {times[day] ?? (posts ? "✓" : "-")}
                         </td>
                       );
                     })}
                     <td style={{ padding: "14px 20px" }}>
-                      <span style={{ fontSize: "10px", fontWeight: 600, padding: "3px 8px", borderRadius: "6px", background: `${c.color}18`, border: `1px solid ${c.color}40`, color: c.color, letterSpacing: "0.06em" }}>{c.timezone}</span>
+                      <span style={{ fontSize: "10px", fontWeight: 600, padding: "3px 8px", borderRadius: "8px", background: `${c.color}18`, border: `1px solid ${c.color}40`, color: c.color, letterSpacing: "0.06em" }}>{c.timezone}</span>
                     </td>
                   </tr>
                 );
@@ -1403,10 +1404,10 @@ function ReportsTab({ ac }: { ac: Company }) {
   })();
 
   const engagementPie = extracted ? [
-    { name: "Reactions",  value: extracted.reactions ?? 0,        color: "#2255CC" },
-    { name: "Comments",   value: extracted.comments ?? 0,         color: "#2BBFB0" },
-    { name: "Shares",     value: extracted.shares ?? 0,           color: GOLD },
-    { name: "Clicks",     value: extracted.clicks ?? 0,           color: "#6633CC" },
+    { name: "Reactions",  value: extracted.reactions ?? 0,        color: GOLD },
+    { name: "Comments",   value: extracted.comments ?? 0,         color: "#0A0A0A" },
+    { name: "Shares",     value: extracted.shares ?? 0,           color: "#666666" },
+    { name: "Clicks",     value: extracted.clicks ?? 0,           color: "#999999" },
   ].filter(d => d.value > 0) : [];
 
   const impressionsLine = extracted?.posts
@@ -1434,8 +1435,8 @@ function ReportsTab({ ac }: { ac: Company }) {
   });
   const showTrends = trendData.length >= 3;
 
-  const chartGrid = "rgba(26,26,26,0.07)";
-  const chartText = "rgba(26,26,26,0.40)";
+  const chartGrid = "#E5E5E5";
+  const chartText = "#999999";
 
   const colStyle = (col: string): React.CSSProperties => ({
     cursor: "pointer", padding: "10px 16px", fontSize: "10px", fontWeight: 600,
@@ -1466,7 +1467,7 @@ function ReportsTab({ ac }: { ac: Company }) {
             <div className="label" style={{ marginBottom: "8px" }}>Report type</div>
             <div style={{ display: "flex", gap: "8px" }}>
               {(["monthly", "weekly"] as const).map(t => (
-                <button key={t} onClick={() => setUploadType(t)} style={{ padding: "8px 18px", borderRadius: "6px", border: `1px solid ${uploadType === t ? GOLD : "rgba(26,26,26,0.12)"}`, background: uploadType === t ? `${GOLD}14` : "transparent", color: uploadType === t ? GOLD : T2, fontSize: "13px", fontWeight: 500, cursor: "pointer", textTransform: "capitalize", fontFamily: "inherit" }}>
+                <button key={t} onClick={() => setUploadType(t)} style={{ padding: "8px 18px", borderRadius: "8px", border: `1px solid ${uploadType === t ? GOLD : "#E5E5E5"}`, background: uploadType === t ? `${GOLD}14` : "transparent", color: uploadType === t ? GOLD : T2, fontSize: "13px", fontWeight: 500, cursor: "pointer", textTransform: "capitalize", fontFamily: "inherit" }}>
                   {t}
                 </button>
               ))}
@@ -1493,12 +1494,12 @@ function ReportsTab({ ac }: { ac: Company }) {
               onDragLeave={() => setDragging(false)}
               onDrop={e => { e.preventDefault(); setDragging(false); const f = e.dataTransfer.files[0]; if (f?.type === "application/pdf") setPdfFile(f); }}
               onClick={() => { const inp = document.createElement("input"); inp.type = "file"; inp.accept = ".pdf"; inp.onchange = (e) => { const f = (e.target as HTMLInputElement).files?.[0]; if (f) setPdfFile(f); }; inp.click(); }}
-              style={{ border: `2px dashed ${dragging ? GOLD : "rgba(26,26,26,0.16)"}`, borderRadius: "8px", padding: "32px", textAlign: "center", cursor: "pointer", background: dragging ? `${GOLD}08` : "rgba(26,26,26,0.02)", transition: "all 0.15s" }}
+              style={{ border: `2px dashed ${dragging ? GOLD : "#E5E5E5"}`, borderRadius: "12px", padding: "32px", textAlign: "center", cursor: "pointer", background: dragging ? `${GOLD}08` : "#F5F5F5", transition: "all 0.15s ease" }}
             >
               {pdfFile ? (
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="1" width="12" height="14" rx="2" stroke="#2BBFB0" strokeWidth="1.5"/><path d="M5 5h6M5 8h6M5 11h4" stroke="#2BBFB0" strokeWidth="1.3" strokeLinecap="round"/></svg>
-                  <span style={{ fontSize: "13px", color: "#2BBFB0", fontWeight: 500 }}>{pdfFile.name}</span>
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="1" width="12" height="14" rx="2" stroke="#E30000" strokeWidth="1.5"/><path d="M5 5h6M5 8h6M5 11h4" stroke="#E30000" strokeWidth="1.3" strokeLinecap="round"/></svg>
+                  <span style={{ fontSize: "13px", color: "#E30000", fontWeight: 500 }}>{pdfFile.name}</span>
                   <button onClick={e => { e.stopPropagation(); setPdfFile(null); }} style={{ background: "none", border: "none", cursor: "pointer", color: T3, fontSize: "16px", lineHeight: 1 }}>×</button>
                 </div>
               ) : (
@@ -1558,11 +1559,11 @@ function ReportsTab({ ac }: { ac: Company }) {
             <div
               key={r.id}
               onClick={() => setSelectedId(r.id)}
-              style={{ padding: "12px 14px", borderRadius: "8px", border: `1px solid ${isActive ? GOLD : "rgba(26,26,26,0.08)"}`, background: isActive ? `${GOLD}08` : "#fff", cursor: "pointer", transition: "all 0.15s", position: "relative" }}
+              style={{ padding: "12px 14px", borderRadius: "8px", border: `1px solid ${isActive ? GOLD : "#E5E5E5"}`, background: isActive ? `${GOLD}08` : "#fff", cursor: "pointer", transition: "all 0.15s", position: "relative" }}
             >
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
                 <span style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: isActive ? GOLD : T3 }}>{r.type}</span>
-                <span style={{ fontSize: "9px", padding: "1px 6px", borderRadius: "100px", background: r.status === "published" ? "rgba(43,191,176,0.12)" : "rgba(26,26,26,0.06)", color: r.status === "published" ? "#2BBFB0" : T3, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase" }}>{r.status}</span>
+                <span style={{ fontSize: "9px", padding: "1px 6px", borderRadius: "100px", background: r.status === "published" ? "rgba(227,0,0,0.10)" : "#E5E5E5", color: r.status === "published" ? "#E30000" : T3, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase" }}>{r.status}</span>
               </div>
               <div style={{ fontSize: "12px", fontWeight: 500, color: T, marginBottom: "3px" }}>{r.period_start.slice(0, 7)}</div>
               {d?.impressions && <div style={{ fontSize: "11px", color: T3 }}>{fmtN(d.impressions)} impressions</div>}
@@ -1587,17 +1588,17 @@ function ReportsTab({ ac }: { ac: Company }) {
             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "16px", flexWrap: "wrap" }}>
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
-                  <span style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", padding: "2px 8px", borderRadius: "100px", background: "rgba(26,26,26,0.06)", color: T2 }}>{selectedReport.type}</span>
-                  <span style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", padding: "2px 8px", borderRadius: "100px", background: selectedReport.status === "published" ? "rgba(43,191,176,0.12)" : "rgba(26,26,26,0.06)", color: selectedReport.status === "published" ? "#2BBFB0" : T2 }}>{selectedReport.status}</span>
+                  <span style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", padding: "2px 8px", borderRadius: "100px", background: "#E5E5E5", color: T2 }}>{selectedReport.type}</span>
+                  <span style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", padding: "2px 8px", borderRadius: "100px", background: selectedReport.status === "published" ? "rgba(227,0,0,0.10)" : "#E5E5E5", color: selectedReport.status === "published" ? "#E30000" : T2 }}>{selectedReport.status}</span>
                 </div>
                 <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "28px", fontWeight: 300, fontStyle: "normal", color: T, marginBottom: "4px" }}>{ac.name}</div>
                 <div style={{ fontSize: "12px", color: T3 }}>{selectedReport.period_start} – {selectedReport.period_end}</div>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
                 {showTrends && (
-                  <div style={{ display: "flex", background: "rgba(26,26,26,0.04)", borderRadius: "6px", padding: "3px" }}>
+                  <div style={{ display: "flex", background: "#F5F5F5", borderRadius: "8px", padding: "3px" }}>
                     {(["report", "trends"] as const).map(v => (
-                      <button key={v} onClick={() => setMainView(v)} style={{ padding: "5px 12px", borderRadius: "4px", border: "none", background: mainView === v ? "#fff" : "transparent", color: mainView === v ? T : T3, fontSize: "12px", fontWeight: 500, cursor: "pointer", fontFamily: "inherit", textTransform: "capitalize", boxShadow: mainView === v ? "0 1px 3px rgba(26,26,26,0.10)" : "none" }}>
+                      <button key={v} onClick={() => setMainView(v)} style={{ padding: "5px 12px", borderRadius: "4px", border: "none", background: mainView === v ? "#fff" : "transparent", color: mainView === v ? T : T3, fontSize: "12px", fontWeight: 500, cursor: "pointer", fontFamily: "inherit", textTransform: "capitalize", boxShadow: mainView === v ? "0 1px 3px rgba(0,0,0,0.08)" : "none" }}>
                         {v}
                       </button>
                     ))}
@@ -1617,10 +1618,10 @@ function ReportsTab({ ac }: { ac: Company }) {
                     Export PDF ▾
                   </GlassBtn>
                   {exportMenuOpen && (
-                    <div style={{ position: "absolute", right: 0, top: "calc(100% + 4px)", background: "#fff", border: "1px solid rgba(26,26,26,0.10)", borderRadius: "8px", boxShadow: "0 4px 16px rgba(26,26,26,0.10)", zIndex: 20, minWidth: 160, overflow: "hidden" }}>
+                    <div style={{ position: "absolute", right: 0, top: "calc(100% + 4px)", background: "#fff", border: "1px solid #E5E5E5", borderRadius: "8px", boxShadow: "0 1px 3px rgba(0,0,0,0.08)", zIndex: 20, minWidth: 160, overflow: "hidden" }}>
                       {[{ label: "Agency version", v: "agency" }, { label: "Client version", v: "client" }].map(({ label, v }) => (
                         <button key={v} onClick={() => handleExportPdf(v as "agency" | "client")} style={{ display: "block", width: "100%", padding: "10px 16px", textAlign: "left", background: "none", border: "none", cursor: "pointer", fontSize: "13px", color: T, fontFamily: "inherit" }}
-                          onMouseEnter={e => (e.currentTarget.style.background = "rgba(26,26,26,0.04)")}
+                          onMouseEnter={e => (e.currentTarget.style.background = "#F5F5F5")}
                           onMouseLeave={e => (e.currentTarget.style.background = "none")}>{label}</button>
                       ))}
                     </div>
@@ -1641,7 +1642,7 @@ function ReportsTab({ ac }: { ac: Company }) {
                       <XAxis dataKey="period" tick={{ fill: chartText, fontSize: 11 }} axisLine={false} tickLine={false} />
                       <YAxis tick={{ fill: chartText, fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => `${(v/1000).toFixed(0)}K`} />
                       <Tooltip formatter={(v: unknown) => [fmtN(v as number), "Impressions"]} />
-                      <Line type="monotone" dataKey="impressions" stroke="#2255CC" strokeWidth={2} dot={{ fill: "#2255CC", r: 3 }} />
+                      <Line type="monotone" dataKey="impressions" stroke="#E30000" strokeWidth={2} dot={{ fill: "#E30000", r: 3 }} />
                     </LineChart>
                   </ResponsiveContainer>}
                 </div>
@@ -1650,12 +1651,12 @@ function ReportsTab({ ac }: { ac: Company }) {
                     <div className="label" style={{ marginBottom: "16px" }}>Engagement Rate %</div>
                     {mounted && <ResponsiveContainer width="100%" height={160}>
                       <AreaChart data={trendData}>
-                        <defs><linearGradient id="gEngTrend" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#2BBFB0" stopOpacity={0.3}/><stop offset="100%" stopColor="#2BBFB0" stopOpacity={0}/></linearGradient></defs>
+                        <defs><linearGradient id="gEngTrend" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#E30000" stopOpacity={0.3}/><stop offset="100%" stopColor="#E30000" stopOpacity={0}/></linearGradient></defs>
                         <CartesianGrid stroke={chartGrid} vertical={false} />
                         <XAxis dataKey="period" tick={{ fill: chartText, fontSize: 10 }} axisLine={false} tickLine={false} />
                         <YAxis tick={{ fill: chartText, fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => `${v}%`} />
                         <Tooltip formatter={(v: unknown) => [`${Number(v).toFixed(1)}%`, "Engagement"]} />
-                        <Area type="monotone" dataKey="engagementRate" stroke="#2BBFB0" fill="url(#gEngTrend)" strokeWidth={1.5} dot={false} />
+                        <Area type="monotone" dataKey="engagementRate" stroke="#E30000" fill="url(#gEngTrend)" strokeWidth={1.5} dot={false} />
                       </AreaChart>
                     </ResponsiveContainer>}
                   </div>
@@ -1687,7 +1688,7 @@ function ReportsTab({ ac }: { ac: Company }) {
                         <div key={label} style={glass({ padding: "16px 20px" })}>
                           <div className="label" style={{ marginBottom: "8px" }}>{label}</div>
                           <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "28px", fontWeight: 300, color: T, lineHeight: 1, marginBottom: "4px" }}>{(fmt as (v: number) => string)(cur)}</div>
-                          <div style={{ fontSize: "11px", color: up ? "#2BBFB0" : "#CC4422", fontWeight: 600 }}>{up ? "+" : ""}{delta.toFixed(1)}% vs last month</div>
+                          <div style={{ fontSize: "11px", color: up ? "#E30000" : "#CC4422", fontWeight: 600 }}>{up ? "+" : ""}{delta.toFixed(1)}% vs last month</div>
                         </div>
                       );
                     })}
@@ -1703,17 +1704,17 @@ function ReportsTab({ ac }: { ac: Company }) {
                 {extracted ? (
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "12px" }}>
                     {[
-                      { label: "Impressions",       value: fmtN(extracted.impressions),            color: "#2255CC" },
-                      { label: "Reach",             value: fmtN(extracted.reach),                  color: "#2BBFB0" },
+                      { label: "Impressions",       value: fmtN(extracted.impressions),            color: GOLD },
+                      { label: "Reach",             value: fmtN(extracted.reach),                  color: GOLD },
                       { label: "Engagement Rate",   value: fmtPct(extracted.engagementRate),        color: GOLD },
-                      { label: "Total Engagements", value: fmtN(extracted.totalEngagements),        color: "#6633CC" },
-                      { label: "Follower Count",    value: fmtN(extracted.followerCount),           color: "#2255CC" },
-                      { label: "Follower Growth",   value: extracted.followerGrowth != null ? `${extracted.followerGrowth > 0 ? "+" : ""}${extracted.followerGrowth}` : "—", color: "#2BBFB0" },
+                      { label: "Total Engagements", value: fmtN(extracted.totalEngagements),        color: GOLD },
+                      { label: "Follower Count",    value: fmtN(extracted.followerCount),           color: GOLD },
+                      { label: "Follower Growth",   value: extracted.followerGrowth != null ? `${extracted.followerGrowth > 0 ? "+" : ""}${extracted.followerGrowth}` : "—", color: GOLD },
                     ].map(k => (
                       <div key={k.label} style={glass({ padding: "18px 20px 16px", position: "relative", overflow: "hidden" })}>
-                        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: k.color, opacity: 0.65 }} />
+                        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: k.color }} />
                         <div className="label" style={{ marginBottom: "10px" }}>{k.label}</div>
-                        <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "32px", fontWeight: 300, color: T, letterSpacing: "-0.02em", lineHeight: 1 }}>{k.value}</div>
+                        <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "32px", fontWeight: 700, color: "#0A0A0A", letterSpacing: "-0.02em", lineHeight: 1 }}>{k.value}</div>
                       </div>
                     ))}
                   </div>
@@ -1737,7 +1738,7 @@ function ReportsTab({ ac }: { ac: Company }) {
                             <XAxis dataKey="date" tick={{ fill: chartText, fontSize: 10 }} axisLine={false} tickLine={false} />
                             <YAxis tick={{ fill: chartText, fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => fmtN(v as number)} />
                             <Tooltip formatter={(v: unknown) => [fmtN(v as number), "Impressions"]} />
-                            <Line type="monotone" dataKey="impressions" stroke="#2255CC" strokeWidth={1.5} dot={{ fill: "#2255CC", r: 2 }} />
+                            <Line type="monotone" dataKey="impressions" stroke="#E30000" strokeWidth={1.5} dot={{ fill: "#E30000", r: 2 }} />
                           </LineChart>
                         </ResponsiveContainer>}
                       </div>
@@ -1789,13 +1790,13 @@ function ReportsTab({ ac }: { ac: Company }) {
                           </div>
                           {extracted.followerGrowth != null && (
                             <div>
-                              <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "32px", fontWeight: 300, color: "#2BBFB0", lineHeight: 1, letterSpacing: "-0.02em" }}>{extracted.followerGrowth > 0 ? "+" : ""}{extracted.followerGrowth}</div>
+                              <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "32px", fontWeight: 300, color: "#E30000", lineHeight: 1, letterSpacing: "-0.02em" }}>{extracted.followerGrowth > 0 ? "+" : ""}{extracted.followerGrowth}</div>
                               <div style={{ fontSize: "11px", color: T3, marginTop: "4px" }}>This period</div>
                             </div>
                           )}
                           {extracted.followerGrowthPercent != null && (
                             <div>
-                              <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "32px", fontWeight: 300, color: "#2BBFB0", lineHeight: 1 }}>{fmtPct(extracted.followerGrowthPercent)}</div>
+                              <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "32px", fontWeight: 300, color: "#E30000", lineHeight: 1 }}>{fmtPct(extracted.followerGrowthPercent)}</div>
                               <div style={{ fontSize: "11px", color: T3, marginTop: "4px" }}>Growth rate</div>
                             </div>
                           )}
@@ -1808,13 +1809,13 @@ function ReportsTab({ ac }: { ac: Company }) {
                 {/* Posts table */}
                 {sortedPosts.length > 0 && (
                   <div style={glass()}>
-                    <div style={{ padding: "16px 20px", borderBottom: "1px solid rgba(26,26,26,0.08)" }}>
+                    <div style={{ padding: "16px 20px", borderBottom: "1px solid #E5E5E5" }}>
                       <div className="label" style={{ marginBottom: "4px" }}>Post Performance</div>
                       <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "18px", fontWeight: 300, fontStyle: "normal", color: T }}>Sortable by any metric</div>
                     </div>
                     <table style={{ width: "100%", borderCollapse: "collapse" }}>
                       <thead>
-                        <tr style={{ borderBottom: "1px solid rgba(26,26,26,0.08)" }}>
+                        <tr style={{ borderBottom: "1px solid #E5E5E5" }}>
                           {[
                             { key: "date", label: "Date" },
                             { key: "content", label: "Content" },
@@ -1835,13 +1836,13 @@ function ReportsTab({ ac }: { ac: Company }) {
                           const isTop = extracted?.topPost?.content === p.content;
                           const isExpanded = expandedPost === i;
                           return (
-                            <tr key={i} style={{ borderBottom: "1px solid rgba(26,26,26,0.06)", borderLeft: isTop ? `3px solid ${GOLD}` : "3px solid transparent", cursor: "pointer", background: isExpanded ? "rgba(227,0,0,0.03)" : "transparent" }} onClick={() => setExpandedPost(isExpanded ? null : i)}>
+                            <tr key={i} style={{ borderBottom: "1px solid #E5E5E5", borderLeft: isTop ? `3px solid ${GOLD}` : "3px solid transparent", cursor: "pointer", background: isExpanded ? "rgba(227,0,0,0.03)" : "transparent" }} onClick={() => setExpandedPost(isExpanded ? null : i)}>
                               <td style={{ padding: "12px 16px", fontSize: "12px", color: T3, whiteSpace: "nowrap" }}>{p.date ?? "—"}</td>
                               <td style={{ padding: "12px 16px", fontSize: "12px", color: T2, maxWidth: 220 }}>
                                 {isExpanded ? p.content : `${(p.content ?? "").slice(0, 80)}${(p.content?.length ?? 0) > 80 ? "…" : ""}`}
                               </td>
                               <td style={{ padding: "12px 16px", fontSize: "13px", fontWeight: 600, color: T }}>{fmtN(p.impressions)}</td>
-                              <td style={{ padding: "12px 16px" }}><span style={{ fontSize: "12px", fontWeight: 600, color: "#2BBFB0" }}>{fmtPct(p.engagementRate)}</span></td>
+                              <td style={{ padding: "12px 16px" }}><span style={{ fontSize: "12px", fontWeight: 600, color: "#E30000" }}>{fmtPct(p.engagementRate)}</span></td>
                               <td style={{ padding: "12px 16px", fontSize: "12px", color: T2 }}>{fmtN(p.reactions)}</td>
                               <td style={{ padding: "12px 16px", fontSize: "12px", color: T2 }}>{fmtN(p.comments)}</td>
                               <td style={{ padding: "12px 16px", fontSize: "12px", color: T2 }}>{fmtN(p.clicks)}</td>
@@ -1850,7 +1851,7 @@ function ReportsTab({ ac }: { ac: Company }) {
                         })}
                       </tbody>
                     </table>
-                    {extracted?.topPost && <div style={{ padding: "10px 20px", fontSize: "11px", color: T3, borderTop: "1px solid rgba(26,26,26,0.06)" }}>Gold border = top performing post of the period</div>}
+                    {extracted?.topPost && <div style={{ padding: "10px 20px", fontSize: "11px", color: T3, borderTop: "1px solid #E5E5E5" }}>Gold border = top performing post of the period</div>}
                   </div>
                 )}
 
@@ -1863,14 +1864,14 @@ function ReportsTab({ ac }: { ac: Company }) {
                     </div>
                     <div style={{ display: "flex", gap: "4px" }}>
                       {(["agency", "client"] as const).map(t => (
-                        <button key={t} onClick={() => setNarrativeTab(t)} style={{ padding: "6px 14px", borderRadius: "6px", border: `1px solid ${narrativeTab === t ? GOLD : "rgba(26,26,26,0.10)"}`, background: narrativeTab === t ? `${GOLD}14` : "transparent", color: narrativeTab === t ? GOLD : T2, fontSize: "12px", fontWeight: 500, cursor: "pointer", textTransform: "capitalize", fontFamily: "inherit" }}>
+                        <button key={t} onClick={() => setNarrativeTab(t)} style={{ padding: "6px 14px", borderRadius: "8px", border: `1px solid ${narrativeTab === t ? GOLD : "#E5E5E5"}`, background: narrativeTab === t ? `${GOLD}14` : "transparent", color: narrativeTab === t ? GOLD : T2, fontSize: "12px", fontWeight: 500, cursor: "pointer", textTransform: "capitalize", fontFamily: "inherit" }}>
                           {t}
                         </button>
                       ))}
                     </div>
                   </div>
                   {!selectedReport.narrative_agency && !selectedReport.narrative_client ? (
-                    <div style={{ padding: "24px", textAlign: "center", color: T3, fontSize: "13px", background: "rgba(26,26,26,0.02)", borderRadius: "6px" }}>
+                    <div style={{ padding: "24px", textAlign: "center", color: T3, fontSize: "13px", background: "#F5F5F5", borderRadius: "8px" }}>
                       {selectedReport.extracted_data ? "Generating narratives…" : "Upload a PDF to generate narratives"}
                       {selectedReport.extracted_data && <div style={{ marginTop: "8px" }}><Spinner /></div>}
                     </div>
@@ -1916,17 +1917,17 @@ function LogoUploadPanel({ logo, currentLogoSrc, onFile, onToggleInvert }: {
   const rawSrc   = logo.file ? URL.createObjectURL(logo.file) : null;
   const origSrc  = logo.originalB64 ? `data:image/png;base64,${logo.originalB64}` : null;
   const dispSrc  = logo.displayB64  ? `data:image/png;base64,${logo.displayB64}`  : null;
-  const panelBg  = "rgba(26,26,26,0.06)";
+  const panelBg  = "#E5E5E5";
 
   return (
     <div style={{ marginBottom: "24px" }}>
-      <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(26,26,26,0.45)", marginBottom: "7px" }}>
+      <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>
         Company Logo — Background Removal
       </label>
 
       <div style={{ display: "flex", gap: "12px", alignItems: "flex-start", flexWrap: "wrap" }}>
         {/* File picker */}
-        <label style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "9px 16px", background: "rgba(26,26,26,0.04)", border: "1px solid rgba(26,26,26,0.12)", borderRadius: "6px", fontSize: "12px", color: T3, cursor: "pointer", flexShrink: 0, whiteSpace: "nowrap", letterSpacing: "0.04em" }}>
+        <label style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "9px 16px", background: "#F5F5F5", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "12px", color: T3, cursor: "pointer", flexShrink: 0, whiteSpace: "nowrap", letterSpacing: "0.04em" }}>
           {logo.file ? logo.file.name : currentLogoSrc ? "Replace logo…" : "Choose file…"}
           <input id={inputId} type="file" accept="image/png,image/jpeg,image/webp" style={{ display: "none" }}
             onChange={e => { const f = e.target.files?.[0]; if (f) onFile(f); }} />
@@ -1934,7 +1935,7 @@ function LogoUploadPanel({ logo, currentLogoSrc, onFile, onToggleInvert }: {
 
         {/* Processing spinner */}
         {logo.processing && (
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "9px 14px", background: "rgba(227,0,0,0.06)", border: "1px solid rgba(227,0,0,0.18)", borderRadius: "6px", fontSize: "12px", color: GOLD }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "9px 14px", background: "rgba(227,0,0,0.06)", border: "1px solid rgba(227,0,0,0.18)", borderRadius: "8px", fontSize: "12px", color: GOLD }}>
             <Spinner /> Removing background…
           </div>
         )}
@@ -1946,31 +1947,31 @@ function LogoUploadPanel({ logo, currentLogoSrc, onFile, onToggleInvert }: {
             {/* Before */}
             {rawSrc && (
               <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(26,26,26,0.35)", marginBottom: "5px" }}>Original</div>
+                <div style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "5px" }}>Original</div>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={rawSrc} alt="original" style={{ height: "60px", maxWidth: "140px", objectFit: "contain", background: panelBg, borderRadius: "8px", padding: "6px", border: "1px solid rgba(26,26,26,0.12)" }} />
+                <img src={rawSrc} alt="original" style={{ height: "60px", maxWidth: "140px", objectFit: "contain", background: panelBg, borderRadius: "8px", padding: "6px", border: "1px solid #E5E5E5" }} />
               </div>
             )}
 
             {/* Current logo (edit mode, no new upload yet) */}
             {!rawSrc && currentLogoSrc && !origSrc && (
               <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(26,26,26,0.35)", marginBottom: "5px" }}>Current</div>
+                <div style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "5px" }}>Current</div>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={currentLogoSrc} alt="current" style={{ height: "60px", maxWidth: "140px", objectFit: "contain", background: panelBg, borderRadius: "8px", padding: "6px", border: "1px solid rgba(26,26,26,0.12)" }} />
+                <img src={currentLogoSrc} alt="current" style={{ height: "60px", maxWidth: "140px", objectFit: "contain", background: panelBg, borderRadius: "8px", padding: "6px", border: "1px solid #E5E5E5" }} />
               </div>
             )}
 
             {/* After bg removal (original transparent) */}
             {origSrc && (
               <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(26,26,26,0.35)", marginBottom: "5px" }}>
+                <div style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "5px" }}>
                   Transparent
                 </div>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={origSrc} alt="transparent" style={{ height: "60px", maxWidth: "140px", objectFit: "contain", background: "repeating-conic-gradient(rgba(255,255,255,0.05) 0% 25%, transparent 0% 50%) 0 0 / 10px 10px", borderRadius: "8px", padding: "6px", border: "1px solid rgba(26,26,26,0.12)" }} />
+                <img src={origSrc} alt="transparent" style={{ height: "60px", maxWidth: "140px", objectFit: "contain", background: "repeating-conic-gradient(rgba(255,255,255,0.05) 0% 25%, transparent 0% 50%) 0 0 / 10px 10px", borderRadius: "8px", padding: "6px", border: "1px solid #E5E5E5" }} />
                 {logo.brightness !== null && (
-                  <div style={{ fontSize: "10px", color: "rgba(26,26,26,0.35)", marginTop: "3px" }}>
+                  <div style={{ fontSize: "10px", color: "#999999", marginTop: "3px" }}>
                     Brightness: {Math.round(logo.brightness)}
                   </div>
                 )}
@@ -1980,11 +1981,11 @@ function LogoUploadPanel({ logo, currentLogoSrc, onFile, onToggleInvert }: {
             {/* Display version (what will be saved & shown) */}
             {dispSrc && (
               <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: "10px", fontWeight: 500, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(43,191,176,0.6)", marginBottom: "5px" }}>
+                <div style={{ fontSize: "10px", fontWeight: 500, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(227,0,0,0.6)", marginBottom: "5px" }}>
                   Display {logo.inverted ? "(inverted)" : "(original)"}
                 </div>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={dispSrc} alt="display" style={{ height: "60px", maxWidth: "140px", objectFit: "contain", background: "#F5F5F5", borderRadius: "6px", padding: "6px", border: "1px solid rgba(43,191,176,0.2)" }} />
+                <img src={dispSrc} alt="display" style={{ height: "60px", maxWidth: "140px", objectFit: "contain", background: "#F5F5F5", borderRadius: "8px", padding: "6px", border: "1px solid rgba(227,0,0,0.20)" }} />
               </div>
             )}
 
@@ -1996,22 +1997,22 @@ function LogoUploadPanel({ logo, currentLogoSrc, onFile, onToggleInvert }: {
                   style={{
                     display: "inline-flex", alignItems: "center", gap: "8px",
                     padding: "7px 14px",
-                    background: logo.inverted ? "rgba(43,191,176,0.10)" : "transparent",
-                    border: logo.inverted ? "1px solid rgba(43,191,176,0.3)" : "1px solid rgba(26,26,26,0.12)",
-                    borderRadius: "6px",
+                    background: logo.inverted ? "rgba(227,0,0,0.10)" : "transparent",
+                    border: logo.inverted ? "1px solid rgba(227,0,0,0.25)" : "1px solid #E5E5E5",
+                    borderRadius: "8px",
                     fontSize: "12px", fontWeight: 500,
-                    color: logo.inverted ? "#2BBFB0" : T3,
+                    color: logo.inverted ? "#E30000" : T3,
                     cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s ease",
                   }}
                 >
                   {/* Toggle switch visual */}
-                  <span style={{ width: "28px", height: "16px", borderRadius: "8px", background: logo.inverted ? "#2BBFB0" : "rgba(26,26,26,0.15)", display: "inline-block", position: "relative", flexShrink: 0, transition: "background 0.2s ease" }}>
+                  <span style={{ width: "28px", height: "16px", borderRadius: "8px", background: logo.inverted ? "#E30000" : "#E5E5E5", display: "inline-block", position: "relative", flexShrink: 0, transition: "background 0.2s ease" }}>
                     <span style={{ position: "absolute", top: "2px", left: logo.inverted ? "14px" : "2px", width: "12px", height: "12px", borderRadius: "50%", background: "#fff", transition: "left 0.2s ease" }} />
                   </span>
                   Invert for dark background
                 </button>
                 {logo.inverted && logo.brightness !== null && logo.brightness < 128 && (
-                  <div style={{ fontSize: "10px", color: "rgba(43,191,176,0.5)", marginTop: "4px", textAlign: "center" }}>Auto-detected dark logo</div>
+                  <div style={{ fontSize: "10px", color: "rgba(227,0,0,0.5)", marginTop: "4px", textAlign: "center" }}>Auto-detected dark logo</div>
                 )}
               </div>
             )}
@@ -2301,16 +2302,17 @@ function ClientsTab({ clients, notify, onClientAdded }: {
               brand_prompt: kit.brand_prompt || "",
               invert_logo: Boolean(kit.invert_logo),
             });
-          }} style={{ ...glass({ padding: "20px", paddingTop: "22px", position: "relative", overflow: "hidden" }), cursor: "pointer" }}>
-            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: c.color, opacity: 0.6 }} />
-            <div style={{ marginBottom: "12px" }}>
-              <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "18px", fontWeight: 300, color: T, letterSpacing: "-0.01em" }}>{c.name}</div>
+          }} style={{ ...glass({ padding: "24px", position: "relative", overflow: "hidden" }), cursor: "pointer", transition: "all 0.15s ease" }}>
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: GOLD }} />
+            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
+              <div style={{ width: "24px", height: "24px", borderRadius: "50%", background: c.color, flexShrink: 0 }} />
+              <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "18px", fontWeight: 700, color: "#0A0A0A", letterSpacing: "-0.01em" }}>{c.name}</div>
             </div>
-            <div style={{ fontSize: "12px", fontStyle: "normal", color: T3, marginBottom: "12px", fontFamily: "var(--font-raleway), sans-serif" }}>{c.tagline}</div>
-            <div style={{ fontSize: "10px", color: T3, marginBottom: "12px", letterSpacing: "0.08em", textTransform: "uppercase" as const }}>{c.timezone}</div>
+            <div style={{ fontSize: "13px", color: "#666666", marginBottom: "12px", fontFamily: "Helvetica, Arial, sans-serif" }}>{c.tagline}</div>
+            <div style={{ fontSize: "11px", color: "#999999", marginBottom: "12px", letterSpacing: "0.08em", textTransform: "uppercase" as const, fontFamily: "Helvetica, Arial, sans-serif" }}>{c.timezone}</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
               {(Array.isArray(c.pillars) ? c.pillars : []).slice(0, 4).map((p: Record<string, unknown>, i: number) => (
-                <span key={i} style={{ fontSize: "9px", padding: "2px 8px", background: "rgba(26,26,26,0.04)", border: "1px solid rgba(26,26,26,0.09)", color: T3, borderRadius: "4px", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>
+                <span key={i} style={{ fontSize: "9px", padding: "2px 8px", background: "#F5F5F5", border: "1px solid #E5E5E5", color: T3, borderRadius: "4px", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>
                   {p.day as string}
                 </span>
               ))}
@@ -2340,12 +2342,12 @@ function ClientsTab({ clients, notify, onClientAdded }: {
               { label: "Logo text", key: "logo_text" },
             ].map(f => (
               <div key={f.key}>
-                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(26,26,26,0.45)", marginBottom: "7px" }}>{f.label}</label>
+                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>{f.label}</label>
                 <input type="text" value={editForm[f.key] as string}
                   onChange={e => setEditForm(p => ({ ...p!, [f.key]: e.target.value }))}
                   style={{ ...INPUT, padding: "10px 13px", fontSize: "13px" }}
                   onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
-                  onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
+                  onBlur={e => e.target.style.borderColor = "#E5E5E5"}
                 />
               </div>
             ))}
@@ -2359,17 +2361,17 @@ function ClientsTab({ clients, notify, onClientAdded }: {
               { label: "Light color", key: "light_color" },
             ].map(f => (
               <div key={f.key}>
-                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(26,26,26,0.45)", marginBottom: "7px" }}>{f.label}</label>
+                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>{f.label}</label>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                   <input type="color" value={editForm[f.key] as string}
                     onChange={e => setEditForm(p => ({ ...p!, [f.key]: e.target.value }))}
-                    style={{ width: "36px", height: "36px", borderRadius: "6px", border: "1px solid rgba(26,26,26,0.12)", cursor: "pointer" }}
+                    style={{ width: "36px", height: "36px", borderRadius: "8px", border: "1px solid #E5E5E5", cursor: "pointer" }}
                   />
                   <input type="text" value={editForm[f.key] as string}
                     onChange={e => setEditForm(p => ({ ...p!, [f.key]: e.target.value }))}
                     style={{ ...INPUT, padding: "8px 10px", fontSize: "12px" }}
                     onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
-                    onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
+                    onBlur={e => e.target.style.borderColor = "#E5E5E5"}
                   />
                 </div>
               </div>
@@ -2383,14 +2385,14 @@ function ClientsTab({ clients, notify, onClientAdded }: {
               { label: "Visual mood", key: "visual_mood", placeholder: "Dark backgrounds, bold type…" },
             ].map(f => (
               <div key={f.key}>
-                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(26,26,26,0.45)", marginBottom: "7px" }}>{f.label}</label>
+                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>{f.label}</label>
                 <textarea value={editForm[f.key] as string}
                   onChange={e => setEditForm(p => ({ ...p!, [f.key]: e.target.value }))}
                   placeholder={(f as Record<string, string>).placeholder}
                   rows={3}
                   style={{ ...INPUT, resize: "none", fontSize: "13px" }}
                   onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
-                  onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
+                  onBlur={e => e.target.style.borderColor = "#E5E5E5"}
                 />
               </div>
             ))}
@@ -2402,20 +2404,20 @@ function ClientsTab({ clients, notify, onClientAdded }: {
               { label: "Secondary / body font",   key: "secondary_font", placeholder: "e.g. DM Sans, Georgia, Inter" },
             ].map(f => (
               <div key={f.key}>
-                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(26,26,26,0.45)", marginBottom: "7px" }}>{f.label}</label>
+                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>{f.label}</label>
                 <input type="text" value={editForm[f.key] as string}
                   onChange={e => setEditForm(p => ({ ...p!, [f.key]: e.target.value }))}
                   placeholder={(f as Record<string, string>).placeholder}
                   style={{ ...INPUT, padding: "10px 13px", fontSize: "13px" }}
                   onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
-                  onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
+                  onBlur={e => e.target.style.borderColor = "#E5E5E5"}
                 />
               </div>
             ))}
           </div>
 
-          <div style={glassElevated({ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", marginBottom: "20px", padding: "16px", border: "1px solid rgba(43,191,176,0.12)" })}>
-            <div style={{ gridColumn: "1/-1", fontSize: "10px", fontWeight: 500, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(43,191,176,0.6)", marginBottom: "4px" }}>
+          <div style={glassElevated({ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", marginBottom: "20px", padding: "16px", border: "1px solid rgba(227,0,0,0.10)" })}>
+            <div style={{ gridColumn: "1/-1", fontSize: "10px", fontWeight: 500, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(227,0,0,0.6)", marginBottom: "4px" }}>
               Visual generation fonts — used in SVG image creation
             </div>
             {[
@@ -2423,13 +2425,13 @@ function ClientsTab({ clients, notify, onClientAdded }: {
               { label: "Body font (visuals)",     key: "body_font",     placeholder: "Google Font name, e.g. DM Sans" },
             ].map(f => (
               <div key={f.key}>
-                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(26,26,26,0.45)", marginBottom: "7px" }}>{f.label}</label>
+                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>{f.label}</label>
                 <input type="text" value={editForm[f.key] as string}
                   onChange={e => setEditForm(p => ({ ...p!, [f.key]: e.target.value }))}
                   placeholder={(f as Record<string, string>).placeholder}
                   style={{ ...INPUT, padding: "10px 13px", fontSize: "13px" }}
-                  onFocus={e => e.target.style.borderColor = "rgba(43,191,176,0.3)"}
-                  onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
+                  onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.25)"}
+                  onBlur={e => e.target.style.borderColor = "#E5E5E5"}
                 />
               </div>
             ))}
@@ -2459,19 +2461,19 @@ function ClientsTab({ clients, notify, onClientAdded }: {
               placeholder="Click Generate to create an optimised AI image prompt from this brand's data…"
               style={{ ...INPUT, resize: "vertical", fontSize: "12px", lineHeight: 1.7, fontFamily: "monospace" }}
               onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
-              onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
+              onBlur={e => e.target.style.borderColor = "#E5E5E5"}
             />
           </div>
 
           {/* Invert logo toggle */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", background: "rgba(26,26,26,0.02)", border: "1px solid rgba(26,26,26,0.09)", borderRadius: "8px", marginBottom: "20px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", background: "#F5F5F5", border: "1px solid #E5E5E5", borderRadius: "8px", marginBottom: "20px" }}>
             <div>
               <div style={{ fontSize: "12px", fontWeight: 400, color: T2, marginBottom: "2px" }}>Invert logo for dark backgrounds</div>
               <div style={{ fontSize: "11px", color: T3 }}>Applies brightness(0) invert(1) filter on generated image overlays</div>
             </div>
             <button onClick={() => setEditForm(f => ({ ...f!, invert_logo: !f!.invert_logo }))}
-              style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 12px", background: editForm.invert_logo ? "rgba(43,191,176,0.10)" : "transparent", border: editForm.invert_logo ? "1px solid rgba(43,191,176,0.3)" : "1px solid rgba(26,26,26,0.12)", borderRadius: "6px", color: editForm.invert_logo ? "#2BBFB0" : T3, cursor: "pointer", fontFamily: "inherit", fontSize: "11px", fontWeight: 500, transition: "all 0.15s ease" }}>
-              <span style={{ width: "28px", height: "16px", borderRadius: "8px", background: editForm.invert_logo ? "#2BBFB0" : "rgba(26,26,26,0.15)", display: "inline-block", position: "relative", flexShrink: 0, transition: "background 0.2s ease" }}>
+              style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 12px", background: editForm.invert_logo ? "rgba(227,0,0,0.10)" : "transparent", border: editForm.invert_logo ? "1px solid rgba(227,0,0,0.25)" : "1px solid #E5E5E5", borderRadius: "8px", color: editForm.invert_logo ? "#E30000" : T3, cursor: "pointer", fontFamily: "inherit", fontSize: "11px", fontWeight: 500, transition: "all 0.15s ease" }}>
+              <span style={{ width: "28px", height: "16px", borderRadius: "8px", background: editForm.invert_logo ? "#E30000" : "#E5E5E5", display: "inline-block", position: "relative", flexShrink: 0, transition: "background 0.2s ease" }}>
                 <span style={{ position: "absolute", top: "2px", left: editForm.invert_logo ? "14px" : "2px", width: "12px", height: "12px", borderRadius: "50%", background: "#fff", transition: "left 0.2s ease" }} />
               </span>
               {editForm.invert_logo ? "On" : "Off"}
@@ -2479,7 +2481,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
           </div>
 
           <div style={{ marginBottom: "20px" }}>
-            <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(26,26,26,0.45)", marginBottom: "7px" }}>Key brand phrases</label>
+            <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>Key brand phrases</label>
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               {(editForm.key_phrases as string[]).map((p, i) => (
                 <div key={i} style={{ display: "flex", gap: "8px" }}>
@@ -2487,11 +2489,11 @@ function ClientsTab({ clients, notify, onClientAdded }: {
                     onChange={e => setEditForm(f => ({ ...f!, key_phrases: (f!.key_phrases as string[]).map((x, idx) => idx === i ? e.target.value : x) }))}
                     style={{ ...INPUT, padding: "9px 12px", fontSize: "13px" }}
                     onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
-                    onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
+                    onBlur={e => e.target.style.borderColor = "#E5E5E5"}
                   />
                   {i === (editForm.key_phrases as string[]).length - 1 && (
                     <button onClick={() => setEditForm(f => ({ ...f!, key_phrases: [...(f!.key_phrases as string[]), ""] }))}
-                      style={{ padding: "9px 16px", background: "rgba(26,26,26,0.05)", border: "1px solid rgba(26,26,26,0.12)", borderRadius: "6px", color: T3, cursor: "pointer", fontFamily: "inherit", fontSize: "13px" }}>
+                      style={{ padding: "9px 16px", background: "#F5F5F5", border: "1px solid #E5E5E5", borderRadius: "8px", color: T3, cursor: "pointer", fontFamily: "inherit", fontSize: "13px" }}>
                       +
                     </button>
                   )}
@@ -2501,18 +2503,18 @@ function ClientsTab({ clients, notify, onClientAdded }: {
           </div>
 
           <div style={{ marginBottom: "28px" }}>
-            <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(26,26,26,0.45)", marginBottom: "7px" }}>Badges / tags</label>
+            <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>Badges / tags</label>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
               {(editForm.badges as string[]).map((b, i) => (
                 <input key={i} type="text" value={b}
                   onChange={e => setEditForm(f => ({ ...f!, badges: (f!.badges as string[]).map((x, idx) => idx === i ? e.target.value : x) }))}
                   style={{ ...INPUT, width: "140px", padding: "7px 10px", fontSize: "12px" }}
                   onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
-                  onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
+                  onBlur={e => e.target.style.borderColor = "#E5E5E5"}
                 />
               ))}
               <button onClick={() => setEditForm(f => ({ ...f!, badges: [...(f!.badges as string[]), ""] }))}
-                style={{ padding: "7px 14px", background: "rgba(26,26,26,0.04)", border: "1px solid rgba(26,26,26,0.12)", borderRadius: "6px", color: T3, cursor: "pointer", fontFamily: "inherit", fontSize: "12px" }}>
+                style={{ padding: "7px 14px", background: "#F5F5F5", border: "1px solid #E5E5E5", borderRadius: "8px", color: T3, cursor: "pointer", fontFamily: "inherit", fontSize: "12px" }}>
                 +
               </button>
             </div>
@@ -2532,7 +2534,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
                 )}
               </div>
               <a href={`/api/auth/linkedin?client_id=${selectedClient.id}`}
-                style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "8px 16px", background: "#0A66C2", color: "#fff", border: "none", borderRadius: "6px", fontSize: "12px", fontWeight: 600, textDecoration: "none", letterSpacing: "0.04em", transition: "opacity 0.15s ease" }}
+                style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "8px 16px", background: "#0A66C2", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12px", fontWeight: 600, textDecoration: "none", letterSpacing: "0.04em", transition: "opacity 0.15s ease" }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = "0.88"; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
@@ -2632,7 +2634,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
       placeholder="https://example.com"
       style={{ ...INPUT, flex: 1, padding: "10px 14px", fontSize: "13px" }}
       onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
-      onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
+      onBlur={e => e.target.style.borderColor = "#E5E5E5"}
     />
     <GlassBtn
       variant="primary"
@@ -2703,14 +2705,14 @@ function ClientsTab({ clients, notify, onClientAdded }: {
               { label: "Logo text", key: "logo_text", placeholder: "e.g. ACME" },
             ].map(f => (
               <div key={f.key}>
-                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(26,26,26,0.45)", marginBottom: "7px" }}>{f.label}</label>
+                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>{f.label}</label>
                 <input type="text"
                   value={(form as Record<string, unknown>)[f.key] as string}
                   onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
                   placeholder={f.placeholder}
                   style={{ ...INPUT, padding: "10px 13px", fontSize: "13px" }}
                   onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
-                  onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
+                  onBlur={e => e.target.style.borderColor = "#E5E5E5"}
                 />
               </div>
             ))}
@@ -2724,19 +2726,19 @@ function ClientsTab({ clients, notify, onClientAdded }: {
               { label: "Light color", key: "light_color" },
             ].map(f => (
               <div key={f.key}>
-                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(26,26,26,0.45)", marginBottom: "7px" }}>{f.label}</label>
+                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>{f.label}</label>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                   <input type="color"
                     value={(form as Record<string, unknown>)[f.key] as string}
                     onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
-                    style={{ width: "36px", height: "36px", borderRadius: "6px", border: "1px solid rgba(26,26,26,0.12)", cursor: "pointer" }}
+                    style={{ width: "36px", height: "36px", borderRadius: "8px", border: "1px solid #E5E5E5", cursor: "pointer" }}
                   />
                   <input type="text"
                     value={(form as Record<string, unknown>)[f.key] as string}
                     onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
                     style={{ ...INPUT, padding: "8px 10px", fontSize: "12px" }}
                     onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
-                    onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
+                    onBlur={e => e.target.style.borderColor = "#E5E5E5"}
                   />
                 </div>
               </div>
@@ -2750,7 +2752,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
               { label: "Visual mood", key: "visual_mood", placeholder: "Dark backgrounds, bold type, teal accents…" },
             ].map(f => (
               <div key={f.key}>
-                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(26,26,26,0.45)", marginBottom: "7px" }}>{f.label}</label>
+                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>{f.label}</label>
                 <textarea
                   value={(form as Record<string, unknown>)[f.key] as string}
                   onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
@@ -2758,7 +2760,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
                   rows={3}
                   style={{ ...INPUT, resize: "none", fontSize: "13px" }}
                   onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
-                  onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
+                  onBlur={e => e.target.style.borderColor = "#E5E5E5"}
                 />
               </div>
             ))}
@@ -2770,21 +2772,21 @@ function ClientsTab({ clients, notify, onClientAdded }: {
               { label: "Secondary / body font",   key: "secondary_font", placeholder: "e.g. DM Sans, Georgia, Inter" },
             ].map(f => (
               <div key={f.key}>
-                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(26,26,26,0.45)", marginBottom: "7px" }}>{f.label}</label>
+                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>{f.label}</label>
                 <input type="text"
                   value={(form as Record<string, unknown>)[f.key] as string}
                   onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
                   placeholder={f.placeholder}
                   style={{ ...INPUT, padding: "10px 13px", fontSize: "13px" }}
                   onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
-                  onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
+                  onBlur={e => e.target.style.borderColor = "#E5E5E5"}
                 />
               </div>
             ))}
           </div>
 
-          <div style={glassElevated({ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", marginBottom: "20px", padding: "16px", border: "1px solid rgba(43,191,176,0.12)" })}>
-            <div style={{ gridColumn: "1/-1", fontSize: "10px", fontWeight: 500, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(43,191,176,0.6)", marginBottom: "4px" }}>
+          <div style={glassElevated({ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", marginBottom: "20px", padding: "16px", border: "1px solid rgba(227,0,0,0.10)" })}>
+            <div style={{ gridColumn: "1/-1", fontSize: "10px", fontWeight: 500, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(227,0,0,0.6)", marginBottom: "4px" }}>
               Visual generation fonts — used in SVG image creation
             </div>
             {[
@@ -2792,14 +2794,14 @@ function ClientsTab({ clients, notify, onClientAdded }: {
               { label: "Body font (visuals)",     key: "body_font",     placeholder: "Google Font name, e.g. DM Sans" },
             ].map(f => (
               <div key={f.key}>
-                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(26,26,26,0.45)", marginBottom: "7px" }}>{f.label}</label>
+                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>{f.label}</label>
                 <input type="text"
                   value={(form as Record<string, unknown>)[f.key] as string}
                   onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
                   placeholder={f.placeholder}
                   style={{ ...INPUT, padding: "10px 13px", fontSize: "13px" }}
-                  onFocus={e => e.target.style.borderColor = "rgba(43,191,176,0.3)"}
-                  onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
+                  onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.25)"}
+                  onBlur={e => e.target.style.borderColor = "#E5E5E5"}
                 />
               </div>
             ))}
@@ -2812,7 +2814,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
                 <div style={{ fontSize: "10px", fontWeight: 500, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(227,0,0,0.7)", marginBottom: "2px" }}>
                   AI Image Brand Prompt
                 </div>
-                <div style={{ fontSize: "11px", color: "rgba(26,26,26,0.45)" }}>Prepended to every Ideogram / Flux generation request</div>
+                <div style={{ fontSize: "11px", color: "#999999" }}>Prepended to every Ideogram / Flux generation request</div>
               </div>
               <GlassBtn
                 onClick={generateBrandPromptForNew}
@@ -2829,12 +2831,12 @@ function ClientsTab({ clients, notify, onClientAdded }: {
               placeholder="Click Generate to create an optimised AI image prompt from this brand's data…"
               style={{ ...INPUT, resize: "vertical", fontSize: "12px", lineHeight: 1.7, fontFamily: "monospace" }}
               onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.45)"}
-              onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
+              onBlur={e => e.target.style.borderColor = "#E5E5E5"}
             />
           </div>
 
           <div style={{ marginBottom: "20px" }}>
-            <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(26,26,26,0.45)", marginBottom: "7px" }}>Key brand phrases</label>
+            <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>Key brand phrases</label>
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               {form.key_phrases.map((p, i) => (
                 <div key={i} style={{ display: "flex", gap: "8px" }}>
@@ -2843,11 +2845,11 @@ function ClientsTab({ clients, notify, onClientAdded }: {
                     placeholder={`Phrase ${i + 1}`}
                     style={{ ...INPUT, padding: "9px 12px", fontSize: "13px" }}
                     onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
-                    onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
+                    onBlur={e => e.target.style.borderColor = "#E5E5E5"}
                   />
                   {i === form.key_phrases.length - 1 && (
                     <button onClick={() => setForm(f => ({ ...f, key_phrases: [...f.key_phrases, ""] }))}
-                      style={{ padding: "9px 16px", background: "rgba(26,26,26,0.05)", border: "1px solid rgba(26,26,26,0.12)", borderRadius: "6px", color: T3, cursor: "pointer", fontFamily: "inherit", fontSize: "13px" }}>
+                      style={{ padding: "9px 16px", background: "#F5F5F5", border: "1px solid #E5E5E5", borderRadius: "8px", color: T3, cursor: "pointer", fontFamily: "inherit", fontSize: "13px" }}>
                       +
                     </button>
                   )}
@@ -2857,7 +2859,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
           </div>
 
           <div style={{ marginBottom: "20px" }}>
-            <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(26,26,26,0.45)", marginBottom: "7px" }}>Badges / tags</label>
+            <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>Badges / tags</label>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
               {form.badges.map((b, i) => (
                 <input key={i} type="text" value={b}
@@ -2865,35 +2867,35 @@ function ClientsTab({ clients, notify, onClientAdded }: {
                   placeholder="Tag"
                   style={{ ...INPUT, width: "140px", padding: "7px 10px", fontSize: "12px" }}
                   onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
-                  onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
+                  onBlur={e => e.target.style.borderColor = "#E5E5E5"}
                 />
               ))}
               <button onClick={() => setForm(f => ({ ...f, badges: [...f.badges, ""] }))}
-                style={{ padding: "7px 14px", background: "rgba(26,26,26,0.04)", border: "1px solid rgba(26,26,26,0.12)", borderRadius: "6px", color: T3, cursor: "pointer", fontFamily: "inherit", fontSize: "12px" }}>
+                style={{ padding: "7px 14px", background: "#F5F5F5", border: "1px solid #E5E5E5", borderRadius: "8px", color: T3, cursor: "pointer", fontFamily: "inherit", fontSize: "12px" }}>
                 +
               </button>
             </div>
           </div>
 
           <div style={{ marginBottom: "28px" }}>
-            <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(26,26,26,0.45)", marginBottom: "12px" }}>Content pillars</label>
+            <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "12px" }}>Content pillars</label>
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               {form.pillars.map((p, i) => (
                 <div key={i} style={{ display: "grid", gridTemplateColumns: "100px 140px 1fr", gap: "8px", alignItems: "center" }}>
-                  <div style={{ fontSize: "12px", fontWeight: 600, color: "rgba(26,26,26,0.45)", padding: "9px 0" }}>{p.day}</div>
+                  <div style={{ fontSize: "12px", fontWeight: 600, color: "#999999", padding: "9px 0" }}>{p.day}</div>
                   <input type="text" value={p.type}
                     onChange={e => updatePillar(i, "type", e.target.value)}
                     placeholder="Post type"
                     style={{ ...INPUT, padding: "9px 12px", fontSize: "13px" }}
                     onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
-                    onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
+                    onBlur={e => e.target.style.borderColor = "#E5E5E5"}
                   />
                   <input type="text" value={p.example}
                     onChange={e => updatePillar(i, "example", e.target.value)}
                     placeholder="Content direction / example topic"
                     style={{ ...INPUT, padding: "9px 12px", fontSize: "13px" }}
                     onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
-                    onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
+                    onBlur={e => e.target.style.borderColor = "#E5E5E5"}
                   />
                 </div>
               ))}
@@ -3007,14 +3009,14 @@ const [editSaving, setEditSaving] = useState(false);
               { label: "Tax rate (%)",   key: "tax_rate",    type: "number" },
             ].map(f => (
               <div key={f.key}>
-                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(26,26,26,0.45)", marginBottom: "7px" }}>{f.label}</label>
+                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>{f.label}</label>
                 <input
                   type={f.type}
                   value={(form as Record<string, unknown>)[f.key] as string}
                   onChange={e => setForm(prev => ({ ...prev, [f.key]: f.type === "number" ? Number(e.target.value) : e.target.value }))}
                   style={{ ...INPUT, padding: "10px 13px", fontSize: "13px" }}
                   onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
-                  onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
+                  onBlur={e => e.target.style.borderColor = "#E5E5E5"}
                 />
               </div>
             ))}
@@ -3032,7 +3034,7 @@ const [editSaving, setEditSaving] = useState(false);
                     placeholder="Description"
                     style={{ ...INPUT, padding: "9px 12px", fontSize: "13px" }}
                     onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
-                    onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
+                    onBlur={e => e.target.style.borderColor = "#E5E5E5"}
                   />
                   <input
                     type="number" value={item.qty}
@@ -3040,7 +3042,7 @@ const [editSaving, setEditSaving] = useState(false);
                     placeholder="Qty"
                     style={{ ...INPUT, padding: "9px 12px", fontSize: "13px", textAlign: "center" }}
                     onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
-                    onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
+                    onBlur={e => e.target.style.borderColor = "#E5E5E5"}
                   />
                   <input
                     type="number" value={item.rate}
@@ -3048,7 +3050,7 @@ const [editSaving, setEditSaving] = useState(false);
                     placeholder="Rate ($)"
                     style={{ ...INPUT, padding: "9px 12px", fontSize: "13px" }}
                     onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
-                    onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
+                    onBlur={e => e.target.style.borderColor = "#E5E5E5"}
                   />
                   <button onClick={() => removeItem(i)}
                     style={{ width: "36px", height: "36px", background: "rgba(255,68,68,0.1)", border: "1px solid rgba(255,68,68,0.2)", borderRadius: "8px", color: "#ff6b6b", cursor: "pointer", fontSize: "16px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontFamily: "inherit" }}>
@@ -3066,11 +3068,11 @@ const [editSaving, setEditSaving] = useState(false);
           {/* Totals */}
           <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "20px" }}>
             <div style={{ minWidth: "220px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid rgba(26,26,26,0.08)", fontSize: "13px", color: "rgba(26,26,26,0.55)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #E5E5E5", fontSize: "13px", color: "#666666" }}>
                 <span>Subtotal</span><span>${formTotal.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
               </div>
               {form.tax_rate > 0 && (
-                <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid rgba(26,26,26,0.08)", fontSize: "13px", color: "rgba(26,26,26,0.55)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #E5E5E5", fontSize: "13px", color: "#666666" }}>
                   <span>Tax ({form.tax_rate}%)</span><span>${formTax.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
                 </div>
               )}
@@ -3082,11 +3084,11 @@ const [editSaving, setEditSaving] = useState(false);
 
           {/* Notes */}
           <div style={{ marginBottom: "20px" }}>
-            <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(26,26,26,0.45)", marginBottom: "7px" }}>Notes</label>
+            <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>Notes</label>
             <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="Payment terms, notes to client…"
               style={{ ...INPUT, resize: "none", fontSize: "13px" }}
               onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
-              onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
+              onBlur={e => e.target.style.borderColor = "#E5E5E5"}
             />
           </div>
 
@@ -3108,26 +3110,26 @@ const [editSaving, setEditSaving] = useState(false);
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
-                <tr style={{ borderBottom: "1px solid rgba(26,26,26,0.08)" }}>
+                <tr style={{ borderBottom: "1px solid #E5E5E5" }}>
                   {["Invoice #","Client","Date","Due","Amount","Status","Actions"].map(h => (
-                    <th key={h} style={{ textAlign: "left", padding: "12px 20px", fontSize: "10px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(26,26,26,0.40)", whiteSpace: "nowrap" }}>{h}</th>
+                    <th key={h} style={{ textAlign: "left", padding: "12px 20px", fontSize: "10px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#999999", whiteSpace: "nowrap" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {invoices.map((inv, i) => (
-                  <tr key={inv.id} style={{ borderBottom: i < invoices.length - 1 ? "1px solid rgba(26,26,26,0.06)" : "none" }}>
+                  <tr key={inv.id} style={{ borderBottom: i < invoices.length - 1 ? "1px solid #E5E5E5" : "none" }}>
                     <td style={{ padding: "14px 20px", fontSize: "11px", fontWeight: 500, letterSpacing: "0.08em", color: T2 }}>{inv.number}</td>
                     <td style={{ padding: "14px 20px", fontSize: "13px", color: T }}>{inv.client_name}</td>
                     <td style={{ padding: "14px 20px", fontSize: "11px", color: T3 }}>{inv.date}</td>
                     <td style={{ padding: "14px 20px", fontSize: "11px", color: inv.status === "overdue" ? "#d07070" : T3 }}>{inv.due_date}</td>
-                    <td style={{ padding: "14px 20px", fontFamily: "var(--font-raleway), sans-serif", fontSize: "18px", fontWeight: 300, color: T }}>
+                    <td style={{ padding: "14px 20px", fontFamily: "var(--font-raleway), sans-serif", fontSize: "16px", fontWeight: 700, color: "#0A0A0A" }}>
                       ${total(inv).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                     </td>
                     <td style={{ padding: "14px 20px" }}><StatusBadge status={inv.status} /></td>
                     <td style={{ padding: "14px 20px" }}>
                       <div style={{ display: "flex", gap: "8px" }}>
-                        {inv.status === "pending"  && <button onClick={() => updateStatus(inv.id, "paid")}    style={{ fontSize: "10px", color: "#2BBFB0", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.06em", textTransform: "uppercase" }}>Mark paid</button>}
+                        {inv.status === "pending"  && <button onClick={() => updateStatus(inv.id, "paid")}    style={{ fontSize: "10px", color: "#E30000", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.06em", textTransform: "uppercase" }}>Mark paid</button>}
                         {inv.status === "pending"  && <button onClick={() => updateStatus(inv.id, "overdue")} style={{ fontSize: "10px", color: "#cc3333", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.06em", textTransform: "uppercase" }}>Overdue</button>}
                         <button onClick={() => { notify("PDF downloaded", "success"); }}  style={{ fontSize: "10px", color: T3, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.06em", textTransform: "uppercase" }}>PDF</button>
                         <button onClick={() => { notify("Email sent", "success"); }}      style={{ fontSize: "10px", color: T3, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.06em", textTransform: "uppercase" }}>Email</button>
@@ -3215,7 +3217,7 @@ function LandingPage() {
           <div style={{
             display: "flex", alignItems: "center", gap: "12px",
             fontSize: "11px", fontWeight: 500, letterSpacing: "0.20em",
-            textTransform: "uppercase", color: "rgba(26,26,26,0.45)",
+            textTransform: "uppercase", color: "#999999",
             marginBottom: "36px",
           }}>
             <div style={{ width: "28px", height: "0.5px", background: "rgba(26,26,26,0.35)" }} />
@@ -3345,8 +3347,8 @@ function LandingPage() {
 
         <div style={{
           display: "grid", gridTemplateColumns: "repeat(3, 1fr)",
-          gap: "1px", background: "rgba(26,26,26,0.10)",
-          border: "0.5px solid rgba(26,26,26,0.10)",
+          gap: "1px", background: "#E5E5E5",
+          border: "0.5px solid #E5E5E5",
         }}>
           {[
             { n: "01", title: "Profile Architecture",    desc: "From headline to featured section. Every element engineered to convert visitors into conversations." },
@@ -3417,12 +3419,12 @@ function LandingPage() {
           {/* Client card */}
           <a href="/portal/login" style={{
             display: "block", padding: "36px 40px",
-            background: "#FFFFFF", border: "0.5px solid rgba(26,26,26,0.12)",
+            background: "#FFFFFF", border: "0.5px solid #E5E5E5",
             textDecoration: "none", color: "inherit",
             transition: "border-color 0.25s, box-shadow 0.25s",
           }}
-            onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = "rgba(26,26,26,0.30)"; el.style.boxShadow = "0 4px 24px rgba(26,26,26,0.06)"; }}
-            onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = "rgba(26,26,26,0.12)"; el.style.boxShadow = "none"; }}
+            onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = "rgba(26,26,26,0.30)"; el.style.boxShadow = "0 1px 3px rgba(0,0,0,0.08)"; }}
+            onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = "#E5E5E5"; el.style.boxShadow = "none"; }}
           >
             <div style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(26,26,26,0.35)", marginBottom: "12px" }}>01</div>
             <div style={{
@@ -3438,12 +3440,12 @@ function LandingPage() {
           {/* Team card */}
           <a href="/login" style={{
             display: "block", padding: "36px 40px",
-            background: "#F5F5F5", border: "0.5px solid rgba(26,26,26,0.10)",
+            background: "#F5F5F5", border: "0.5px solid #E5E5E5",
             textDecoration: "none", color: "inherit",
             transition: "border-color 0.25s",
           }}
             onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(26,26,26,0.25)"; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(26,26,26,0.10)"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "#E5E5E5"; }}
           >
             <div style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(26,26,26,0.35)", marginBottom: "12px" }}>02</div>
             <div style={{
@@ -3743,7 +3745,7 @@ function ClientUsersTab({ clients, notify, onCompanyAdded }: {
   const statusLabel = (u: ClientUser) =>
     !u.active ? "Deactivated" : u.must_reset_password ? "Pending password reset" : "Active";
   const statusColor = (u: ClientUser) =>
-    !u.active ? T3 : u.must_reset_password ? GOLD : "#2BBFB0";
+    !u.active ? T3 : u.must_reset_password ? GOLD : "#E30000";
 
   const fmtDate = (s: string | null) => {
     if (!s) return "—";
@@ -3886,12 +3888,12 @@ function ClientUsersTab({ clients, notify, onCompanyAdded }: {
                   <tr><td colSpan={7} style={{ padding: "20px 0", color: T3, textAlign: "center" }}>No client users yet.</td></tr>
                 )}
                 {users.map((u, i) => (
-                  <tr key={u.id} style={{ borderTop: i === 0 ? "1px solid rgba(26,26,26,0.10)" : "1px solid rgba(26,26,26,0.06)" }}>
+                  <tr key={u.id} style={{ borderTop: i === 0 ? "1px solid #E5E5E5" : "1px solid #E5E5E5" }}>
                     <td style={{ padding: "10px 10px 10px 0", color: T }}>{u.first_name} {u.last_name}</td>
                     <td style={{ padding: "10px", color: T2 }}>{u.email}</td>
                     <td style={{ padding: "10px", color: T2 }}>
                       <select value={u.role} onChange={e => changeRole(u, e.target.value)}
-                        style={{ background: "transparent", border: "1px solid rgba(26,26,26,0.14)", borderRadius: "6px", padding: "4px 6px", fontSize: "12px", color: T2, fontFamily: "inherit", textTransform: "capitalize" as const, cursor: "pointer" }}>
+                        style={{ background: "#FFFFFF", border: "1px solid #E5E5E5", borderRadius: "8px", padding: "4px 6px", fontSize: "12px", color: T2, fontFamily: "Helvetica, Arial, sans-serif", textTransform: "capitalize" as const, cursor: "pointer" }}>
                         {(["owner", "administrator", "user"] as const).map(r => (
                           <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>
                         ))}
@@ -3908,7 +3910,7 @@ function ClientUsersTab({ clients, notify, onCompanyAdded }: {
                         Resend welcome email
                       </button>
                       <button onClick={() => toggleActive(u)}
-                        style={{ fontSize: "11px", color: u.active ? "#C0392B" : "#2BBFB0", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}>
+                        style={{ fontSize: "11px", color: u.active ? "#C0392B" : "#E30000", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}>
                         {u.active ? "Deactivate" : "Reactivate"}
                       </button>
                       {!u.active && (
@@ -3933,7 +3935,7 @@ function ClientUsersTab({ clients, notify, onCompanyAdded }: {
               {threads.length === 0 && <div style={{ color: T3, fontSize: "12px" }}>No messages yet.</div>}
               {threads.map((t, i) => (
                 <div key={t.client_user_id} onClick={() => openThread(t.client_user_id)}
-                  style={{ padding: "12px 4px", borderTop: i === 0 ? "none" : "1px solid rgba(26,26,26,0.06)", cursor: "pointer", display: "flex", alignItems: "flex-start", gap: "8px" }}>
+                  style={{ padding: "12px 4px", borderTop: i === 0 ? "none" : "1px solid #E5E5E5", cursor: "pointer", display: "flex", alignItems: "flex-start", gap: "8px" }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                       <span style={{ fontSize: "13px", color: T, fontWeight: 500 }}>{t.first_name} {t.last_name}</span>
@@ -3962,7 +3964,7 @@ function ClientUsersTab({ clients, notify, onCompanyAdded }: {
                       <div style={{
                         background: isAdmin ? GOLD : "#F5F5F5",
                         color: isAdmin ? "#fff" : T,
-                        border: isAdmin ? "none" : "1px solid rgba(26,26,26,0.10)",
+                        border: isAdmin ? "none" : "1px solid #E5E5E5",
                         borderRadius: "10px", padding: "8px 12px", fontSize: "12px", lineHeight: 1.5, whiteSpace: "pre-wrap" as const,
                       }}>{m.body}</div>
                       <div style={{ fontSize: "9px", color: T3, marginTop: "3px", textAlign: isAdmin ? "right" : "left" }}>{fmtDate(m.created_at)}</div>
@@ -4186,7 +4188,7 @@ if (loadingClients || !ac || !ap) {
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      color: "rgba(26,26,26,0.40)",
+      color: "#999999",
       fontSize: "14px",
     }}>
       Loading clients…
@@ -4211,7 +4213,7 @@ if (loadingClients || !ac || !ap) {
   ];
 
   return (
-    <div style={{ minHeight: "100vh", background: "#F5F5F5", color: "#1A1A1A", paddingTop: "64px" }}>
+    <div style={{ minHeight: "100vh", background: "#F5F5F5", color: "#0A0A0A", fontFamily: "Helvetica, Arial, sans-serif", paddingTop: "64px" }}>
 
       {/* Toast */}
       {note && <Toast message={note} type={noteType} />}
@@ -4219,90 +4221,59 @@ if (loadingClients || !ac || !ap) {
       {/* ── Nav ── */}
       <header style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 50,
-        background: "rgba(244,241,236,0.92)",
-        backdropFilter: "blur(12px)",
-        WebkitBackdropFilter: "blur(12px)",
-        borderBottom: "0.5px solid rgba(26,24,20,0.10)",
+        background: "#0A0A0A",
       }}>
-        <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "0 32px", height: "64px", display: "flex", alignItems: "center", gap: "40px" }}>
+        <div style={{ padding: "0 32px", height: "64px", display: "flex", alignItems: "center", gap: "40px" }}>
 
-          {/* Logo + tagline */}
-          <a href="/" style={{ flexShrink: 0, textDecoration: "none", display: "flex", alignItems: "center", gap: "20px" }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/linkwright-logo-white.png" alt="Linkwright" style={{ height: "26px", width: "auto", objectFit: "contain", filter: "brightness(0)" }} />
-            <div style={{ width: "0.5px", height: "28px", background: "rgba(26,24,20,0.15)" }} />
+          {/* Wordmark */}
+          <a href="/" style={{ flexShrink: 0, textDecoration: "none", display: "flex", alignItems: "center" }}>
             <span style={{
               fontFamily: "var(--font-raleway), sans-serif",
-              fontSize: "13px", fontWeight: 300, fontStyle: "normal",
-              color: "rgba(26,24,20,0.45)", letterSpacing: "0.01em", whiteSpace: "nowrap",
+              fontSize: "18px", fontWeight: 200,
+              color: "#FFFFFF", letterSpacing: "0.1em", whiteSpace: "nowrap",
             }}>
-              Engineered for LinkedIn. Optimised for 2026.
+              LINKWRIGHT
             </span>
           </a>
 
-          {/* Tabs */}
-          <nav style={{ display: "flex", gap: "0px", flex: 1, justifyContent: "center" }}>
-            {TABS.map(t => (
-              <button key={t.id} onClick={() => setTab(t.id)}
-                style={{
-                  position: "relative",
-                  padding: "8px 18px",
-                  background: "transparent",
-                  border: "none",
-                  borderBottom: tab === t.id ? `1px solid ${GOLD}` : "1px solid transparent",
-                  fontSize: "12px", fontWeight: 400,
-                  letterSpacing: "0.04em",
-                  color: tab === t.id ? T : T3,
-                  cursor: "pointer",
-                  transition: "color 0.15s ease, border-color 0.15s ease",
-                  fontFamily: "Helvetica, Arial, sans-serif",
-                  display: "inline-flex", alignItems: "center", gap: "6px",
-                  marginBottom: "-1px",
-                }}>
-                {t.label}
-                {t.badge && t.badge > 0 ? (
-                  <span style={{ minWidth: "16px", height: "16px", borderRadius: "8px", background: "rgba(227,0,0,0.15)", color: GOLD, border: "1px solid rgba(227,0,0,0.3)", fontSize: "9px", fontWeight: 600, display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "0 4px" }}>
-                    {t.badge}
-                  </span>
-                ) : null}
-              </button>
-            ))}
-          </nav>
+          <div style={{ flex: 1 }} />
 
           {/* Company switcher + back to main site + logout */}
           <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
             <CompanySwitcher ac={ac} clients={clients} onChange={switchCompany} />
             <a href="/" style={{
-              fontSize: "12px", fontWeight: 500,
-              color: T3,
+              fontSize: "13px", fontWeight: 400,
+              color: "#FFFFFF",
               textDecoration: "none",
-              padding: "6px 14px",
+              padding: "8px 16px",
               background: "transparent",
-              border: "1px solid rgba(26,26,26,0.12)",
-              borderRadius: "6px",
-              fontFamily: "Helvetica, Arial, sans-serif",
+              border: "1px solid rgba(255,255,255,0.4)",
+              borderRadius: "999px",
+              fontFamily: "var(--font-raleway), sans-serif",
               transition: "all 0.15s ease",
+              cursor: "pointer",
             }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(26,26,26,0.22)"; (e.currentTarget as HTMLElement).style.color = T2; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(26,26,26,0.12)"; (e.currentTarget as HTMLElement).style.color = T3; }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "#FFFFFF"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.4)"; }}
             >
               ← Back to main site
             </a>
             <a href="/portal" target="_blank" rel="noreferrer" style={{
               display: "inline-flex", alignItems: "center", gap: "5px",
-              padding: "6px 12px",
+              padding: "8px 16px",
               background: "transparent",
-              border: "1px solid rgba(26,26,26,0.12)",
-              borderRadius: "6px",
-              color: T3,
+              border: "1px solid rgba(255,255,255,0.4)",
+              borderRadius: "999px",
+              color: "#FFFFFF",
               textDecoration: "none",
-              fontSize: "11px",
-              letterSpacing: "0.06em",
-              fontFamily: "Helvetica, Arial, sans-serif",
+              fontSize: "13px",
+              fontWeight: 400,
+              fontFamily: "var(--font-raleway), sans-serif",
               transition: "all 0.15s ease",
+              cursor: "pointer",
             }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(26,26,26,0.22)"; (e.currentTarget as HTMLElement).style.color = T2; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(26,26,26,0.12)"; (e.currentTarget as HTMLElement).style.color = T3; }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "#FFFFFF"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.4)"; }}
               title="Open client portal"
             >
               Portal ↗
@@ -4310,7 +4281,7 @@ if (loadingClients || !ac || !ap) {
             {/* Notifications bell */}
             <div style={{ position: "relative" }}>
               <button onClick={() => setBellOpen(o => !o)}
-                style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center", width: "32px", height: "32px", background: bellOpen ? "rgba(227,0,0,0.08)" : "transparent", border: `1px solid ${bellOpen ? "rgba(227,0,0,0.3)" : "rgba(26,26,26,0.12)"}`, borderRadius: "6px", color: bellOpen ? GOLD : T3, cursor: "pointer", transition: "all 0.15s ease", fontFamily: "inherit" }}>
+                style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center", width: "36px", height: "36px", background: bellOpen ? "#E30000" : "transparent", border: `1px solid ${bellOpen ? "#E30000" : "rgba(255,255,255,0.4)"}`, borderRadius: "999px", color: "#FFFFFF", cursor: "pointer", transition: "all 0.15s ease", fontFamily: "inherit" }}>
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                   <path d="M7 1.5a4 4 0 0 1 4 4v2.5l1 1.5H2l1-1.5V5.5a4 4 0 0 1 4-4zM5.5 11.5a1.5 1.5 0 0 0 3 0" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
                 </svg>
@@ -4321,8 +4292,8 @@ if (loadingClients || !ac || !ap) {
                 )}
               </button>
               {bellOpen && (
-                <div style={{ position: "absolute", top: "calc(100% + 8px)", right: 0, width: "320px", background: "#FFFFFF", border: "1px solid rgba(26,26,26,0.10)", borderRadius: "12px", boxShadow: "0 8px 32px rgba(26,26,26,0.12)", zIndex: 200, overflow: "hidden" }}>
-                  <div style={{ padding: "14px 18px", borderBottom: "1px solid rgba(26,26,26,0.07)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ position: "absolute", top: "calc(100% + 8px)", right: 0, width: "320px", background: "#FFFFFF", border: "1px solid #E5E5E5", borderRadius: "12px", boxShadow: "0 1px 3px rgba(0,0,0,0.08)", zIndex: 200, overflow: "hidden" }}>
+                  <div style={{ padding: "14px 18px", borderBottom: "1px solid #E5E5E5", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     <span style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: T3 }}>Needs Attention</span>
                     {bellCount === 0 && <span style={{ fontSize: "11px", color: T3 }}>All clear</span>}
                   </div>
@@ -4333,8 +4304,8 @@ if (loadingClients || !ac || !ap) {
                       <>
                         {pendingApprovalAll.map(p => (
                           <div key={p.id} onClick={() => { setTab("library"); setBellOpen(false); }}
-                            style={{ padding: "12px 18px", borderBottom: "1px solid rgba(26,26,26,0.06)", cursor: "pointer", transition: "background 0.12s" }}
-                            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(26,26,26,0.02)"; }}
+                            style={{ padding: "12px 18px", borderBottom: "1px solid #E5E5E5", cursor: "pointer", transition: "background 0.12s" }}
+                            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#F5F5F5"; }}
                             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
                             <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "4px" }}>
                               <span style={{ fontSize: "9px", fontWeight: 700, padding: "2px 7px", background: "rgba(227,0,0,0.10)", color: "#B00000", border: "1px solid rgba(227,0,0,0.25)", borderRadius: "4px", letterSpacing: "0.08em" }}>PENDING</span>
@@ -4345,8 +4316,8 @@ if (loadingClients || !ac || !ap) {
                         ))}
                         {changeRequestAll.map(p => (
                           <div key={p.id} onClick={() => { setTab("library"); setBellOpen(false); }}
-                            style={{ padding: "12px 18px", borderBottom: "1px solid rgba(26,26,26,0.06)", cursor: "pointer", transition: "background 0.12s" }}
-                            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(26,26,26,0.02)"; }}
+                            style={{ padding: "12px 18px", borderBottom: "1px solid #E5E5E5", cursor: "pointer", transition: "background 0.12s" }}
+                            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#F5F5F5"; }}
                             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
                             <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "4px" }}>
                               <span style={{ fontSize: "9px", fontWeight: 700, padding: "2px 7px", background: "rgba(204,51,51,0.08)", color: "#cc3333", border: "1px solid rgba(204,51,51,0.20)", borderRadius: "4px", letterSpacing: "0.08em" }}>CHANGE REQ</span>
@@ -4364,32 +4335,86 @@ if (loadingClients || !ac || !ap) {
 
             <a href="/login" style={{
               display: "flex", alignItems: "center", justifyContent: "center",
-              width: "32px", height: "32px",
+              padding: "8px 16px",
               background: "transparent",
-              border: "1px solid rgba(26,26,26,0.12)",
-              borderRadius: "6px",
-              color: T3,
+              border: "1px solid rgba(255,255,255,0.4)",
+              borderRadius: "999px",
+              color: "#FFFFFF",
               textDecoration: "none",
-              fontSize: "14px",
+              fontSize: "13px",
+              fontWeight: 400,
+              fontFamily: "var(--font-raleway), sans-serif",
               transition: "all 0.15s ease",
+              cursor: "pointer",
             }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(26,26,26,0.22)"; (e.currentTarget as HTMLElement).style.color = T2; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(26,26,26,0.12)"; (e.currentTarget as HTMLElement).style.color = T3; }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "#FFFFFF"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.4)"; }}
               title="Sign out"
             >
-              ↩
+              Sign out
             </a>
           </div>
         </div>
 
       </header>
 
+      {/* ── Body: left sidebar + content column ── */}
+      <div style={{ display: "flex", alignItems: "stretch", minHeight: "calc(100vh - 64px)" }}>
+
+        {/* Left sidebar nav */}
+        <aside style={{
+          width: "220px", flexShrink: 0,
+          background: "#FFFFFF",
+          borderRight: "1px solid #E5E5E5",
+          padding: "24px 12px",
+          display: "flex", flexDirection: "column", gap: "4px",
+        }}>
+          <div style={{
+            fontFamily: "Helvetica, Arial, sans-serif",
+            fontSize: "11px", color: "#999999",
+            letterSpacing: "0.15em", textTransform: "uppercase",
+            padding: "0 12px", marginBottom: "8px",
+          }}>
+            Workspace
+          </div>
+          {TABS.map(t => {
+            const active = tab === t.id;
+            return (
+              <button key={t.id} onClick={() => setTab(t.id)}
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "space-between", gap: "6px",
+                  width: "100%", textAlign: "left",
+                  padding: "12px 24px",
+                  background: active ? "#E30000" : "transparent",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontSize: "14px", fontWeight: active ? 600 : 400,
+                  color: active ? "#FFFFFF" : "#666666",
+                  cursor: "pointer",
+                  transition: "all 0.15s ease",
+                  fontFamily: "Helvetica, Arial, sans-serif",
+                }}
+                onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = "#F5F5F5"; }}
+                onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
+                <span>{t.label}</span>
+                {t.badge && t.badge > 0 ? (
+                  <span style={{ minWidth: "18px", height: "18px", borderRadius: "999px", background: active ? "#FFFFFF" : "#E30000", color: active ? "#E30000" : "#FFFFFF", fontSize: "10px", fontWeight: 600, display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "0 5px" }}>
+                    {t.badge}
+                  </span>
+                ) : null}
+              </button>
+            );
+          })}
+        </aside>
+
+        {/* Content column */}
+        <div style={{ flex: 1, minWidth: 0, background: "#F5F5F5", display: "flex", flexDirection: "column" }}>
+
       {/* Scrolling marquee */}
       <div style={{
         height: "40px",
         background: "#FFFFFF",
-        borderTop: "1px solid rgba(26,26,26,0.06)",
-        borderBottom: "1px solid rgba(26,26,26,0.08)",
+        borderBottom: "1px solid #E5E5E5",
         overflow: "hidden",
         display: "flex",
         alignItems: "center",
@@ -4406,9 +4431,9 @@ if (loadingClients || !ac || !ap) {
             }}>
               <span style={{ width: "4px", height: "4px", borderRadius: "50%", background: c.color, display: "inline-block", flexShrink: 0 }} />
               <span style={{ color: T2 }}>{c.name}</span>
-              <span style={{ color: "rgba(26,26,26,0.18)" }}>·</span>
+              <span style={{ color: "#E5E5E5" }}>·</span>
               <span>{c.tagline || c.timezone}</span>
-              <span style={{ color: "rgba(26,26,26,0.18)" }}>·</span>
+              <span style={{ color: "#E5E5E5" }}>·</span>
               <span>{c.timezone}</span>
             </span>
           ))}
@@ -4419,10 +4444,10 @@ if (loadingClients || !ac || !ap) {
       <div style={{ position: "relative", height: "160px", overflow: "hidden", background: "#ECECEC" }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/images/services.png" alt="" aria-hidden="true" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", filter: "brightness(1.05) contrast(1.05) saturate(0.6)" }} />
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(244,241,236,0.80) 0%, rgba(244,241,236,0.60) 100%)" }} />
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(245,245,245,0.85) 0%, rgba(245,245,245,0.65) 100%)" }} />
         <div style={{ position: "relative", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: "10px" }}>
           <div style={{ width: "28px", height: "1px", background: "#E30000" }} />
-          <p style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "clamp(18px, 2vw, 28px)", fontWeight: 300, fontStyle: "normal", color: "#1A1814", letterSpacing: "-0.01em" }}>
+          <p style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "clamp(18px, 2vw, 28px)", fontWeight: 600, fontStyle: "normal", color: "#0A0A0A", letterSpacing: "-0.01em" }}>
             {ac ? ac.name : "Content Studio"}
           </p>
           <div style={{ width: "28px", height: "1px", background: "#E30000" }} />
@@ -4430,7 +4455,7 @@ if (loadingClients || !ac || !ap) {
       </div>
 
       {/* ── Main content ── */}
-      <main style={{ maxWidth: "1400px", margin: "0 auto", padding: "32px 32px 80px" }}>
+      <main style={{ flex: 1, maxWidth: "1400px", width: "100%", margin: "0 auto", padding: "32px 32px 80px" }}>
         {tab === "overview"  && <OverviewTab  ac={ac} clients={clients} posts={posts} allPosts={allPosts} />}
         {tab === "compose"   && (
           <ComposeTab
@@ -4475,6 +4500,8 @@ if (loadingClients || !ac || !ap) {
           />
         )}
       </main>
+        </div>
+      </div>
 
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }

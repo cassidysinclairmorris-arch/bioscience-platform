@@ -63,24 +63,24 @@ type ExtractedData = {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function glass(extra?: React.CSSProperties): React.CSSProperties {
-  return { background: "#FFFFFF", border: "1px solid rgba(26,26,26,0.08)", borderRadius: "12px", ...extra };
+  return { background: "#FFFFFF", border: "1px solid #E5E5E5", borderRadius: "12px", ...extra };
 }
 
 function Spinner() {
-  return <span style={{ width: "14px", height: "14px", border: "1.5px solid rgba(26,26,26,0.14)", borderTopColor: "#1A1A1A", borderRadius: "50%", animation: "spin 0.7s linear infinite", display: "inline-block", flexShrink: 0 }} />;
+  return <span style={{ width: "14px", height: "14px", border: "1.5px solid #E5E5E5", borderTopColor: "#0A0A0A", borderRadius: "50%", animation: "spin 0.7s linear infinite", display: "inline-block", flexShrink: 0 }} />;
 }
 
 function StatusPill({ status }: { status: string }) {
   const cfg: Record<string, { bg: string; color: string; border: string }> = {
-    draft:            { bg: "rgba(26,26,26,0.04)",    color: "rgba(26,26,26,0.55)",    border: "rgba(26,26,26,0.12)"    },
-    pending_approval: { bg: "rgba(227,0,0,0.08)",  color: "#B00000",                border: "rgba(227,0,0,0.30)"  },
-    approved:         { bg: "rgba(26,26,26,0.08)",   color: "#1A1A1A",                border: "rgba(26,26,26,0.25)"   },
-    scheduled:        { bg: "rgba(26,26,26,0.08)",  color: "#1A1A1A",                border: "rgba(26,26,26,0.25)"  },
-    posted:           { bg: "rgba(227,0,0,0.08)",  color: "#8A8680",                border: "rgba(227,0,0,0.28)"  },
+    draft:            { bg: "#F5F5F5",          color: "#666666",   border: "#E5E5E5"          },
+    pending_approval: { bg: "rgba(227,0,0,0.10)", color: "#E30000", border: "rgba(227,0,0,0.30)" },
+    approved:         { bg: "rgba(10,10,10,0.10)", color: "#0A0A0A", border: "rgba(10,10,10,0.20)" },
+    scheduled:        { bg: "rgba(10,10,10,0.10)", color: "#0A0A0A", border: "rgba(10,10,10,0.20)" },
+    posted:           { bg: "rgba(227,0,0,0.10)", color: "#E30000", border: "rgba(227,0,0,0.30)" },
   };
   const s = cfg[status] ?? cfg.draft;
   return (
-    <span style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", padding: "3px 10px", borderRadius: "20px", background: s.bg, color: s.color, border: `1px solid ${s.border}`, whiteSpace: "nowrap" }}>
+    <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", padding: "4px 12px", borderRadius: "999px", background: s.bg, color: s.color, border: `1px solid ${s.border}`, whiteSpace: "nowrap" }}>
       {status.replace("_", " ")}
     </span>
   );
@@ -100,31 +100,31 @@ function DashboardTab({ client, pendingPosts, postedPosts, accentColor, onNaviga
   const publishedThisMonth = postedPosts.filter(p => p.updated_at >= monthStart).length;
 
   const statCards = [
-    { label: "Awaiting Your Approval", value: pendingPosts.length, color: "#E30000",  glow: "rgba(227,0,0,0.12)", action: pendingPosts.length > 0 ? () => onNavigate("approval") : undefined, actionLabel: "Review now →" },
-    { label: "Published This Month",   value: publishedThisMonth,  color: "#1A1A1A",  glow: "rgba(26,26,26,0.04)",   action: () => onNavigate("history"),  actionLabel: "View history →" },
-    { label: "Total Published",        value: postedPosts.length,  color: "#E30000",  glow: "rgba(227,0,0,0.08)" },
+    { label: "Awaiting Your Approval", value: pendingPosts.length, color: "#E30000",  action: pendingPosts.length > 0 ? () => onNavigate("approval") : undefined, actionLabel: "Review now →" },
+    { label: "Published This Month",   value: publishedThisMonth,  color: "#0A0A0A",  action: () => onNavigate("history"),  actionLabel: "View history →" },
+    { label: "Total Published",        value: postedPosts.length,  color: "#E30000" },
   ];
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
       {/* Welcome */}
-      <div style={glass({ padding: "40px 44px", borderTop: "3px solid #E30000" })}>
-        <p style={{ fontSize: "11px", fontWeight: 500, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(26,26,26,0.40)", marginBottom: "16px", display: "flex", alignItems: "center", gap: "10px" }}>
-          <span style={{ display: "block", width: "24px", height: "0.5px", background: "#E30000", flexShrink: 0 }} />
+      <div style={glass({ padding: "24px", borderTop: "3px solid #E30000" })}>
+        <p style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", color: "#999999", marginBottom: "16px", display: "flex", alignItems: "center", gap: "10px" }}>
+          <span style={{ display: "block", width: "24px", height: "1px", background: "#E30000", flexShrink: 0 }} />
           Client Portal
         </p>
-        <h2 style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "clamp(26px, 2.5vw, 40px)", fontWeight: 300, fontStyle: "normal", lineHeight: 1.15, letterSpacing: "-0.01em", color: "#1A1A1A", marginBottom: "12px" }}>
+        <h2 style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "clamp(26px, 2.5vw, 40px)", fontWeight: 700, fontStyle: "normal", lineHeight: 1.15, letterSpacing: "-0.01em", color: "#0A0A0A", marginBottom: "12px" }}>
           Welcome back, {client.name}
         </h2>
         {client.tagline && (
-          <p style={{ fontSize: "14px", fontWeight: 300, color: "rgba(26,26,26,0.50)", lineHeight: 1.7 }}>{client.tagline}</p>
+          <p style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "14px", color: "#666666", lineHeight: 1.7 }}>{client.tagline}</p>
         )}
         {pendingPosts.length > 0 && (
-          <div style={{ marginTop: "24px", display: "inline-flex", alignItems: "center", gap: "10px", padding: "10px 18px", background: "rgba(227,0,0,0.08)", border: "1px solid rgba(227,0,0,0.30)", borderRadius: "8px" }}>
-            <span style={{ fontSize: "13px", color: "#B00000", fontWeight: 500 }}>
+          <div style={{ marginTop: "24px", display: "inline-flex", alignItems: "center", gap: "10px", padding: "10px 18px", background: "rgba(227,0,0,0.10)", border: "1px solid rgba(227,0,0,0.30)", borderRadius: "8px" }}>
+            <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "13px", color: "#E30000", fontWeight: 500 }}>
               {pendingPosts.length} post{pendingPosts.length !== 1 ? "s" : ""} awaiting your approval
             </span>
-            <button onClick={() => onNavigate("approval")} style={{ fontSize: "12px", color: "#B00000", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, textDecoration: "underline", textUnderlineOffset: "3px" }}>
+            <button onClick={() => onNavigate("approval")} style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: "#E30000", background: "none", border: "none", cursor: "pointer", fontWeight: 600, textDecoration: "underline", textUnderlineOffset: "3px", transition: "all 0.15s ease" }}>
               Review →
             </button>
           </div>
@@ -132,13 +132,13 @@ function DashboardTab({ client, pendingPosts, postedPosts, accentColor, onNaviga
       </div>
 
       {/* Stat cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "14px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "24px" }}>
         {statCards.map((s, i) => (
-          <div key={i} style={glass({ padding: "24px 28px", borderTop: `3px solid ${s.color}`, background: `linear-gradient(135deg, rgba(26,26,26,0.02), ${s.glow})` })}>
-            <div style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(26,26,26,0.45)", marginBottom: "12px" }}>{s.label}</div>
-            <div style={{ fontSize: "54px", fontWeight: 300, fontFamily: "var(--font-raleway), sans-serif", color: s.color, letterSpacing: "-0.02em", lineHeight: 1 }}>{s.value}</div>
+          <div key={i} style={glass({ padding: "24px", borderTop: `3px solid ${s.color}` })}>
+            <div style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "13px", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "#999999", marginBottom: "12px" }}>{s.label}</div>
+            <div style={{ fontSize: "32px", fontWeight: 700, fontFamily: "var(--font-raleway), sans-serif", color: s.color, letterSpacing: "-0.02em", lineHeight: 1 }}>{s.value}</div>
             {s.action && (
-              <button onClick={s.action} style={{ marginTop: "10px", fontSize: "12px", color: s.color, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, textDecoration: "underline", textUnderlineOffset: "3px", opacity: 0.8 }}>
+              <button onClick={s.action} style={{ marginTop: "10px", fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: s.color, background: "none", border: "none", cursor: "pointer", fontWeight: 600, textDecoration: "underline", textUnderlineOffset: "3px", transition: "all 0.15s ease" }}>
                 {s.actionLabel}
               </button>
             )}
@@ -149,28 +149,28 @@ function DashboardTab({ client, pendingPosts, postedPosts, accentColor, onNaviga
       {/* Recent pending posts preview */}
       {pendingPosts.length > 0 && (
         <div style={glass({ padding: "0", overflow: "hidden" })}>
-          <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(26,26,26,0.08)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "24px", fontWeight: 300, fontStyle: "normal", letterSpacing: "-0.01em" }}>Needs Your Review</div>
+          <div style={{ padding: "24px", borderBottom: "1px solid #E5E5E5", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "20px", fontWeight: 700, fontStyle: "normal", letterSpacing: "-0.01em", color: "#0A0A0A" }}>Needs Your Review</div>
             <StatusPill status="pending_approval" />
           </div>
           <div style={{ display: "flex", flexDirection: "column" }}>
             {pendingPosts.slice(0, 3).map((p, i) => (
-              <div key={p.id} style={{ padding: "16px 24px", borderBottom: i < Math.min(pendingPosts.length, 3) - 1 ? "1px solid rgba(26,26,26,0.06)" : "none" }}>
+              <div key={p.id} style={{ padding: "16px 24px", borderBottom: i < Math.min(pendingPosts.length, 3) - 1 ? "1px solid #E5E5E5" : "none" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
-                  <span style={{ fontSize: "11px", fontWeight: 600, color: "rgba(26,26,26,0.55)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{p.post_type}</span>
-                  <span style={{ color: "rgba(26,26,26,0.20)" }}>·</span>
-                  <span style={{ fontSize: "11px", color: "rgba(26,26,26,0.40)" }}>{p.scheduled_day}</span>
-                  <span style={{ fontSize: "11px", color: "rgba(26,26,26,0.35)", marginLeft: "auto" }}>{formatDate(p.created_at)}</span>
+                  <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", fontWeight: 600, color: "#666666", textTransform: "uppercase", letterSpacing: "0.06em" }}>{p.post_type}</span>
+                  <span style={{ color: "#E5E5E5" }}>·</span>
+                  <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: "#999999" }}>{p.scheduled_day}</span>
+                  <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: "#999999", marginLeft: "auto" }}>{formatDate(p.created_at)}</span>
                 </div>
-                <p style={{ fontSize: "13px", color: "rgba(26,26,26,0.65)", lineHeight: 1.6, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                <p style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "15px", color: "#0A0A0A", lineHeight: 1.6, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
                   {p.content}
                 </p>
               </div>
             ))}
           </div>
           {pendingPosts.length > 3 && (
-            <div style={{ padding: "14px 24px", borderTop: "1px solid rgba(26,26,26,0.06)", textAlign: "center" }}>
-              <button onClick={() => onNavigate("approval")} style={{ fontSize: "13px", color: accentColor, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>
+            <div style={{ padding: "14px 24px", borderTop: "1px solid #E5E5E5", textAlign: "center" }}>
+              <button onClick={() => onNavigate("approval")} style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "13px", color: accentColor, background: "none", border: "none", cursor: "pointer", fontWeight: 600, transition: "all 0.15s ease" }}>
                 View all {pendingPosts.length} posts →
               </button>
             </div>
@@ -211,52 +211,52 @@ function ApprovalTab({ client, pendingPosts, accentColor, onRefresh, onToast }: 
   if (pendingPosts.length === 0) {
     return (
       <div style={{ textAlign: "center", padding: "80px 0" }}>
-        <div style={{ width: "60px", height: "60px", borderRadius: "50%", background: "rgba(227,0,0,0.08)", border: "1px solid rgba(227,0,0,0.22)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
+        <div style={{ width: "60px", height: "60px", borderRadius: "50%", background: "rgba(227,0,0,0.10)", border: "1px solid rgba(227,0,0,0.30)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
             <path d="M5 13l4 4L19 7" stroke="#E30000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </div>
-        <div style={{ fontSize: "30px", fontWeight: 300, fontStyle: "normal", color: "#1A1A1A", marginBottom: "8px", fontFamily: "var(--font-raleway), sans-serif" }}>All caught up!</div>
-        <p style={{ fontSize: "14px", color: "rgba(26,26,26,0.40)" }}>No posts are waiting for your approval right now.</p>
+        <div style={{ fontSize: "18px", fontWeight: 600, fontStyle: "normal", color: "#0A0A0A", marginBottom: "8px", fontFamily: "var(--font-raleway), sans-serif" }}>All caught up!</div>
+        <p style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "14px", color: "#999999" }}>No posts are waiting for your approval right now.</p>
       </div>
     );
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
-        <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "32px", fontWeight: 300, fontStyle: "normal", letterSpacing: "-0.02em" }}>Approval Queue</div>
-        <span style={{ fontSize: "12px", fontWeight: 600, padding: "3px 10px", background: "rgba(227,0,0,0.10)", border: "1px solid rgba(227,0,0,0.30)", color: "#B00000", borderRadius: "20px" }}>
+        <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "20px", fontWeight: 700, fontStyle: "normal", letterSpacing: "-0.01em", color: "#0A0A0A" }}>Approval Queue</div>
+        <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", fontWeight: 600, padding: "4px 12px", background: "rgba(227,0,0,0.10)", border: "1px solid rgba(227,0,0,0.30)", color: "#E30000", borderRadius: "999px" }}>
           {pendingPosts.length} pending
         </span>
       </div>
       {pendingPosts.map(p => (
-        <div key={p.id} style={glass({ overflow: "hidden", border: `1px solid ${accentColor}20` })}>
+        <div key={p.id} style={glass({ overflow: "hidden" })}>
           {/* Header */}
-          <div style={{ padding: "14px 20px", borderBottom: "1px solid rgba(26,26,26,0.07)", display: "flex", alignItems: "center", gap: "10px", background: "rgba(26,26,26,0.02)", flexWrap: "wrap" }}>
-            <span style={{ fontSize: "11px", fontWeight: 600, padding: "3px 10px", background: `${accentColor}18`, border: `1px solid ${accentColor}40`, color: accentColor, borderRadius: "8px", letterSpacing: "0.02em" }}>
+          <div style={{ padding: "14px 24px", borderBottom: "1px solid #E5E5E5", display: "flex", alignItems: "center", gap: "10px", background: "#F5F5F5", flexWrap: "wrap" }}>
+            <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", fontWeight: 600, padding: "4px 12px", background: "rgba(227,0,0,0.10)", border: `1px solid rgba(227,0,0,0.30)`, color: accentColor, borderRadius: "999px", letterSpacing: "0.02em" }}>
               {p.post_type}
             </span>
-            <span style={{ fontSize: "12px", color: "rgba(26,26,26,0.50)" }}>{p.scheduled_day}</span>
-            <span style={{ marginLeft: "auto", fontSize: "11px", color: "rgba(26,26,26,0.35)" }}>{formatDate(p.created_at)}</span>
+            <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: "#666666" }}>{p.scheduled_day}</span>
+            <span style={{ marginLeft: "auto", fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: "#999999" }}>{formatDate(p.created_at)}</span>
           </div>
 
           {/* Content */}
-          <div style={{ padding: "20px 24px" }}>
+          <div style={{ padding: "24px" }}>
             {p.image_url && (
-              <div style={{ marginBottom: "16px", borderRadius: "10px", overflow: "hidden", border: "1px solid rgba(26,26,26,0.08)" }}>
+              <div style={{ marginBottom: "16px", borderRadius: "8px", overflow: "hidden", border: "1px solid #E5E5E5" }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={p.image_url} alt="Post visual" style={{ width: "100%", maxHeight: "360px", objectFit: "cover", display: "block" }} />
               </div>
             )}
-            <p style={{ fontSize: "14px", lineHeight: 1.8, color: "rgba(26,26,26,0.85)", whiteSpace: "pre-wrap" }}>{p.content}</p>
+            <p style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "15px", lineHeight: 1.6, color: "#0A0A0A", whiteSpace: "pre-wrap" }}>{p.content}</p>
           </div>
 
           {/* Actions */}
-          <div style={{ padding: "14px 24px", borderTop: "1px solid rgba(26,26,26,0.07)", background: "rgba(26,26,26,0.01)" }}>
+          <div style={{ padding: "14px 24px", borderTop: "1px solid #E5E5E5", background: "#F5F5F5" }}>
             {requestingId === p.id ? (
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                <label style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(26,26,26,0.45)" }}>
+                <label style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999" }}>
                   Describe what you&apos;d like changed
                 </label>
                 <textarea
@@ -264,21 +264,21 @@ function ApprovalTab({ client, pendingPosts, accentColor, onRefresh, onToast }: 
                   onChange={e => setNoteText(prev => ({ ...prev, [p.id]: e.target.value }))}
                   rows={3}
                   placeholder="e.g. Please make the tone more technical, and add a reference to our FDA approval timeline…"
-                  style={{ width: "100%", background: "#FFFFFF", border: "1px solid rgba(26,26,26,0.12)", borderRadius: "10px", padding: "11px 14px", fontSize: "14px", color: "#1A1A1A", outline: "none", fontFamily: "inherit", lineHeight: 1.6, resize: "none", boxSizing: "border-box" }}
-                  onFocus={e => e.target.style.borderColor = "rgba(204,51,51,0.40)"}
-                  onBlur={e => e.target.style.borderColor = "rgba(26,26,26,0.12)"}
+                  style={{ width: "100%", background: "#FFFFFF", border: "1px solid #E5E5E5", borderRadius: "8px", padding: "11px 14px", fontSize: "14px", color: "#0A0A0A", outline: "none", fontFamily: "Helvetica, Arial, sans-serif", lineHeight: 1.6, resize: "none", boxSizing: "border-box", transition: "all 0.15s ease" }}
+                  onFocus={e => e.target.style.borderColor = "#0A0A0A"}
+                  onBlur={e => e.target.style.borderColor = "#E5E5E5"}
                   autoFocus
                 />
                 <div style={{ display: "flex", gap: "8px" }}>
                   <button
                     onClick={() => requestChanges(p)}
                     disabled={!noteText[p.id]?.trim() || busy === p.id}
-                    style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "9px 18px", background: "rgba(204,51,51,0.08)", border: "1px solid rgba(204,51,51,0.25)", borderRadius: "10px", fontSize: "13px", fontWeight: 600, color: "#cc3333", cursor: !noteText[p.id]?.trim() || busy === p.id ? "not-allowed" : "pointer", opacity: !noteText[p.id]?.trim() || busy === p.id ? 0.5 : 1, fontFamily: "inherit" }}
+                    style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "9px 18px", background: "#E30000", border: "1px solid #E30000", borderRadius: "8px", fontSize: "13px", fontWeight: 600, color: "#FFFFFF", cursor: !noteText[p.id]?.trim() || busy === p.id ? "not-allowed" : "pointer", opacity: !noteText[p.id]?.trim() || busy === p.id ? 0.5 : 1, fontFamily: "Helvetica, Arial, sans-serif", transition: "all 0.15s ease" }}
                   >
                     {busy === p.id ? <Spinner /> : null}
                     Submit request
                   </button>
-                  <button onClick={() => setRequestingId(null)} style={{ padding: "9px 18px", background: "transparent", border: "1px solid rgba(26,26,26,0.12)", borderRadius: "10px", fontSize: "13px", color: "rgba(26,26,26,0.55)", cursor: "pointer", fontFamily: "inherit" }}>
+                  <button onClick={() => setRequestingId(null)} style={{ padding: "9px 18px", background: "#FFFFFF", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", color: "#666666", cursor: "pointer", fontFamily: "Helvetica, Arial, sans-serif", transition: "all 0.15s ease" }}>
                     Cancel
                   </button>
                 </div>
@@ -288,9 +288,9 @@ function ApprovalTab({ client, pendingPosts, accentColor, onRefresh, onToast }: 
                 <button
                   onClick={() => approve(p)}
                   disabled={busy === p.id}
-                  style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "9px 22px", background: `${accentColor}20`, border: `1px solid ${accentColor}50`, borderRadius: "10px", fontSize: "13px", fontWeight: 700, color: accentColor, cursor: busy === p.id ? "not-allowed" : "pointer", fontFamily: "inherit", transition: "all 0.15s ease" }}
-                  onMouseEnter={e => { if (busy !== p.id) (e.currentTarget as HTMLElement).style.background = `${accentColor}30`; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = `${accentColor}20`; }}
+                  style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "9px 22px", background: accentColor, border: `1px solid ${accentColor}`, borderRadius: "8px", fontSize: "13px", fontWeight: 600, color: "#FFFFFF", cursor: busy === p.id ? "not-allowed" : "pointer", fontFamily: "Helvetica, Arial, sans-serif", transition: "all 0.15s ease" }}
+                  onMouseEnter={e => { if (busy !== p.id) (e.currentTarget as HTMLElement).style.opacity = "0.88"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}
                 >
                   {busy === p.id ? <Spinner /> : (
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -301,9 +301,9 @@ function ApprovalTab({ client, pendingPosts, accentColor, onRefresh, onToast }: 
                 </button>
                 <button
                   onClick={() => setRequestingId(p.id)}
-                  style={{ padding: "9px 18px", background: "rgba(26,26,26,0.04)", border: "1px solid rgba(26,26,26,0.12)", borderRadius: "10px", fontSize: "13px", fontWeight: 500, color: "rgba(26,26,26,0.65)", cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s ease" }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(26,26,26,0.08)"; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "rgba(26,26,26,0.04)"; }}
+                  style={{ padding: "9px 18px", background: "#FFFFFF", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", fontWeight: 500, color: "#0A0A0A", cursor: "pointer", fontFamily: "Helvetica, Arial, sans-serif", transition: "all 0.15s ease" }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "#0A0A0A"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "#E5E5E5"; }}
                 >
                   Request changes
                 </button>
@@ -323,35 +323,38 @@ function HistoryTab({ postedPosts, analytics, accentColor }: {
   if (postedPosts.length === 0) {
     return (
       <div style={{ textAlign: "center", padding: "80px 0" }}>
-        <div style={{ fontSize: "40px", marginBottom: "16px", opacity: 0.15 }}>📋</div>
-        <p style={{ fontSize: "14px", color: "rgba(26,26,26,0.35)" }}>No published posts yet.</p>
+        <div style={{ width: "60px", height: "60px", borderRadius: "50%", background: "rgba(227,0,0,0.10)", border: "1px solid rgba(227,0,0,0.30)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
+          <span style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#E30000" }} />
+        </div>
+        <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "18px", fontWeight: 600, color: "#0A0A0A", marginBottom: "8px" }}>No published posts yet</div>
+        <p style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "14px", color: "#999999" }}>Your published posts will appear here once they go live.</p>
       </div>
     );
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-      <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "32px", fontWeight: 300, fontStyle: "normal", letterSpacing: "-0.02em", marginBottom: "8px" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+      <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "20px", fontWeight: 700, fontStyle: "normal", letterSpacing: "-0.01em", marginBottom: "8px", color: "#0A0A0A" }}>
         Post History
       </div>
       {postedPosts.map((p, i) => {
         const an = analytics[p.id];
         return (
           <div key={p.id} style={glass({ overflow: "hidden" })}>
-            <div style={{ padding: "14px 20px", borderBottom: "1px solid rgba(26,26,26,0.07)", display: "flex", alignItems: "center", gap: "10px", background: "rgba(26,26,26,0.02)", flexWrap: "wrap" }}>
+            <div style={{ padding: "14px 24px", borderBottom: "1px solid #E5E5E5", display: "flex", alignItems: "center", gap: "10px", background: "#F5F5F5", flexWrap: "wrap" }}>
               <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#E30000", flexShrink: 0 }} />
-              <span style={{ fontSize: "11px", fontWeight: 600, padding: "2px 8px", background: `${accentColor}18`, border: `1px solid ${accentColor}30`, color: accentColor, borderRadius: "6px", letterSpacing: "0.02em" }}>{p.post_type}</span>
-              <span style={{ fontSize: "12px", color: "rgba(26,26,26,0.45)" }}>{p.scheduled_day}</span>
+              <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", fontWeight: 600, padding: "4px 12px", background: "rgba(227,0,0,0.10)", border: `1px solid rgba(227,0,0,0.30)`, color: accentColor, borderRadius: "999px", letterSpacing: "0.02em" }}>{p.post_type}</span>
+              <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: "#666666" }}>{p.scheduled_day}</span>
               <StatusPill status="posted" />
-              <span style={{ marginLeft: "auto", fontSize: "11px", color: "rgba(26,26,26,0.35)" }}>{formatDate(p.updated_at)}</span>
+              <span style={{ marginLeft: "auto", fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: "#999999" }}>{formatDate(p.updated_at)}</span>
             </div>
-            <div style={{ padding: "18px 24px" }}>
-              <p style={{ fontSize: "14px", lineHeight: 1.75, color: "rgba(26,26,26,0.75)", whiteSpace: "pre-wrap", display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+            <div style={{ padding: "24px" }}>
+              <p style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "15px", lineHeight: 1.6, color: "#0A0A0A", whiteSpace: "pre-wrap", display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
                 {p.content}
               </p>
             </div>
             {an && (
-              <div style={{ padding: "12px 24px", borderTop: "1px solid rgba(26,26,26,0.06)", display: "flex", gap: "24px", flexWrap: "wrap" }}>
+              <div style={{ padding: "12px 24px", borderTop: "1px solid #E5E5E5", display: "flex", gap: "24px", flexWrap: "wrap" }}>
                 {[
                   { label: "Impressions",  value: an.impressions.toLocaleString() },
                   { label: "Engagement",   value: `${an.engagement_rate.toFixed(1)}%` },
@@ -361,8 +364,8 @@ function HistoryTab({ postedPosts, analytics, accentColor }: {
                   { label: "Reposts",      value: an.reposts.toLocaleString() },
                 ].map(m => (
                   <div key={m.label}>
-                    <div style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(26,26,26,0.35)", marginBottom: "2px" }}>{m.label}</div>
-                    <div style={{ fontSize: "22px", fontWeight: 300, color: accentColor, fontFamily: "var(--font-raleway), sans-serif" }}>{m.value}</div>
+                    <div style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "13px", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "#999999", marginBottom: "2px" }}>{m.label}</div>
+                    <div style={{ fontSize: "32px", fontWeight: 700, color: "#0A0A0A", fontFamily: "var(--font-raleway), sans-serif" }}>{m.value}</div>
                   </div>
                 ))}
               </div>
@@ -425,18 +428,18 @@ function ReportsTab({ client, accentColor }: {
 
   if (loading) {
     return <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-      {[...Array(3)].map((_, i) => <div key={i} style={{ height: 60, borderRadius: 12, background: "rgba(26,26,26,0.05)", animation: "pulse 1.5s ease-in-out infinite" }} />)}
+      {[...Array(3)].map((_, i) => <div key={i} style={{ height: 60, borderRadius: 12, background: "#F5F5F5", animation: "pulse 1.5s ease-in-out infinite" }} />)}
     </div>;
   }
 
   if (reports.length === 0) {
     return (
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "12px", padding: "80px 40px", textAlign: "center" }}>
-        <div style={{ width: 56, height: 56, borderRadius: "50%", background: `${accentColor}12`, border: `1px solid ${accentColor}30`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "8px" }}>
+        <div style={{ width: 60, height: 60, borderRadius: "50%", background: "rgba(227,0,0,0.10)", border: "1px solid rgba(227,0,0,0.30)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "8px" }}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M4 18V6a2 2 0 012-2h9l5 5v9a2 2 0 01-2 2H6a2 2 0 01-2-2z" stroke={accentColor} strokeWidth="1.5"/><path d="M14 4v5h5M8 12h8M8 16h5" stroke={accentColor} strokeWidth="1.5" strokeLinecap="round"/></svg>
         </div>
-        <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "22px", fontWeight: 300, fontStyle: "normal", color: "#1A1A1A" }}>No published reports yet</div>
-        <div style={{ fontSize: "13px", color: "rgba(26,26,26,0.50)" }}>Your Linkwright team will publish performance reports here.</div>
+        <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "18px", fontWeight: 600, fontStyle: "normal", color: "#0A0A0A" }}>No published reports yet</div>
+        <div style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "14px", color: "#999999" }}>Your Linkwright team will publish performance reports here.</div>
       </div>
     );
   }
@@ -447,13 +450,13 @@ function ReportsTab({ client, accentColor }: {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
         <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
           {reports.map(r => (
-            <button key={r.id} onClick={() => setSelectedId(r.id)} style={{ padding: "7px 14px", borderRadius: "8px", border: `1px solid ${r.id === selectedId ? accentColor : "rgba(26,26,26,0.12)"}`, background: r.id === selectedId ? `${accentColor}12` : "transparent", color: r.id === selectedId ? accentColor : "rgba(26,26,26,0.55)", fontSize: "12px", fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+            <button key={r.id} onClick={() => setSelectedId(r.id)} style={{ padding: "7px 14px", borderRadius: "999px", border: `1px solid ${r.id === selectedId ? accentColor : "#E5E5E5"}`, background: r.id === selectedId ? "rgba(227,0,0,0.10)" : "#FFFFFF", color: r.id === selectedId ? accentColor : "#666666", fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", fontWeight: 600, cursor: "pointer", transition: "all 0.15s ease" }}>
               {r.period_start.slice(0, 7)} {r.type === "weekly" ? "(weekly)" : ""}
             </button>
           ))}
         </div>
         {selectedReport && (
-          <button onClick={handleExport} disabled={exporting} style={{ display: "inline-flex", alignItems: "center", gap: "7px", padding: "9px 18px", background: `${accentColor}18`, border: `1px solid ${accentColor}40`, borderRadius: "10px", fontSize: "13px", fontWeight: 600, color: accentColor, cursor: "pointer", fontFamily: "inherit", opacity: exporting ? 0.7 : 1 }}>
+          <button onClick={handleExport} disabled={exporting} style={{ display: "inline-flex", alignItems: "center", gap: "7px", padding: "9px 18px", background: accentColor, border: `1px solid ${accentColor}`, borderRadius: "8px", fontFamily: "Helvetica, Arial, sans-serif", fontSize: "13px", fontWeight: 600, color: "#FFFFFF", cursor: "pointer", opacity: exporting ? 0.7 : 1, transition: "all 0.15s ease" }}>
             <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 9v2h9V9M6.5 1v7M4 6l2.5 2.5L9 6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
             {exporting ? "Generating…" : "Export PDF"}
           </button>
@@ -463,33 +466,32 @@ function ReportsTab({ client, accentColor }: {
       {selectedReport && (
         <>
           {/* Brand header */}
-          <div style={{ background: `linear-gradient(135deg, ${accentColor}18, ${accentColor}08)`, border: `1px solid ${accentColor}30`, borderRadius: "16px", padding: "24px 28px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ background: "#FFFFFF", border: "1px solid #E5E5E5", borderRadius: "12px", borderTop: "3px solid #E30000", padding: "24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div>
-              <div style={{ fontSize: "32px", fontWeight: 300, fontStyle: "normal", fontFamily: "var(--font-raleway), sans-serif", color: "#1A1A1A", letterSpacing: "-0.02em", marginBottom: "4px" }}>{client.name}</div>
-              <div style={{ fontSize: "12px", color: "rgba(26,26,26,0.45)" }}>{selectedReport.period_start} – {selectedReport.period_end}</div>
-              {selectedReport.published_at && <div style={{ fontSize: "11px", color: "rgba(26,26,26,0.35)", marginTop: "4px" }}>Published {new Date(selectedReport.published_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</div>}
+              <div style={{ fontSize: "32px", fontWeight: 700, fontStyle: "normal", fontFamily: "var(--font-raleway), sans-serif", color: "#0A0A0A", letterSpacing: "-0.02em", marginBottom: "4px" }}>{client.name}</div>
+              <div style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: "#666666" }}>{selectedReport.period_start} – {selectedReport.period_end}</div>
+              {selectedReport.published_at && <div style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: "#999999", marginTop: "4px" }}>Published {new Date(selectedReport.published_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</div>}
             </div>
             <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(26,26,26,0.35)", marginBottom: "6px" }}>Prepared by</div>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/linkwright-logo-white.png" alt="Linkwright" style={{ height: "20px", width: "auto", objectFit: "contain", filter: "brightness(0)" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+              <div style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "6px" }}>Prepared by</div>
+              <span style={{ fontFamily: "var(--font-raleway), sans-serif", fontWeight: 200, fontSize: "16px", letterSpacing: "0.1em", color: "#0A0A0A" }}>LINKWRIGHT</span>
             </div>
           </div>
 
           {/* KPI cards */}
           {extracted && (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "24px" }}>
               {[
-                { label: "Impressions",       value: fmtN(extracted.impressions),        color: "#1A1A1A" },
+                { label: "Impressions",       value: fmtN(extracted.impressions),        color: "#0A0A0A" },
                 { label: "Reach",             value: fmtN(extracted.reach),              color: accentColor },
                 { label: "Engagement Rate",   value: fmtPct(extracted.engagementRate),   color: accentColor },
-                { label: "Total Engagements", value: fmtN(extracted.totalEngagements),   color: "#1A1A1A" },
+                { label: "Total Engagements", value: fmtN(extracted.totalEngagements),   color: "#0A0A0A" },
                 { label: "Followers",         value: fmtN(extracted.followerCount),      color: accentColor },
-                { label: "Follower Growth",   value: extracted.followerGrowth != null ? `${extracted.followerGrowth > 0 ? "+" : ""}${extracted.followerGrowth}` : "—", color: "#1A1A1A" },
+                { label: "Follower Growth",   value: extracted.followerGrowth != null ? `${extracted.followerGrowth > 0 ? "+" : ""}${extracted.followerGrowth}` : "—", color: "#0A0A0A" },
               ].map(k => (
-                <div key={k.label} style={glass({ padding: "16px 20px 14px", borderTop: `2px solid ${k.color}` })}>
-                  <div style={{ fontSize: "9px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(26,26,26,0.40)", marginBottom: "8px" }}>{k.label}</div>
-                  <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "32px", fontWeight: 300, color: k.color, letterSpacing: "-0.02em", lineHeight: 1 }}>{k.value}</div>
+                <div key={k.label} style={glass({ padding: "24px", borderTop: `3px solid ${k.color}` })}>
+                  <div style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "13px", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "#999999", marginBottom: "8px" }}>{k.label}</div>
+                  <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "32px", fontWeight: 700, color: k.color, letterSpacing: "-0.02em", lineHeight: 1 }}>{k.value}</div>
                 </div>
               ))}
             </div>
@@ -498,21 +500,21 @@ function ReportsTab({ client, accentColor }: {
           {/* Top posts */}
           {extracted?.posts && extracted.posts.length > 0 && (
             <div style={glass({ overflow: "hidden" })}>
-              <div style={{ padding: "16px 22px", borderBottom: "1px solid rgba(26,26,26,0.08)" }}>
-                <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "22px", fontWeight: 300, fontStyle: "normal" }}>Top Posts This Period</div>
+              <div style={{ padding: "24px", borderBottom: "1px solid #E5E5E5" }}>
+                <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "20px", fontWeight: 700, fontStyle: "normal", color: "#0A0A0A" }}>Top Posts This Period</div>
               </div>
               <div>
                 {extracted.posts.slice(0, 5).map((p, i) => (
-                  <div key={i} style={{ padding: "14px 22px", borderBottom: i < 4 ? "1px solid rgba(26,26,26,0.06)" : "none", display: "flex", gap: "14px", alignItems: "flex-start" }}>
+                  <div key={i} style={{ padding: "14px 24px", borderBottom: i < 4 ? "1px solid #E5E5E5" : "none", display: "flex", gap: "14px", alignItems: "flex-start" }}>
                     <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: accentColor, marginTop: "6px", flexShrink: 0 }} />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontSize: "13px", color: "rgba(26,26,26,0.75)", lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", marginBottom: "4px" }}>
+                      <p style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "15px", color: "#0A0A0A", lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", marginBottom: "4px" }}>
                         {p.content ?? "—"}
                       </p>
                       <div style={{ display: "flex", gap: "16px" }}>
-                        {p.impressions != null && <span style={{ fontSize: "11px", color: "rgba(26,26,26,0.50)", fontWeight: 500 }}>{fmtN(p.impressions)} impressions</span>}
-                        {p.engagementRate != null && <span style={{ fontSize: "11px", color: accentColor, fontWeight: 600 }}>{fmtPct(p.engagementRate)} engagement</span>}
-                        {p.date && <span style={{ fontSize: "11px", color: "rgba(26,26,26,0.35)" }}>{p.date}</span>}
+                        {p.impressions != null && <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: "#666666", fontWeight: 500 }}>{fmtN(p.impressions)} impressions</span>}
+                        {p.engagementRate != null && <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: accentColor, fontWeight: 600 }}>{fmtPct(p.engagementRate)} engagement</span>}
+                        {p.date && <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: "#999999" }}>{p.date}</span>}
                       </div>
                     </div>
                   </div>
@@ -523,9 +525,9 @@ function ReportsTab({ client, accentColor }: {
 
           {/* Client narrative — NEVER show agency narrative */}
           {selectedReport.narrative_client && (
-            <div style={glass({ padding: "24px 28px" })}>
-              <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "22px", fontWeight: 300, fontStyle: "normal", marginBottom: "16px" }}>Performance Summary</div>
-              <p style={{ fontSize: "14px", lineHeight: 1.8, color: "rgba(26,26,26,0.75)", whiteSpace: "pre-wrap" }}>{selectedReport.narrative_client}</p>
+            <div style={glass({ padding: "24px" })}>
+              <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "20px", fontWeight: 700, fontStyle: "normal", marginBottom: "16px", color: "#0A0A0A" }}>Performance Summary</div>
+              <p style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "15px", lineHeight: 1.6, color: "#0A0A0A", whiteSpace: "pre-wrap" }}>{selectedReport.narrative_client}</p>
             </div>
           )}
         </>
@@ -609,29 +611,29 @@ function TeamTab({ myRole, accentColor, onToast }: {
     await load();
   };
 
-  const inputStyle: React.CSSProperties = { background: "#FFFFFF", border: "1px solid rgba(26,26,26,0.14)", borderRadius: "10px", padding: "11px 13px", fontSize: "14px", fontFamily: "inherit", color: "#1A1A1A", outline: "none", width: "100%", boxSizing: "border-box" };
-  const th: React.CSSProperties = { textAlign: "left", fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(26,26,26,0.40)", fontWeight: 600, padding: "0 12px 10px" };
-  const td: React.CSSProperties = { fontSize: "13px", color: "#1A1A1A", padding: "12px", borderTop: "1px solid rgba(26,26,26,0.07)", verticalAlign: "middle" };
+  const inputStyle: React.CSSProperties = { background: "#FFFFFF", border: "1px solid #E5E5E5", borderRadius: "8px", padding: "11px 13px", fontSize: "14px", fontFamily: "Helvetica, Arial, sans-serif", color: "#0A0A0A", outline: "none", width: "100%", boxSizing: "border-box", transition: "all 0.15s ease" };
+  const th: React.CSSProperties = { textAlign: "left", fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", fontWeight: 600, padding: "0 12px 10px" };
+  const td: React.CSSProperties = { fontFamily: "Helvetica, Arial, sans-serif", fontSize: "14px", color: "#0A0A0A", padding: "12px", borderTop: "1px solid #E5E5E5", verticalAlign: "middle" };
 
   return (
     <div style={{ maxWidth: "980px", margin: "0 auto" }}>
-      <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "26px", fontWeight: 300, fontStyle: "normal", marginBottom: "6px" }}>Team</div>
-      <p style={{ fontSize: "13px", color: "rgba(26,26,26,0.55)", marginBottom: "24px" }}>
+      <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "20px", fontWeight: 700, fontStyle: "normal", marginBottom: "6px", color: "#0A0A0A" }}>Team</div>
+      <p style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "14px", color: "#666666", marginBottom: "24px" }}>
         Manage administrators and users for your company.
       </p>
 
       {/* Add form */}
       <div style={glass({ padding: "24px" })}>
-        <div style={{ fontSize: "12px", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "rgba(26,26,26,0.55)", marginBottom: "16px" }}>
+        <div style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "#666666", marginBottom: "16px" }}>
           Add a team member
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "12px" }}>
-          <input style={inputStyle} placeholder="First name" value={form.first_name} onChange={e => setForm({ ...form, first_name: e.target.value })} />
-          <input style={inputStyle} placeholder="Last name" value={form.last_name} onChange={e => setForm({ ...form, last_name: e.target.value })} />
-          <input style={inputStyle} placeholder="Email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
-          <input style={inputStyle} placeholder="Job title (optional)" value={form.job_title} onChange={e => setForm({ ...form, job_title: e.target.value })} />
-          <input style={inputStyle} placeholder="Phone (optional)" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
-          <select style={inputStyle} value={form.role} onChange={e => setForm({ ...form, role: e.target.value as ClientRole })}>
+          <input style={inputStyle} placeholder="First name" value={form.first_name} onChange={e => setForm({ ...form, first_name: e.target.value })} onFocus={e => e.target.style.borderColor = "#0A0A0A"} onBlur={e => e.target.style.borderColor = "#E5E5E5"} />
+          <input style={inputStyle} placeholder="Last name" value={form.last_name} onChange={e => setForm({ ...form, last_name: e.target.value })} onFocus={e => e.target.style.borderColor = "#0A0A0A"} onBlur={e => e.target.style.borderColor = "#E5E5E5"} />
+          <input style={inputStyle} placeholder="Email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} onFocus={e => e.target.style.borderColor = "#0A0A0A"} onBlur={e => e.target.style.borderColor = "#E5E5E5"} />
+          <input style={inputStyle} placeholder="Job title (optional)" value={form.job_title} onChange={e => setForm({ ...form, job_title: e.target.value })} onFocus={e => e.target.style.borderColor = "#0A0A0A"} onBlur={e => e.target.style.borderColor = "#E5E5E5"} />
+          <input style={inputStyle} placeholder="Phone (optional)" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} onFocus={e => e.target.style.borderColor = "#0A0A0A"} onBlur={e => e.target.style.borderColor = "#E5E5E5"} />
+          <select style={inputStyle} value={form.role} onChange={e => setForm({ ...form, role: e.target.value as ClientRole })} onFocus={e => e.target.style.borderColor = "#0A0A0A"} onBlur={e => e.target.style.borderColor = "#E5E5E5"}>
             <option value="user">User</option>
             <option value="administrator" disabled={adminLimitReached}>
               Administrator{adminLimitReached ? " (limit reached)" : ""}
@@ -639,7 +641,7 @@ function TeamTab({ myRole, accentColor, onToast }: {
           </select>
         </div>
         <button onClick={add} disabled={busy}
-          style={{ padding: "11px 22px", background: accentColor, color: "#FFFFFF", border: "none", borderRadius: "10px", fontSize: "13px", fontWeight: 600, cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1, fontFamily: "inherit" }}>
+          style={{ padding: "11px 22px", background: accentColor, color: "#FFFFFF", border: "none", borderRadius: "8px", fontSize: "13px", fontWeight: 600, cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1, fontFamily: "Helvetica, Arial, sans-serif", transition: "all 0.15s ease" }}>
           {busy ? "Adding..." : "Add and send invite"}
         </button>
       </div>
@@ -647,9 +649,9 @@ function TeamTab({ myRole, accentColor, onToast }: {
       {/* Team table */}
       <div style={glass({ padding: "20px 20px 8px", marginTop: "20px" })}>
         {loading ? (
-          <div style={{ color: "rgba(26,26,26,0.45)", fontSize: "13px", padding: "8px 12px 16px" }}>Loading...</div>
+          <div style={{ fontFamily: "Helvetica, Arial, sans-serif", color: "#999999", fontSize: "14px", padding: "8px 12px 16px" }}>Loading...</div>
         ) : team.length === 0 ? (
-          <div style={{ color: "rgba(26,26,26,0.45)", fontSize: "13px", padding: "8px 12px 16px" }}>No team members yet.</div>
+          <div style={{ fontFamily: "Helvetica, Arial, sans-serif", color: "#999999", fontSize: "14px", padding: "8px 12px 16px" }}>No team members yet.</div>
         ) : (
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead><tr><th style={th}>Name</th><th style={th}>Email</th><th style={th}>Role</th><th style={th}>Status</th><th style={th}>Last login</th><th style={th}></th></tr></thead>
@@ -672,7 +674,7 @@ function TeamTab({ myRole, accentColor, onToast }: {
                         </select>
                       ) : !isOwnerRow && myRole === "administrator" && m.role === "user" ? (
                         <button onClick={() => changeRole(m, "administrator")}
-                          style={{ fontSize: "12px", color: accentColor, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, textDecoration: "underline", textUnderlineOffset: "3px", padding: 0 }}>
+                          style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: accentColor, background: "none", border: "none", cursor: "pointer", fontWeight: 600, textDecoration: "underline", textUnderlineOffset: "3px", padding: 0, transition: "all 0.15s ease" }}>
                           Promote to admin
                         </button>
                       ) : (
@@ -685,11 +687,11 @@ function TeamTab({ myRole, accentColor, onToast }: {
                       {canManage && (
                         <>
                           <button onClick={() => resend(m)}
-                            style={{ fontSize: "12px", color: "rgba(26,26,26,0.55)", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", marginRight: "14px" }}>
+                            style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: "#666666", background: "none", border: "none", cursor: "pointer", marginRight: "14px", transition: "all 0.15s ease" }}>
                             Resend
                           </button>
                           <button onClick={() => deactivate(m)}
-                            style={{ fontSize: "12px", color: "#cc3333", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}>
+                            style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: "#E30000", background: "none", border: "none", cursor: "pointer", fontWeight: 600, transition: "all 0.15s ease" }}>
                             Remove
                           </button>
                         </>
@@ -750,22 +752,22 @@ function MessagesTab({ accentColor, onViewed }: { accentColor: string; onViewed:
 
   return (
     <div style={{ maxWidth: "760px", margin: "0 auto" }}>
-      <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "26px", fontWeight: 300, fontStyle: "normal", marginBottom: "6px" }}>Messages</div>
-      <p style={{ fontSize: "13px", color: "rgba(26,26,26,0.55)", marginBottom: "24px" }}>Message your team at Linkwright. We reply here.</p>
+      <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "20px", fontWeight: 700, fontStyle: "normal", marginBottom: "6px", color: "#0A0A0A" }}>Messages</div>
+      <p style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "14px", color: "#666666", marginBottom: "24px" }}>Message your team at Linkwright. We reply here.</p>
 
-      <div style={{ background: "#FFFFFF", border: "1px solid rgba(26,26,26,0.10)", borderRadius: "16px", padding: "24px", minHeight: "320px", display: "flex", flexDirection: "column", gap: "14px" }}>
+      <div style={{ background: "#FFFFFF", border: "1px solid #E5E5E5", borderRadius: "12px", padding: "24px", minHeight: "320px", display: "flex", flexDirection: "column", gap: "14px" }}>
         {loading ? (
-          <div style={{ color: "rgba(26,26,26,0.45)", fontSize: "13px" }}>Loading...</div>
+          <div style={{ fontFamily: "Helvetica, Arial, sans-serif", color: "#999999", fontSize: "14px" }}>Loading...</div>
         ) : messages.length === 0 ? (
-          <div style={{ color: "rgba(26,26,26,0.45)", fontSize: "13px" }}>No messages yet. Send the first one below.</div>
+          <div style={{ fontFamily: "Helvetica, Arial, sans-serif", color: "#999999", fontSize: "14px" }}>No messages yet. Send the first one below.</div>
         ) : (
           messages.map(m => (
             <div key={m.id} style={{ display: "flex", justifyContent: m.sender === "client" ? "flex-end" : "flex-start" }}>
-              <div style={{ maxWidth: "78%", padding: "11px 15px", borderRadius: "14px", fontSize: "14px", lineHeight: 1.55, whiteSpace: "pre-wrap",
-                background: m.sender === "client" ? `${accentColor}14` : "rgba(26,26,26,0.05)",
-                border: `1px solid ${m.sender === "client" ? `${accentColor}33` : "rgba(26,26,26,0.08)"}`,
-                color: "#1A1A1A" }}>
-                <div style={{ fontSize: "10px", letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(26,26,26,0.40)", marginBottom: "4px", fontWeight: 600 }}>
+              <div style={{ maxWidth: "78%", padding: "11px 15px", borderRadius: "12px", fontFamily: "Helvetica, Arial, sans-serif", fontSize: "15px", lineHeight: 1.55, whiteSpace: "pre-wrap",
+                background: m.sender === "client" ? "rgba(227,0,0,0.10)" : "#F5F5F5",
+                border: `1px solid ${m.sender === "client" ? "rgba(227,0,0,0.30)" : "#E5E5E5"}`,
+                color: "#0A0A0A" }}>
+                <div style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", letterSpacing: "0.06em", textTransform: "uppercase", color: m.sender === "client" ? "#E30000" : "#999999", marginBottom: "4px", fontWeight: 600 }}>
                   {m.sender === "client" ? "You" : "Linkwright"}
                 </div>
                 {m.body}
@@ -781,10 +783,12 @@ function MessagesTab({ accentColor, onViewed }: { accentColor: string; onViewed:
           onChange={e => setText(e.target.value)}
           onKeyDown={e => { if (e.key === "Enter") send(); }}
           placeholder="Write a message"
-          style={{ flex: 1, background: "#FFFFFF", border: "1px solid rgba(26,26,26,0.14)", borderRadius: "10px", padding: "12px 14px", fontSize: "14px", fontFamily: "inherit", color: "#1A1A1A", outline: "none" }}
+          style={{ flex: 1, background: "#FFFFFF", border: "1px solid #E5E5E5", borderRadius: "8px", padding: "12px 14px", fontSize: "14px", fontFamily: "Helvetica, Arial, sans-serif", color: "#0A0A0A", outline: "none", transition: "all 0.15s ease" }}
+          onFocus={e => e.target.style.borderColor = "#0A0A0A"}
+          onBlur={e => e.target.style.borderColor = "#E5E5E5"}
         />
         <button onClick={send} disabled={sending || !text.trim()}
-          style={{ padding: "0 22px", background: accentColor, color: "#FFFFFF", border: "none", borderRadius: "10px", fontSize: "13px", fontWeight: 600, cursor: sending || !text.trim() ? "default" : "pointer", opacity: sending || !text.trim() ? 0.55 : 1, fontFamily: "inherit" }}>
+          style={{ padding: "0 22px", background: accentColor, color: "#FFFFFF", border: "none", borderRadius: "8px", fontSize: "13px", fontWeight: 600, cursor: sending || !text.trim() ? "default" : "pointer", opacity: sending || !text.trim() ? 0.55 : 1, fontFamily: "Helvetica, Arial, sans-serif", transition: "all 0.15s ease" }}>
           Send
         </button>
       </div>
@@ -891,7 +895,7 @@ export default function PortalPage() {
 
   if (loading || !session) {
     return (
-      <div style={{ minHeight: "100vh", background: "#F5F5F5", display: "flex", alignItems: "center", justifyContent: "center", gap: "12px", color: "rgba(26,26,26,0.50)", fontSize: "14px" }}>
+      <div style={{ minHeight: "100vh", background: "#F5F5F5", display: "flex", alignItems: "center", justifyContent: "center", gap: "12px", color: "#999999", fontSize: "14px", fontFamily: "Helvetica, Arial, sans-serif" }}>
         <Spinner /> Loading…
       </div>
     );
@@ -899,9 +903,9 @@ export default function PortalPage() {
 
   if (!client) {
     return (
-      <div style={{ minHeight: "100vh", background: "#F5F5F5", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(26,26,26,0.50)", fontSize: "14px", flexDirection: "column", gap: "12px" }}>
+      <div style={{ minHeight: "100vh", background: "#F5F5F5", display: "flex", alignItems: "center", justifyContent: "center", color: "#666666", fontSize: "14px", fontFamily: "Helvetica, Arial, sans-serif", flexDirection: "column", gap: "12px" }}>
         <p>No client account linked to your profile.</p>
-        <a href="/client/login" style={{ color: "#1A1A1A", fontSize: "13px" }}>Back to login</a>
+        <a href="/client/login" style={{ color: "#E30000", fontSize: "13px", cursor: "pointer" }}>Back to login</a>
       </div>
     );
   }
@@ -923,7 +927,7 @@ export default function PortalPage() {
   ];
 
   return (
-    <div style={{ minHeight: "100vh", background: "#F5F5F5", color: "#1A1A1A", fontFamily: "Helvetica, Arial, sans-serif", paddingTop: "64px" }}>
+    <div style={{ minHeight: "100vh", background: "#F5F5F5", color: "#0A0A0A", fontFamily: "Helvetica, Arial, sans-serif", paddingTop: "64px" }}>
 
       {/* Toast */}
       {toast && (
@@ -932,33 +936,30 @@ export default function PortalPage() {
           display: "flex", alignItems: "center", gap: "10px",
           padding: "12px 20px",
           background: "#FFFFFF",
-          border: `1px solid ${toast.type === "success" ? "rgba(227,0,0,0.30)" : toast.type === "error" ? "rgba(204,51,51,0.25)" : "rgba(26,26,26,0.10)"}`,
+          border: `1px solid ${toast.type === "error" ? "rgba(227,0,0,0.30)" : "#E5E5E5"}`,
           borderRadius: "12px",
           animation: "toastIn 0.3s cubic-bezier(0.16,1,0.3,1) both",
-          boxShadow: "0 4px 24px rgba(26,26,26,0.10)",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
         }}>
-          <span style={{ fontSize: "12px", color: toast.type === "success" ? "#8A8680" : toast.type === "error" ? "#cc3333" : "rgba(26,26,26,0.55)", fontWeight: 700 }}>
-            {toast.type === "success" ? "✓" : toast.type === "error" ? "✕" : "✦"}
+          <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: toast.type === "success" ? "#E30000" : toast.type === "error" ? "#E30000" : "#666666", fontWeight: 700 }}>
+            {toast.type === "success" ? "✓" : toast.type === "error" ? "✕" : "●"}
           </span>
-          <span style={{ fontSize: "13px", fontWeight: 500, color: "#1A1A1A" }}>{toast.msg}</span>
+          <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "13px", fontWeight: 500, color: "#0A0A0A" }}>{toast.msg}</span>
         </div>
       )}
 
       {/* Nav */}
-      <header style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 50, background: "rgba(244,241,236,0.92)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", borderBottom: "0.5px solid rgba(26,24,20,0.10)" }}>
+      <header style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 50, background: "#0A0A0A" }}>
         <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 32px", height: "64px", display: "flex", alignItems: "center", gap: "24px" }}>
 
-          {/* Logo + tagline */}
+          {/* Logo */}
           <a href="/" style={{ flexShrink: 0, textDecoration: "none", display: "flex", alignItems: "center", gap: "20px" }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/linkwright-logo-white.png" alt="Linkwright" style={{ height: "26px", width: "auto", objectFit: "contain", filter: "brightness(0)" }} />
-            <div style={{ width: "0.5px", height: "28px", background: "rgba(26,24,20,0.15)" }} />
             <span style={{
               fontFamily: "var(--font-raleway), sans-serif",
-              fontSize: "13px", fontWeight: 300, fontStyle: "normal",
-              color: "rgba(26,24,20,0.45)", letterSpacing: "0.01em", whiteSpace: "nowrap",
+              fontSize: "18px", fontWeight: 200,
+              color: "#FFFFFF", letterSpacing: "0.1em", whiteSpace: "nowrap",
             }}>
-              Engineered for LinkedIn. Optimised for 2026.
+              LINKWRIGHT
             </span>
           </a>
 
@@ -967,7 +968,7 @@ export default function PortalPage() {
             <div style={{ display: "flex", gap: "4px", flexShrink: 0 }}>
               {clients.slice(0, 5).map(c => (
                 <button key={c.id} onClick={() => handleClientSwitch(c)}
-                  style={{ padding: "5px 12px", borderRadius: "8px", fontSize: "12px", fontWeight: 500, background: client.id === c.id ? "rgba(26,26,26,0.08)" : "transparent", border: "none", color: client.id === c.id ? "#1A1A1A" : "rgba(26,26,26,0.45)", cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s ease" }}>
+                  style={{ padding: "5px 12px", borderRadius: "999px", fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", fontWeight: 500, background: client.id === c.id ? "#E30000" : "transparent", border: "none", color: client.id === c.id ? "#FFFFFF" : "#999999", cursor: "pointer", transition: "all 0.15s ease" }}>
                   {c.name.split(" ")[0]}
                 </button>
               ))}
@@ -978,10 +979,10 @@ export default function PortalPage() {
           <nav style={{ display: "flex", gap: "0px", flex: 1, justifyContent: "center" }}>
             {TABS.map(t => (
               <button key={t.id} onClick={() => setTab(t.id)}
-                style={{ position: "relative", padding: "8px 18px", background: "transparent", border: "none", borderBottom: tab === t.id ? "1px solid #E30000" : "1px solid transparent", fontSize: "12px", fontWeight: 400, letterSpacing: "0.04em", color: tab === t.id ? "#1A1A1A" : "rgba(26,26,26,0.45)", cursor: "pointer", transition: "color 0.15s ease, border-color 0.15s ease", fontFamily: "Helvetica, Arial, sans-serif", display: "inline-flex", alignItems: "center", gap: "6px", marginBottom: "-1px" }}>
+                style={{ position: "relative", padding: "8px 18px", background: "transparent", border: "none", borderBottom: tab === t.id ? "2px solid #E30000" : "2px solid transparent", fontSize: "13px", fontWeight: 400, letterSpacing: "0.04em", color: tab === t.id ? "#FFFFFF" : "#999999", cursor: "pointer", transition: "all 0.15s ease", fontFamily: "Helvetica, Arial, sans-serif", display: "inline-flex", alignItems: "center", gap: "6px", marginBottom: "-1px" }}>
                 {t.label}
                 {t.badge && t.badge > 0 ? (
-                  <span style={{ minWidth: "16px", height: "16px", borderRadius: "8px", background: "rgba(227,0,0,0.15)", color: "#E30000", border: "1px solid rgba(227,0,0,0.30)", fontSize: "9px", fontWeight: 600, display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "0 4px" }}>
+                  <span style={{ minWidth: "16px", height: "16px", borderRadius: "999px", background: "#E30000", color: "#FFFFFF", fontFamily: "Helvetica, Arial, sans-serif", fontSize: "9px", fontWeight: 600, display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "0 4px" }}>
                     {t.badge}
                   </span>
                 ) : null}
@@ -989,43 +990,30 @@ export default function PortalPage() {
             ))}
           </nav>
 
-          {/* Right: back to main site + sign out */}
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
-            <a href="/" style={{ fontSize: "12px", fontWeight: 500, color: "rgba(26,26,26,0.55)", textDecoration: "none", padding: "6px 14px", background: "transparent", border: "1px solid rgba(26,26,26,0.12)", borderRadius: "6px", transition: "all 0.15s ease", fontFamily: "Helvetica, Arial, sans-serif" }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(26,26,26,0.22)"; (e.currentTarget as HTMLElement).style.color = "#1A1A1A"; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(26,26,26,0.12)"; (e.currentTarget as HTMLElement).style.color = "rgba(26,26,26,0.55)"; }}>
-              ← Back to main site
-            </a>
-            <button onClick={handleSignOut} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "32px", height: "32px", background: "transparent", border: "1px solid rgba(26,26,26,0.12)", borderRadius: "6px", color: "rgba(26,26,26,0.45)", cursor: "pointer", fontSize: "14px", transition: "all 0.15s ease", fontFamily: "inherit" }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(26,26,26,0.22)"; (e.currentTarget as HTMLElement).style.color = "#1A1A1A"; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(26,26,26,0.12)"; (e.currentTarget as HTMLElement).style.color = "rgba(26,26,26,0.45)"; }}
+          {/* Right: company name + sign out */}
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", flexShrink: 0 }}>
+            <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "13px", fontWeight: 500, color: "#999999", whiteSpace: "nowrap" }}>{client.name}</span>
+            <button onClick={handleSignOut} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "8px 16px", background: "transparent", border: "1px solid #FFFFFF", borderRadius: "999px", color: "#FFFFFF", cursor: "pointer", fontFamily: "var(--font-raleway), sans-serif", fontWeight: 400, fontSize: "13px", transition: "all 0.15s ease" }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#FFFFFF"; (e.currentTarget as HTMLElement).style.color = "#0A0A0A"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "#FFFFFF"; }}
               title="Sign out">
-              ↩
+              Sign out
             </button>
           </div>
         </div>
-        {/* Accent line */}
-        <div style={{ height: "2px", background: `linear-gradient(90deg, transparent 0%, ${accentColor}80 30%, ${accentColor} 50%, ${accentColor}80 70%, transparent 100%)`, transition: "all 0.4s ease" }} />
       </header>
 
-      {/* Banner — light services.png treatment, matching the landing page split section */}
-      <div style={{ position: "relative", height: "200px", overflow: "hidden", background: "#ECECEC" }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/images/services.png"
-          alt="" aria-hidden="true"
-          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", filter: "brightness(1.05) contrast(1.05) saturate(0.6)" }}
-        />
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(244,241,236,0.78) 0%, rgba(244,241,236,0.58) 100%)" }} />
+      {/* Banner */}
+      <div style={{ position: "relative", height: "200px", overflow: "hidden", background: "#FFFFFF", borderBottom: "1px solid #E5E5E5" }}>
         <div style={{ position: "relative", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "0 48px" }}>
-          <div style={{ width: "28px", height: "1px", background: accentColor, marginBottom: "20px", opacity: 0.8 }} />
-          <p style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "clamp(22px, 3vw, 42px)", fontWeight: 300, fontStyle: "normal", color: "#1A1814", lineHeight: 1.2, maxWidth: "600px", letterSpacing: "-0.01em" }}>
+          <div style={{ width: "28px", height: "2px", background: accentColor, marginBottom: "20px" }} />
+          <p style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "clamp(22px, 3vw, 42px)", fontWeight: 700, fontStyle: "normal", color: "#0A0A0A", lineHeight: 1.2, maxWidth: "600px", letterSpacing: "-0.01em" }}>
             {client.name}
           </p>
           {client.tagline && (
-            <p style={{ fontSize: "11px", color: "rgba(26,24,20,0.50)", marginTop: "10px", letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 500 }}>{client.tagline}</p>
+            <p style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", color: "#999999", marginTop: "10px", letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 600 }}>{client.tagline}</p>
           )}
-          <div style={{ width: "28px", height: "1px", background: accentColor, marginTop: "20px", opacity: 0.8 }} />
+          <div style={{ width: "28px", height: "2px", background: accentColor, marginTop: "20px" }} />
         </div>
       </div>
 
