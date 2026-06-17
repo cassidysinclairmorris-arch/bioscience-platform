@@ -233,9 +233,36 @@ export default function ContactPage() {
   const [company, setCompany] = useState("");
   const [message, setMessage] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = () => {
-    setSubmitted(true);
+  const handleSubmit = async () => {
+    setError("");
+    if (!name.trim() || !email.trim() || !message.trim()) {
+      setError("Please fill in your name, email, and message.");
+      return;
+    }
+    setSending(true);
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, company, message }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Something went wrong. Please try again.");
+      }
+      setSubmitted(true);
+      setName("");
+      setEmail("");
+      setCompany("");
+      setMessage("");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
+    } finally {
+      setSending(false);
+    }
   };
 
   const infoBlocks = [
@@ -317,6 +344,7 @@ export default function ContactPage() {
             <button
               type="button"
               onClick={handleSubmit}
+              disabled={sending}
               style={{
                 background: BLACK,
                 color: WHITE,
@@ -326,10 +354,11 @@ export default function ContactPage() {
                 border: "none",
                 borderRadius: 999,
                 padding: "16px 32px",
-                cursor: "pointer",
+                cursor: sending ? "default" : "pointer",
+                opacity: sending ? 0.6 : 1,
               }}
             >
-              Submit
+              {sending ? "Sending..." : "Submit"}
             </button>
 
             {submitted && (
@@ -343,6 +372,20 @@ export default function ContactPage() {
                 }}
               >
                 Thank you. We have received your message and will be in touch shortly.
+              </p>
+            )}
+
+            {error && (
+              <p
+                style={{
+                  fontFamily: FONT,
+                  fontWeight: 400,
+                  fontSize: 14,
+                  color: RED,
+                  margin: "20px 0 0",
+                }}
+              >
+                {error}
               </p>
             )}
           </div>
