@@ -1007,7 +1007,6 @@ export default function PortalPage() {
       <div style={{ position: "relative", height: "240px", overflow: "hidden", background: "#0A0A0A", borderBottom: "1px solid #E5E5E5" }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/images/1.png" alt="" aria-hidden="true" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-        <div aria-hidden="true" style={{ position: "absolute", inset: 0, background: "linear-gradient(90deg, rgba(10,10,10,0.82) 0%, rgba(10,10,10,0.50) 100%)" }} />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/images/red-circle.png" alt="" aria-hidden="true" style={{ position: "absolute", top: "-100px", right: "-90px", width: "340px", height: "340px", opacity: 0.6, mixBlendMode: "screen", pointerEvents: "none" }} />
         <div style={{ position: "relative", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "0 48px" }}>

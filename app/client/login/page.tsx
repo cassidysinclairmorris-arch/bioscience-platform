@@ -154,7 +154,7 @@ export default function ClientLoginPage() {
               background: BLACK,
               color: WHITE,
               fontFamily: FONT,
-              fontWeight: 600,
+              fontWeight: 400,
               fontSize: 15,
               border: "none",
               borderRadius: 999,
