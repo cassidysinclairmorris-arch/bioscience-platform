@@ -27,11 +27,11 @@ function BrandPanel({ brand }: { brand: BrandProfile | null }) {
   return (
     <div style={{ padding: "20px 18px", display: "flex", flexDirection: "column", gap: 20 }}>
       <div>
-        <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(26,26,26,0.40)", marginBottom: 8 }}>Visual Style</div>
+        <div style={{ fontSize: 10, fontWeight: 400, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(26,26,26,0.40)", marginBottom: 8 }}>Visual Style</div>
         <div style={{ fontSize: 14, fontWeight: 500, color: "#1A1A1A" }}>{brand.visualStyle}</div>
       </div>
       <div>
-        <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(26,26,26,0.40)", marginBottom: 8 }}>Primary Colors</div>
+        <div style={{ fontSize: 10, fontWeight: 400, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(26,26,26,0.40)", marginBottom: 8 }}>Primary Colors</div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
           {brand.primaryColors.map(c => <ColorSwatch key={c} color={c} />)}
         </div>
@@ -41,7 +41,7 @@ function BrandPanel({ brand }: { brand: BrandProfile | null }) {
       </div>
       {brand.secondaryColors.length > 0 && (
         <div>
-          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(26,26,26,0.40)", marginBottom: 8 }}>Secondary Colors</div>
+          <div style={{ fontSize: 10, fontWeight: 400, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(26,26,26,0.40)", marginBottom: 8 }}>Secondary Colors</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
             {brand.secondaryColors.map(c => <ColorSwatch key={c} color={c} />)}
           </div>
@@ -49,16 +49,16 @@ function BrandPanel({ brand }: { brand: BrandProfile | null }) {
       )}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
         <div>
-          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(26,26,26,0.40)", marginBottom: 5 }}>Tone</div>
+          <div style={{ fontSize: 10, fontWeight: 400, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(26,26,26,0.40)", marginBottom: 5 }}>Tone</div>
           <span style={{ fontSize: 12, fontWeight: 500, color: "#1A1A1A", background: "rgba(26,26,26,0.05)", padding: "3px 9px", borderRadius: 20, border: "1px solid rgba(26,26,26,0.10)" }}>{brand.tone}</span>
         </div>
         <div>
-          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(26,26,26,0.40)", marginBottom: 5 }}>Font</div>
+          <div style={{ fontSize: 10, fontWeight: 400, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(26,26,26,0.40)", marginBottom: 5 }}>Font</div>
           <span style={{ fontSize: 12, fontWeight: 500, color: "#1A1A1A", background: "rgba(26,26,26,0.05)", padding: "3px 9px", borderRadius: 20, border: "1px solid rgba(26,26,26,0.10)" }}>{brand.fontStyle}</span>
         </div>
       </div>
       <div>
-        <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(26,26,26,0.40)", marginBottom: 5 }}>Logo</div>
+        <div style={{ fontSize: 10, fontWeight: 400, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(26,26,26,0.40)", marginBottom: 5 }}>Logo</div>
         <div style={{ fontSize: 12, color: "rgba(26,26,26,0.65)", lineHeight: 1.5 }}>{brand.logoDescription}</div>
       </div>
     </div>
@@ -120,7 +120,7 @@ export default function ImageStudio() {
         {/* Header */}
         <div style={{ borderBottom: "1px solid rgba(26,26,26,0.08)", background: "#FFFFFF", padding: "0 32px" }}>
           <div style={{ maxWidth: 1100, margin: "0 auto", height: 56, display: "flex", alignItems: "center", gap: 12 }}>
-            <span style={{ fontSize: 18, fontWeight: 600, color: "#1A1A1A", letterSpacing: "-0.02em" }}>Image Studio</span>
+            <span style={{ fontSize: 18, fontWeight: 400, color: "#1A1A1A", letterSpacing: "-0.02em" }}>Image Studio</span>
             <span style={{ fontSize: 12, color: "rgba(26,26,26,0.38)", fontWeight: 400 }}>Brand-aware generation</span>
           </div>
         </div>
@@ -130,7 +130,7 @@ export default function ImageStudio() {
           {/* Sidebar — Brand Profile */}
           <div style={{ background: "#FFFFFF", border: "1px solid rgba(26,26,26,0.08)", borderRadius: 12, overflow: "hidden", position: "sticky", top: 28 }}>
             <div style={{ padding: "14px 18px", borderBottom: "1px solid rgba(26,26,26,0.07)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(26,26,26,0.50)" }}>Brand Profile</span>
+              <span style={{ fontSize: 11, fontWeight: 400, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(26,26,26,0.50)" }}>Brand Profile</span>
               {brand && <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#2D8A4E", display: "inline-block" }} />}
             </div>
             <BrandPanel brand={brand} />
@@ -142,7 +142,7 @@ export default function ImageStudio() {
             {/* Brand Extractor */}
             <div style={{ background: "#FFFFFF", border: "1px solid rgba(26,26,26,0.08)", borderRadius: 12, overflow: "hidden" }}>
               <div style={{ padding: "14px 20px", borderBottom: "1px solid rgba(26,26,26,0.07)" }}>
-                <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(26,26,26,0.50)" }}>Brand Source</span>
+                <span style={{ fontSize: 11, fontWeight: 400, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(26,26,26,0.50)" }}>Brand Source</span>
               </div>
               <div style={{ padding: "18px 20px" }}>
                 <div style={{ display: "flex", gap: 10 }}>
@@ -179,7 +179,7 @@ export default function ImageStudio() {
             {/* Image Generator */}
             <div style={{ background: "#FFFFFF", border: "1px solid rgba(26,26,26,0.08)", borderRadius: 12, overflow: "hidden" }}>
               <div style={{ padding: "14px 20px", borderBottom: "1px solid rgba(26,26,26,0.07)" }}>
-                <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(26,26,26,0.50)" }}>Generate Image</span>
+                <span style={{ fontSize: 11, fontWeight: 400, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(26,26,26,0.50)" }}>Generate Image</span>
               </div>
               <div style={{ padding: "18px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
                 {brand && (
@@ -212,7 +212,7 @@ export default function ImageStudio() {
             {(imageUrl || generating) && (
               <div style={{ background: "#FFFFFF", border: "1px solid rgba(26,26,26,0.08)", borderRadius: 12, overflow: "hidden" }}>
                 <div style={{ padding: "14px 20px", borderBottom: "1px solid rgba(26,26,26,0.07)" }}>
-                  <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(26,26,26,0.50)" }}>Result</span>
+                  <span style={{ fontSize: 11, fontWeight: 400, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(26,26,26,0.50)" }}>Result</span>
                 </div>
                 <div style={{ padding: 20 }}>
                   {generating && !imageUrl && (

@@ -176,7 +176,7 @@ function CompanyLogo({ company, overlay }: { company: Company; overlay?: boolean
   const invertFilter = shouldInvert ? "brightness(0) invert(1) " : "";
   const shadowFilter = overlay ? "drop-shadow(0 2px 8px rgba(0,0,0,0.5))" : "";
   const filter = `${invertFilter}${shadowFilter}`.trim() || "none";
-  if (!src) return <span style={{ color: T, fontWeight: 700, fontSize: "14px", filter: shadowFilter || "none" }}>{(company.brand as Record<string,unknown> | undefined)?.logoText as string || (company.brand as Record<string,unknown> | undefined)?.logo_text as string || company.name}</span>;
+  if (!src) return <span style={{ color: T, fontWeight: 400, fontSize: "14px", filter: shadowFilter || "none" }}>{(company.brand as Record<string,unknown> | undefined)?.logoText as string || (company.brand as Record<string,unknown> | undefined)?.logo_text as string || company.name}</span>;
   return (
     <div style={{ background: "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -354,7 +354,7 @@ function Toast({ message, type = "default" }: { message: string; type?: "default
       borderRadius: "8px",
       animation: "toastIn 0.3s cubic-bezier(0.16,1,0.3,1) both",
     }}>
-      <span style={{ fontSize: "12px", color: cfg.color, fontWeight: 600 }}>{cfg.icon}</span>
+      <span style={{ fontSize: "12px", color: cfg.color, fontWeight: 400 }}>{cfg.icon}</span>
       <span style={{ fontSize: "13px", fontWeight: 400, color: T, letterSpacing: "-0.01em" }}>{message}</span>
     </div>
   );
@@ -393,7 +393,7 @@ function OverviewTab({ ac, clients, posts, allPosts }: { ac: Company; clients: C
             <div style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "13px", color: "#999999", marginBottom: "16px" }}>{s.label}</div>
             <div style={{
               fontFamily: "var(--font-raleway), sans-serif",
-              fontSize: "36px", fontWeight: 700,
+              fontSize: "36px", fontWeight: 400,
               color: "#0A0A0A", letterSpacing: "-0.02em", lineHeight: 1,
             }}>{s.value}</div>
           </div>
@@ -637,7 +637,7 @@ function ComposeTab({
                     <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
                       <div style={{ width: "40px", height: "40px", borderRadius: "50%", background: `linear-gradient(135deg, ${ac.color}cc, ${ac.color}55)`, flexShrink: 0 }} />
                       <div>
-                        <div style={{ fontSize: "13px", fontWeight: 600, color: "#000", lineHeight: 1.3 }}>{ac.name}</div>
+                        <div style={{ fontSize: "13px", fontWeight: 400, color: "#000", lineHeight: 1.3 }}>{ac.name}</div>
                         <div style={{ fontSize: "11px", color: "#666", lineHeight: 1.4 }}>{ac.tagline}</div>
                         <div style={{ fontSize: "10px", color: "#888" }}>Just now · 🌐</div>
                       </div>
@@ -713,7 +713,7 @@ function ComposeTab({
                 {(["post", "standalone"] as const).map(m => (
                   <button key={m} onClick={() => setGenMode(m)}
                     style={{
-                      fontSize: "11px", fontWeight: 600, padding: "4px 11px",
+                      fontSize: "11px", fontWeight: 400, padding: "4px 11px",
                       background: genMode === m ? "#E5E5E5" : "transparent",
                       border: "none", borderRadius: "8px",
                       color: genMode === m ? T : T3,
@@ -730,7 +730,7 @@ function ComposeTab({
               {(["ai", "svg"] as const).map(m => (
                 <button key={m} onClick={() => setImageMode(m)}
                   style={{
-                    fontSize: "11px", fontWeight: 600, padding: "4px 12px",
+                    fontSize: "11px", fontWeight: 400, padding: "4px 12px",
                     background: imageMode === m ? "#E5E5E5" : "transparent",
                     border: "none", borderRadius: "8px",
                     color: imageMode === m ? T : T3,
@@ -751,7 +751,7 @@ function ComposeTab({
             ).map(t => (
               <button key={t} onClick={() => setVizType(t)}
                 style={{
-                  fontSize: "11px", fontWeight: 600, padding: "5px 12px",
+                  fontSize: "11px", fontWeight: 400, padding: "5px 12px",
                   background: vizType === t ? "rgba(227,0,0,0.08)" : "transparent",
                   border: vizType === t ? `1px solid rgba(227,0,0,0.3)` : "1px solid #E5E5E5",
                   borderRadius: "8px", color: vizType === t ? GOLD : T3,
@@ -1018,7 +1018,7 @@ function LibraryTab({
                     <p style={{ fontSize: "14px", lineHeight: 1.6, color: "#0A0A0A", whiteSpace: "pre-wrap", fontFamily: "Helvetica, Arial, sans-serif" }}>{p.content}</p>
                     {p.notes && (
                       <div style={{ marginTop: "14px", padding: "10px 14px", background: "rgba(204,68,68,0.05)", border: "1px solid rgba(204,68,68,0.15)", borderRadius: "8px", display: "flex", gap: "10px", alignItems: "flex-start" }}>
-                        <span style={{ fontSize: "9px", fontWeight: 600, color: "#cc3333", letterSpacing: "0.12em", textTransform: "uppercase" as const, flexShrink: 0, marginTop: "2px" }}>Change request</span>
+                        <span style={{ fontSize: "9px", fontWeight: 400, color: "#cc3333", letterSpacing: "0.12em", textTransform: "uppercase" as const, flexShrink: 0, marginTop: "2px" }}>Change request</span>
                         <p style={{ fontSize: "12px", color: "rgba(208,112,112,0.8)", lineHeight: 1.6, margin: 0 }}>{p.notes}</p>
                       </div>
                     )}
@@ -1136,7 +1136,7 @@ function CalendarTab({ ac, clients, allPosts }: { ac: Company; clients: Company[
       <div style={glass()}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", borderBottom: "1px solid #E5E5E5" }}>
           {DAY_ORDER.map(d => (
-            <div key={d} style={{ textAlign: "center", fontSize: "10px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: activeDays.includes(d) ? "#666666" : "#999999", padding: "14px 0", borderRight: "1px solid #E5E5E5" }}>{d.slice(0,3)}</div>
+            <div key={d} style={{ textAlign: "center", fontSize: "10px", fontWeight: 400, letterSpacing: "0.1em", textTransform: "uppercase", color: activeDays.includes(d) ? "#666666" : "#999999", padding: "14px 0", borderRight: "1px solid #E5E5E5" }}>{d.slice(0,3)}</div>
           ))}
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)" }}>
@@ -1159,9 +1159,9 @@ function CalendarTab({ ac, clients, allPosts }: { ac: Company; clients: Company[
                         borderLeft: `3px solid ${c.color}`,
                         borderRadius: "8px",
                       }}>
-                        <div style={{ fontSize: "10px", fontWeight: 600, color: c.color, marginBottom: "3px", letterSpacing: "0.01em" }}>{c.name.split(" ")[0]}</div>
+                        <div style={{ fontSize: "10px", fontWeight: 400, color: c.color, marginBottom: "3px", letterSpacing: "0.01em" }}>{c.name.split(" ")[0]}</div>
                         {pil && <div style={{ fontSize: "10px", color: "#999999" }}>{pil.type as string}</div>}
-                        {bestTime && <div style={{ fontSize: "10px", color: c.color, marginTop: "4px", fontWeight: 600 }}>◷ {bestTime}</div>}
+                        {bestTime && <div style={{ fontSize: "10px", color: c.color, marginTop: "4px", fontWeight: 400 }}>◷ {bestTime}</div>}
                       </div>
                     );
                   })}
@@ -1173,7 +1173,7 @@ function CalendarTab({ ac, clients, allPosts }: { ac: Company; clients: Company[
                       borderLeft: `3px solid ${postStatusColor[p.status] || T3}`,
                       borderRadius: "8px",
                     }}>
-                      <div style={{ fontSize: "9px", fontWeight: 600, color: postStatusColor[p.status] || T3, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "2px" }}>{p.status}</div>
+                      <div style={{ fontSize: "9px", fontWeight: 400, color: postStatusColor[p.status] || T3, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "2px" }}>{p.status}</div>
                       <div style={{ fontSize: "10px", color: T2, lineHeight: 1.4, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const }}>{p.content.slice(0, 60)}</div>
                     </div>
                   ))}
@@ -1196,7 +1196,7 @@ function CalendarTab({ ac, clients, allPosts }: { ac: Company; clients: Company[
             <thead>
               <tr style={{ borderBottom: "1px solid #E5E5E5" }}>
                 {["Company", ...activeDays, "TZ"].map(h => (
-                  <th key={h} style={{ textAlign: "left", padding: "11px 20px", fontSize: "10px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#999999", whiteSpace: "nowrap" }}>{h}</th>
+                  <th key={h} style={{ textAlign: "left", padding: "11px 20px", fontSize: "10px", fontWeight: 400, letterSpacing: "0.1em", textTransform: "uppercase", color: "#999999", whiteSpace: "nowrap" }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -1220,7 +1220,7 @@ function CalendarTab({ ac, clients, allPosts }: { ac: Company; clients: Company[
                       );
                     })}
                     <td style={{ padding: "14px 20px" }}>
-                      <span style={{ fontSize: "10px", fontWeight: 600, padding: "3px 8px", borderRadius: "8px", background: `${c.color}18`, border: `1px solid ${c.color}40`, color: c.color, letterSpacing: "0.06em" }}>{c.timezone}</span>
+                      <span style={{ fontSize: "10px", fontWeight: 400, padding: "3px 8px", borderRadius: "8px", background: `${c.color}18`, border: `1px solid ${c.color}40`, color: c.color, letterSpacing: "0.06em" }}>{c.timezone}</span>
                     </td>
                   </tr>
                 );
@@ -1439,7 +1439,7 @@ function ReportsTab({ ac }: { ac: Company }) {
   const chartText = "#999999";
 
   const colStyle = (col: string): React.CSSProperties => ({
-    cursor: "pointer", padding: "10px 16px", fontSize: "10px", fontWeight: 600,
+    cursor: "pointer", padding: "10px 16px", fontSize: "10px", fontWeight: 400,
     letterSpacing: "0.1em", textTransform: "uppercase", color: sortBy === col ? T : T3,
     userSelect: "none", whiteSpace: "nowrap",
   });
@@ -1562,8 +1562,8 @@ function ReportsTab({ ac }: { ac: Company }) {
               style={{ padding: "12px 14px", borderRadius: "8px", border: `1px solid ${isActive ? GOLD : "#E5E5E5"}`, background: isActive ? `${GOLD}08` : "#fff", cursor: "pointer", transition: "all 0.15s", position: "relative" }}
             >
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
-                <span style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: isActive ? GOLD : T3 }}>{r.type}</span>
-                <span style={{ fontSize: "9px", padding: "1px 6px", borderRadius: "100px", background: r.status === "published" ? "rgba(227,0,0,0.10)" : "#E5E5E5", color: r.status === "published" ? "#E30000" : T3, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase" }}>{r.status}</span>
+                <span style={{ fontSize: "9px", fontWeight: 400, letterSpacing: "0.1em", textTransform: "uppercase", color: isActive ? GOLD : T3 }}>{r.type}</span>
+                <span style={{ fontSize: "9px", padding: "1px 6px", borderRadius: "100px", background: r.status === "published" ? "rgba(227,0,0,0.10)" : "#E5E5E5", color: r.status === "published" ? "#E30000" : T3, fontWeight: 400, letterSpacing: "0.06em", textTransform: "uppercase" }}>{r.status}</span>
               </div>
               <div style={{ fontSize: "12px", fontWeight: 500, color: T, marginBottom: "3px" }}>{r.period_start.slice(0, 7)}</div>
               {d?.impressions && <div style={{ fontSize: "11px", color: T3 }}>{fmtN(d.impressions)} impressions</div>}
@@ -1588,8 +1588,8 @@ function ReportsTab({ ac }: { ac: Company }) {
             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "16px", flexWrap: "wrap" }}>
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
-                  <span style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", padding: "2px 8px", borderRadius: "100px", background: "#E5E5E5", color: T2 }}>{selectedReport.type}</span>
-                  <span style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", padding: "2px 8px", borderRadius: "100px", background: selectedReport.status === "published" ? "rgba(227,0,0,0.10)" : "#E5E5E5", color: selectedReport.status === "published" ? "#E30000" : T2 }}>{selectedReport.status}</span>
+                  <span style={{ fontSize: "9px", fontWeight: 400, letterSpacing: "0.1em", textTransform: "uppercase", padding: "2px 8px", borderRadius: "100px", background: "#E5E5E5", color: T2 }}>{selectedReport.type}</span>
+                  <span style={{ fontSize: "9px", fontWeight: 400, letterSpacing: "0.1em", textTransform: "uppercase", padding: "2px 8px", borderRadius: "100px", background: selectedReport.status === "published" ? "rgba(227,0,0,0.10)" : "#E5E5E5", color: selectedReport.status === "published" ? "#E30000" : T2 }}>{selectedReport.status}</span>
                 </div>
                 <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "28px", fontWeight: 300, fontStyle: "normal", color: T, marginBottom: "4px" }}>{ac.name}</div>
                 <div style={{ fontSize: "12px", color: T3 }}>{selectedReport.period_start} – {selectedReport.period_end}</div>
@@ -1688,7 +1688,7 @@ function ReportsTab({ ac }: { ac: Company }) {
                         <div key={label} style={glass({ padding: "16px 20px" })}>
                           <div className="label" style={{ marginBottom: "8px" }}>{label}</div>
                           <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "28px", fontWeight: 300, color: T, lineHeight: 1, marginBottom: "4px" }}>{(fmt as (v: number) => string)(cur)}</div>
-                          <div style={{ fontSize: "11px", color: up ? "#E30000" : "#CC4422", fontWeight: 600 }}>{up ? "+" : ""}{delta.toFixed(1)}% vs last month</div>
+                          <div style={{ fontSize: "11px", color: up ? "#E30000" : "#CC4422", fontWeight: 400 }}>{up ? "+" : ""}{delta.toFixed(1)}% vs last month</div>
                         </div>
                       );
                     })}
@@ -1714,7 +1714,7 @@ function ReportsTab({ ac }: { ac: Company }) {
                       <div key={k.label} style={glass({ padding: "18px 20px 16px", position: "relative", overflow: "hidden" })}>
                         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: k.color }} />
                         <div className="label" style={{ marginBottom: "10px" }}>{k.label}</div>
-                        <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "32px", fontWeight: 700, color: "#0A0A0A", letterSpacing: "-0.02em", lineHeight: 1 }}>{k.value}</div>
+                        <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "32px", fontWeight: 400, color: "#0A0A0A", letterSpacing: "-0.02em", lineHeight: 1 }}>{k.value}</div>
                       </div>
                     ))}
                   </div>
@@ -1841,8 +1841,8 @@ function ReportsTab({ ac }: { ac: Company }) {
                               <td style={{ padding: "12px 16px", fontSize: "12px", color: T2, maxWidth: 220 }}>
                                 {isExpanded ? p.content : `${(p.content ?? "").slice(0, 80)}${(p.content?.length ?? 0) > 80 ? "…" : ""}`}
                               </td>
-                              <td style={{ padding: "12px 16px", fontSize: "13px", fontWeight: 600, color: T }}>{fmtN(p.impressions)}</td>
-                              <td style={{ padding: "12px 16px" }}><span style={{ fontSize: "12px", fontWeight: 600, color: "#E30000" }}>{fmtPct(p.engagementRate)}</span></td>
+                              <td style={{ padding: "12px 16px", fontSize: "13px", fontWeight: 400, color: T }}>{fmtN(p.impressions)}</td>
+                              <td style={{ padding: "12px 16px" }}><span style={{ fontSize: "12px", fontWeight: 400, color: "#E30000" }}>{fmtPct(p.engagementRate)}</span></td>
                               <td style={{ padding: "12px 16px", fontSize: "12px", color: T2 }}>{fmtN(p.reactions)}</td>
                               <td style={{ padding: "12px 16px", fontSize: "12px", color: T2 }}>{fmtN(p.comments)}</td>
                               <td style={{ padding: "12px 16px", fontSize: "12px", color: T2 }}>{fmtN(p.clicks)}</td>
@@ -1921,7 +1921,7 @@ function LogoUploadPanel({ logo, currentLogoSrc, onFile, onToggleInvert }: {
 
   return (
     <div style={{ marginBottom: "24px" }}>
-      <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>
+      <label style={{ display: "block", fontSize: "11px", fontWeight: 400, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>
         Company Logo — Background Removal
       </label>
 
@@ -1947,7 +1947,7 @@ function LogoUploadPanel({ logo, currentLogoSrc, onFile, onToggleInvert }: {
             {/* Before */}
             {rawSrc && (
               <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "5px" }}>Original</div>
+                <div style={{ fontSize: "10px", fontWeight: 400, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "5px" }}>Original</div>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={rawSrc} alt="original" style={{ height: "60px", maxWidth: "140px", objectFit: "contain", background: panelBg, borderRadius: "8px", padding: "6px", border: "1px solid #E5E5E5" }} />
               </div>
@@ -1956,7 +1956,7 @@ function LogoUploadPanel({ logo, currentLogoSrc, onFile, onToggleInvert }: {
             {/* Current logo (edit mode, no new upload yet) */}
             {!rawSrc && currentLogoSrc && !origSrc && (
               <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "5px" }}>Current</div>
+                <div style={{ fontSize: "10px", fontWeight: 400, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "5px" }}>Current</div>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={currentLogoSrc} alt="current" style={{ height: "60px", maxWidth: "140px", objectFit: "contain", background: panelBg, borderRadius: "8px", padding: "6px", border: "1px solid #E5E5E5" }} />
               </div>
@@ -1965,7 +1965,7 @@ function LogoUploadPanel({ logo, currentLogoSrc, onFile, onToggleInvert }: {
             {/* After bg removal (original transparent) */}
             {origSrc && (
               <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "5px" }}>
+                <div style={{ fontSize: "10px", fontWeight: 400, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "5px" }}>
                   Transparent
                 </div>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -2306,7 +2306,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
             <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: GOLD }} />
             <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
               <div style={{ width: "24px", height: "24px", borderRadius: "50%", background: c.color, flexShrink: 0 }} />
-              <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "18px", fontWeight: 700, color: "#0A0A0A", letterSpacing: "-0.01em" }}>{c.name}</div>
+              <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "18px", fontWeight: 400, color: "#0A0A0A", letterSpacing: "-0.01em" }}>{c.name}</div>
             </div>
             <div style={{ fontSize: "13px", color: "#666666", marginBottom: "12px", fontFamily: "Helvetica, Arial, sans-serif" }}>{c.tagline}</div>
             <div style={{ fontSize: "11px", color: "#999999", marginBottom: "12px", letterSpacing: "0.08em", textTransform: "uppercase" as const, fontFamily: "Helvetica, Arial, sans-serif" }}>{c.timezone}</div>
@@ -2342,7 +2342,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
               { label: "Logo text", key: "logo_text" },
             ].map(f => (
               <div key={f.key}>
-                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>{f.label}</label>
+                <label style={{ display: "block", fontSize: "11px", fontWeight: 400, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>{f.label}</label>
                 <input type="text" value={editForm[f.key] as string}
                   onChange={e => setEditForm(p => ({ ...p!, [f.key]: e.target.value }))}
                   style={{ ...INPUT, padding: "10px 13px", fontSize: "13px" }}
@@ -2361,7 +2361,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
               { label: "Light color", key: "light_color" },
             ].map(f => (
               <div key={f.key}>
-                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>{f.label}</label>
+                <label style={{ display: "block", fontSize: "11px", fontWeight: 400, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>{f.label}</label>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                   <input type="color" value={editForm[f.key] as string}
                     onChange={e => setEditForm(p => ({ ...p!, [f.key]: e.target.value }))}
@@ -2385,7 +2385,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
               { label: "Visual mood", key: "visual_mood", placeholder: "Dark backgrounds, bold type…" },
             ].map(f => (
               <div key={f.key}>
-                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>{f.label}</label>
+                <label style={{ display: "block", fontSize: "11px", fontWeight: 400, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>{f.label}</label>
                 <textarea value={editForm[f.key] as string}
                   onChange={e => setEditForm(p => ({ ...p!, [f.key]: e.target.value }))}
                   placeholder={(f as Record<string, string>).placeholder}
@@ -2404,7 +2404,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
               { label: "Secondary / body font",   key: "secondary_font", placeholder: "e.g. DM Sans, Georgia, Inter" },
             ].map(f => (
               <div key={f.key}>
-                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>{f.label}</label>
+                <label style={{ display: "block", fontSize: "11px", fontWeight: 400, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>{f.label}</label>
                 <input type="text" value={editForm[f.key] as string}
                   onChange={e => setEditForm(p => ({ ...p!, [f.key]: e.target.value }))}
                   placeholder={(f as Record<string, string>).placeholder}
@@ -2425,7 +2425,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
               { label: "Body font (visuals)",     key: "body_font",     placeholder: "Google Font name, e.g. DM Sans" },
             ].map(f => (
               <div key={f.key}>
-                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>{f.label}</label>
+                <label style={{ display: "block", fontSize: "11px", fontWeight: 400, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>{f.label}</label>
                 <input type="text" value={editForm[f.key] as string}
                   onChange={e => setEditForm(p => ({ ...p!, [f.key]: e.target.value }))}
                   placeholder={(f as Record<string, string>).placeholder}
@@ -2481,7 +2481,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
           </div>
 
           <div style={{ marginBottom: "20px" }}>
-            <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>Key brand phrases</label>
+            <label style={{ display: "block", fontSize: "11px", fontWeight: 400, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>Key brand phrases</label>
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               {(editForm.key_phrases as string[]).map((p, i) => (
                 <div key={i} style={{ display: "flex", gap: "8px" }}>
@@ -2503,7 +2503,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
           </div>
 
           <div style={{ marginBottom: "28px" }}>
-            <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>Badges / tags</label>
+            <label style={{ display: "block", fontSize: "11px", fontWeight: 400, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>Badges / tags</label>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
               {(editForm.badges as string[]).map((b, i) => (
                 <input key={i} type="text" value={b}
@@ -2524,7 +2524,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
           <div style={{ marginBottom: "24px", padding: "16px 20px", background: "rgba(10,102,194,0.04)", border: "1px solid rgba(10,102,194,0.15)", borderRadius: "8px" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", flexWrap: "wrap" }}>
               <div>
-                <div style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" as const, color: "#0A66C2", marginBottom: "4px" }}>LinkedIn Account</div>
+                <div style={{ fontSize: "11px", fontWeight: 400, letterSpacing: "0.08em", textTransform: "uppercase" as const, color: "#0A66C2", marginBottom: "4px" }}>LinkedIn Account</div>
                 {(selectedClient as Record<string,unknown>).linkedin_urn ? (
                   <div style={{ fontSize: "12px", color: T2 }}>
                     Connected as <strong>{(selectedClient as Record<string,unknown>).linkedin_name as string || "LinkedIn user"}</strong>
@@ -2534,7 +2534,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
                 )}
               </div>
               <a href={`/api/auth/linkedin?client_id=${selectedClient.id}`}
-                style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "8px 16px", background: "#0A66C2", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12px", fontWeight: 600, textDecoration: "none", letterSpacing: "0.04em", transition: "opacity 0.15s ease" }}
+                style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "8px 16px", background: "#0A66C2", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12px", fontWeight: 400, textDecoration: "none", letterSpacing: "0.04em", transition: "opacity 0.15s ease" }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = "0.88"; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
@@ -2705,7 +2705,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
               { label: "Logo text", key: "logo_text", placeholder: "e.g. ACME" },
             ].map(f => (
               <div key={f.key}>
-                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>{f.label}</label>
+                <label style={{ display: "block", fontSize: "11px", fontWeight: 400, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>{f.label}</label>
                 <input type="text"
                   value={(form as Record<string, unknown>)[f.key] as string}
                   onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
@@ -2726,7 +2726,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
               { label: "Light color", key: "light_color" },
             ].map(f => (
               <div key={f.key}>
-                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>{f.label}</label>
+                <label style={{ display: "block", fontSize: "11px", fontWeight: 400, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>{f.label}</label>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                   <input type="color"
                     value={(form as Record<string, unknown>)[f.key] as string}
@@ -2752,7 +2752,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
               { label: "Visual mood", key: "visual_mood", placeholder: "Dark backgrounds, bold type, teal accents…" },
             ].map(f => (
               <div key={f.key}>
-                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>{f.label}</label>
+                <label style={{ display: "block", fontSize: "11px", fontWeight: 400, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>{f.label}</label>
                 <textarea
                   value={(form as Record<string, unknown>)[f.key] as string}
                   onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
@@ -2772,7 +2772,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
               { label: "Secondary / body font",   key: "secondary_font", placeholder: "e.g. DM Sans, Georgia, Inter" },
             ].map(f => (
               <div key={f.key}>
-                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>{f.label}</label>
+                <label style={{ display: "block", fontSize: "11px", fontWeight: 400, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>{f.label}</label>
                 <input type="text"
                   value={(form as Record<string, unknown>)[f.key] as string}
                   onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
@@ -2794,7 +2794,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
               { label: "Body font (visuals)",     key: "body_font",     placeholder: "Google Font name, e.g. DM Sans" },
             ].map(f => (
               <div key={f.key}>
-                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>{f.label}</label>
+                <label style={{ display: "block", fontSize: "11px", fontWeight: 400, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>{f.label}</label>
                 <input type="text"
                   value={(form as Record<string, unknown>)[f.key] as string}
                   onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
@@ -2836,7 +2836,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
           </div>
 
           <div style={{ marginBottom: "20px" }}>
-            <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>Key brand phrases</label>
+            <label style={{ display: "block", fontSize: "11px", fontWeight: 400, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>Key brand phrases</label>
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               {form.key_phrases.map((p, i) => (
                 <div key={i} style={{ display: "flex", gap: "8px" }}>
@@ -2859,7 +2859,7 @@ function ClientsTab({ clients, notify, onClientAdded }: {
           </div>
 
           <div style={{ marginBottom: "20px" }}>
-            <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>Badges / tags</label>
+            <label style={{ display: "block", fontSize: "11px", fontWeight: 400, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>Badges / tags</label>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
               {form.badges.map((b, i) => (
                 <input key={i} type="text" value={b}
@@ -2878,11 +2878,11 @@ function ClientsTab({ clients, notify, onClientAdded }: {
           </div>
 
           <div style={{ marginBottom: "28px" }}>
-            <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "12px" }}>Content pillars</label>
+            <label style={{ display: "block", fontSize: "11px", fontWeight: 400, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "12px" }}>Content pillars</label>
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               {form.pillars.map((p, i) => (
                 <div key={i} style={{ display: "grid", gridTemplateColumns: "100px 140px 1fr", gap: "8px", alignItems: "center" }}>
-                  <div style={{ fontSize: "12px", fontWeight: 600, color: "#999999", padding: "9px 0" }}>{p.day}</div>
+                  <div style={{ fontSize: "12px", fontWeight: 400, color: "#999999", padding: "9px 0" }}>{p.day}</div>
                   <input type="text" value={p.type}
                     onChange={e => updatePillar(i, "type", e.target.value)}
                     placeholder="Post type"
@@ -3009,7 +3009,7 @@ const [editSaving, setEditSaving] = useState(false);
               { label: "Tax rate (%)",   key: "tax_rate",    type: "number" },
             ].map(f => (
               <div key={f.key}>
-                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>{f.label}</label>
+                <label style={{ display: "block", fontSize: "11px", fontWeight: 400, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>{f.label}</label>
                 <input
                   type={f.type}
                   value={(form as Record<string, unknown>)[f.key] as string}
@@ -3084,7 +3084,7 @@ const [editSaving, setEditSaving] = useState(false);
 
           {/* Notes */}
           <div style={{ marginBottom: "20px" }}>
-            <label style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>Notes</label>
+            <label style={{ display: "block", fontSize: "11px", fontWeight: 400, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "7px" }}>Notes</label>
             <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="Payment terms, notes to client…"
               style={{ ...INPUT, resize: "none", fontSize: "13px" }}
               onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
@@ -3112,7 +3112,7 @@ const [editSaving, setEditSaving] = useState(false);
               <thead>
                 <tr style={{ borderBottom: "1px solid #E5E5E5" }}>
                   {["Invoice #","Client","Date","Due","Amount","Status","Actions"].map(h => (
-                    <th key={h} style={{ textAlign: "left", padding: "12px 20px", fontSize: "10px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#999999", whiteSpace: "nowrap" }}>{h}</th>
+                    <th key={h} style={{ textAlign: "left", padding: "12px 20px", fontSize: "10px", fontWeight: 400, letterSpacing: "0.1em", textTransform: "uppercase", color: "#999999", whiteSpace: "nowrap" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -3123,7 +3123,7 @@ const [editSaving, setEditSaving] = useState(false);
                     <td style={{ padding: "14px 20px", fontSize: "13px", color: T }}>{inv.client_name}</td>
                     <td style={{ padding: "14px 20px", fontSize: "11px", color: T3 }}>{inv.date}</td>
                     <td style={{ padding: "14px 20px", fontSize: "11px", color: inv.status === "overdue" ? "#d07070" : T3 }}>{inv.due_date}</td>
-                    <td style={{ padding: "14px 20px", fontFamily: "var(--font-raleway), sans-serif", fontSize: "16px", fontWeight: 700, color: "#0A0A0A" }}>
+                    <td style={{ padding: "14px 20px", fontFamily: "var(--font-raleway), sans-serif", fontSize: "16px", fontWeight: 400, color: "#0A0A0A" }}>
                       ${total(inv).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                     </td>
                     <td style={{ padding: "14px 20px" }}><StatusBadge status={inv.status} /></td>
@@ -3426,7 +3426,7 @@ function LandingPage() {
             onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = "rgba(26,26,26,0.30)"; el.style.boxShadow = "0 1px 3px rgba(0,0,0,0.08)"; }}
             onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = "#E5E5E5"; el.style.boxShadow = "none"; }}
           >
-            <div style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(26,26,26,0.35)", marginBottom: "12px" }}>01</div>
+            <div style={{ fontSize: "10px", fontWeight: 400, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(26,26,26,0.35)", marginBottom: "12px" }}>01</div>
             <div style={{
               fontFamily: "var(--font-raleway), sans-serif",
               fontSize: "24px", fontWeight: 400, color: "#1A1A1A", marginBottom: "8px",
@@ -3447,7 +3447,7 @@ function LandingPage() {
             onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(26,26,26,0.25)"; }}
             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "#E5E5E5"; }}
           >
-            <div style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(26,26,26,0.35)", marginBottom: "12px" }}>02</div>
+            <div style={{ fontSize: "10px", fontWeight: 400, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(26,26,26,0.35)", marginBottom: "12px" }}>02</div>
             <div style={{
               fontFamily: "var(--font-raleway), sans-serif",
               fontSize: "24px", fontWeight: 400, color: "#1A1A1A", marginBottom: "8px",
@@ -3829,7 +3829,7 @@ function ClientUsersTab({ clients, notify, onCompanyAdded }: {
             <label style={labelStyle}>Company name</label>
             <input style={INPUT} value={companyForm.company_name} onChange={e => setCompanyForm(f => ({ ...f, company_name: e.target.value }))} />
           </div>
-          <div style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.08em", color: T3, textTransform: "uppercase" as const, margin: "8px 0 12px" }}>Owner details</div>
+          <div style={{ fontSize: "10px", fontWeight: 400, letterSpacing: "0.08em", color: T3, textTransform: "uppercase" as const, margin: "8px 0 12px" }}>Owner details</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
             <div style={fieldWrap}>
               <label style={labelStyle}>First name</label>
@@ -3915,7 +3915,7 @@ function ClientUsersTab({ clients, notify, onCompanyAdded }: {
                       </button>
                       {!u.active && (
                         <button onClick={() => deleteUser(u)}
-                          style={{ fontSize: "11px", color: "#C0392B", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", marginLeft: "12px", fontWeight: 600 }}>
+                          style={{ fontSize: "11px", color: "#C0392B", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", marginLeft: "12px", fontWeight: 400 }}>
                           Delete
                         </button>
                       )}
@@ -3940,7 +3940,7 @@ function ClientUsersTab({ clients, notify, onCompanyAdded }: {
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                       <span style={{ fontSize: "13px", color: T, fontWeight: 500 }}>{t.first_name} {t.last_name}</span>
                       {t.unread > 0 && (
-                        <span style={{ fontSize: "10px", fontWeight: 600, color: "#fff", background: GOLD, borderRadius: "10px", padding: "1px 7px" }}>{t.unread}</span>
+                        <span style={{ fontSize: "10px", fontWeight: 400, color: "#fff", background: GOLD, borderRadius: "10px", padding: "1px 7px" }}>{t.unread}</span>
                       )}
                     </div>
                     <div style={{ fontSize: "11px", color: T3, marginTop: "1px" }}>{t.company_name}</div>
@@ -4286,7 +4286,7 @@ if (loadingClients || !ac || !ap) {
                   <path d="M7 1.5a4 4 0 0 1 4 4v2.5l1 1.5H2l1-1.5V5.5a4 4 0 0 1 4-4zM5.5 11.5a1.5 1.5 0 0 0 3 0" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
                 </svg>
                 {bellCount > 0 && (
-                  <span style={{ position: "absolute", top: "-4px", right: "-4px", minWidth: "14px", height: "14px", borderRadius: "7px", background: "#cc3333", color: "#fff", fontSize: "8px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px", border: "1.5px solid #F5F5F5" }}>
+                  <span style={{ position: "absolute", top: "-4px", right: "-4px", minWidth: "14px", height: "14px", borderRadius: "7px", background: "#cc3333", color: "#fff", fontSize: "8px", fontWeight: 400, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px", border: "1.5px solid #F5F5F5" }}>
                     {bellCount}
                   </span>
                 )}
@@ -4294,7 +4294,7 @@ if (loadingClients || !ac || !ap) {
               {bellOpen && (
                 <div style={{ position: "absolute", top: "calc(100% + 8px)", right: 0, width: "320px", background: "#FFFFFF", border: "1px solid #E5E5E5", borderRadius: "12px", boxShadow: "0 1px 3px rgba(0,0,0,0.08)", zIndex: 200, overflow: "hidden" }}>
                   <div style={{ padding: "14px 18px", borderBottom: "1px solid #E5E5E5", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <span style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: T3 }}>Needs Attention</span>
+                    <span style={{ fontSize: "11px", fontWeight: 400, letterSpacing: "0.08em", textTransform: "uppercase", color: T3 }}>Needs Attention</span>
                     {bellCount === 0 && <span style={{ fontSize: "11px", color: T3 }}>All clear</span>}
                   </div>
                   <div style={{ maxHeight: "360px", overflowY: "auto" }}>
@@ -4308,7 +4308,7 @@ if (loadingClients || !ac || !ap) {
                             onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#F5F5F5"; }}
                             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
                             <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "4px" }}>
-                              <span style={{ fontSize: "9px", fontWeight: 700, padding: "2px 7px", background: "rgba(227,0,0,0.10)", color: "#B00000", border: "1px solid rgba(227,0,0,0.25)", borderRadius: "4px", letterSpacing: "0.08em" }}>PENDING</span>
+                              <span style={{ fontSize: "9px", fontWeight: 400, padding: "2px 7px", background: "rgba(227,0,0,0.10)", color: "#B00000", border: "1px solid rgba(227,0,0,0.25)", borderRadius: "4px", letterSpacing: "0.08em" }}>PENDING</span>
                               <span style={{ fontSize: "11px", color: T3 }}>{p.company_name}</span>
                             </div>
                             <div style={{ fontSize: "12px", color: T2, lineHeight: 1.5, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const }}>{p.content.slice(0, 100)}</div>
@@ -4320,7 +4320,7 @@ if (loadingClients || !ac || !ap) {
                             onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#F5F5F5"; }}
                             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
                             <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "4px" }}>
-                              <span style={{ fontSize: "9px", fontWeight: 700, padding: "2px 7px", background: "rgba(204,51,51,0.08)", color: "#cc3333", border: "1px solid rgba(204,51,51,0.20)", borderRadius: "4px", letterSpacing: "0.08em" }}>CHANGE REQ</span>
+                              <span style={{ fontSize: "9px", fontWeight: 400, padding: "2px 7px", background: "rgba(204,51,51,0.08)", color: "#cc3333", border: "1px solid rgba(204,51,51,0.20)", borderRadius: "4px", letterSpacing: "0.08em" }}>CHANGE REQ</span>
                               <span style={{ fontSize: "11px", color: T3 }}>{p.company_name}</span>
                             </div>
                             <div style={{ fontSize: "12px", color: T2, lineHeight: 1.5, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const }}>{p.content.slice(0, 100)}</div>
@@ -4398,7 +4398,7 @@ if (loadingClients || !ac || !ap) {
                 onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
                 <span>{t.label}</span>
                 {t.badge && t.badge > 0 ? (
-                  <span style={{ minWidth: "18px", height: "18px", borderRadius: "999px", background: active ? "#FFFFFF" : "#E30000", color: active ? "#E30000" : "#FFFFFF", fontSize: "10px", fontWeight: 600, display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "0 5px" }}>
+                  <span style={{ minWidth: "18px", height: "18px", borderRadius: "999px", background: active ? "#FFFFFF" : "#E30000", color: active ? "#E30000" : "#FFFFFF", fontSize: "10px", fontWeight: 400, display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "0 5px" }}>
                     {t.badge}
                   </span>
                 ) : null}
@@ -4447,7 +4447,7 @@ if (loadingClients || !ac || !ap) {
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(245,245,245,0.85) 0%, rgba(245,245,245,0.65) 100%)" }} />
         <div style={{ position: "relative", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: "10px" }}>
           <div style={{ width: "28px", height: "1px", background: "#E30000" }} />
-          <p style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "clamp(18px, 2vw, 28px)", fontWeight: 600, fontStyle: "normal", color: "#0A0A0A", letterSpacing: "-0.01em" }}>
+          <p style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "clamp(18px, 2vw, 28px)", fontWeight: 400, fontStyle: "normal", color: "#0A0A0A", letterSpacing: "-0.01em" }}>
             {ac ? ac.name : "Content Studio"}
           </p>
           <div style={{ width: "28px", height: "1px", background: "#E30000" }} />

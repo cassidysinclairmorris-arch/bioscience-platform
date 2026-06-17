@@ -94,7 +94,7 @@ function DkSlider({ label, value, min, max, step = 1, onChange, unit = "" }: {
 }
 
 function DkLabel({ children }: { children: React.ReactNode }) {
-  return <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: "0.11em", textTransform: "uppercase", color: D.textDim, marginBottom: 7 }}>{children}</div>;
+  return <div style={{ fontSize: 9, fontWeight: 400, letterSpacing: "0.11em", textTransform: "uppercase", color: D.textDim, marginBottom: 7 }}>{children}</div>;
 }
 
 function DkSection({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
@@ -760,7 +760,7 @@ export default function ImageStudio({ ac }: { ac: Company }) {
         {/* Subtle inline header */}
         <div style={{ padding: "10px 20px", borderBottom: `1px solid ${D.border}`, display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ width: 5, height: 5, borderRadius: "50%", background: canvasReady ? bColors[0] : "rgba(255,255,255,0.15)", transition: "background 0.3s" }} />
-          <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: D.textDim }}>
+          <span style={{ fontSize: 10, fontWeight: 400, letterSpacing: "0.12em", textTransform: "uppercase", color: D.textDim }}>
             Image Studio
           </span>
           {canvasReady && (
@@ -795,7 +795,7 @@ export default function ImageStudio({ ac }: { ac: Company }) {
           <button
             onClick={handleGenerate} disabled={generating || !prompt.trim()}
             style={{
-              padding: "10px 20px", borderRadius: 7, border: "none", fontSize: 12, fontWeight: 600,
+              padding: "10px 20px", borderRadius: 7, border: "none", fontSize: 12, fontWeight: 400,
               letterSpacing: "0.05em", cursor: generating || !prompt.trim() ? "not-allowed" : "pointer",
               background: generating || !prompt.trim() ? "rgba(255,255,255,0.06)" : bColors[0],
               color: generating || !prompt.trim() ? D.textDim : "#fff",
@@ -937,7 +937,7 @@ export default function ImageStudio({ ac }: { ac: Company }) {
                   {(["element","background","export"] as const).map(tab => (
                     <button key={tab} onClick={() => setActiveRightTab(tab)}
                       style={{
-                        flex: 1, padding: "10px 4px", fontSize: 9, fontWeight: 600,
+                        flex: 1, padding: "10px 4px", fontSize: 9, fontWeight: 400,
                         letterSpacing: "0.10em", textTransform: "uppercase",
                         background: "transparent", border: "none",
                         borderBottom: activeRightTab === tab ? `2px solid ${bColors[0]}` : "2px solid transparent",
@@ -1227,7 +1227,7 @@ export default function ImageStudio({ ac }: { ac: Company }) {
                           style={{
                             width: "100%", padding: "12px 16px", borderRadius: 7, border: "none",
                             background: bColors[0], color: "#fff",
-                            fontSize: 12, fontWeight: 600, letterSpacing: "0.05em", cursor: "pointer",
+                            fontSize: 12, fontWeight: 400, letterSpacing: "0.05em", cursor: "pointer",
                             fontFamily: "inherit", transition: "opacity 0.15s",
                           }}
                           onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = "0.85"; }}

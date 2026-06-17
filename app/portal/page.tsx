@@ -80,7 +80,7 @@ function StatusPill({ status }: { status: string }) {
   };
   const s = cfg[status] ?? cfg.draft;
   return (
-    <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", padding: "4px 12px", borderRadius: "999px", background: s.bg, color: s.color, border: `1px solid ${s.border}`, whiteSpace: "nowrap" }}>
+    <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", fontWeight: 400, letterSpacing: "0.06em", textTransform: "uppercase", padding: "4px 12px", borderRadius: "999px", background: s.bg, color: s.color, border: `1px solid ${s.border}`, whiteSpace: "nowrap" }}>
       {status.replace("_", " ")}
     </span>
   );
@@ -109,11 +109,11 @@ function DashboardTab({ client, pendingPosts, postedPosts, accentColor, onNaviga
     <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
       {/* Welcome */}
       <div style={glass({ padding: "24px", borderTop: "3px solid #E30000" })}>
-        <p style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", color: "#999999", marginBottom: "16px", display: "flex", alignItems: "center", gap: "10px" }}>
+        <p style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", fontWeight: 400, letterSpacing: "0.18em", textTransform: "uppercase", color: "#999999", marginBottom: "16px", display: "flex", alignItems: "center", gap: "10px" }}>
           <span style={{ display: "block", width: "24px", height: "1px", background: "#E30000", flexShrink: 0 }} />
           Client Portal
         </p>
-        <h2 style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "clamp(26px, 2.5vw, 40px)", fontWeight: 700, fontStyle: "normal", lineHeight: 1.15, letterSpacing: "-0.01em", color: "#0A0A0A", marginBottom: "12px" }}>
+        <h2 style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "clamp(26px, 2.5vw, 40px)", fontWeight: 400, fontStyle: "normal", lineHeight: 1.15, letterSpacing: "-0.01em", color: "#0A0A0A", marginBottom: "12px" }}>
           Welcome back, {client.name}
         </h2>
         {client.tagline && (
@@ -124,7 +124,7 @@ function DashboardTab({ client, pendingPosts, postedPosts, accentColor, onNaviga
             <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "13px", color: "#E30000", fontWeight: 500 }}>
               {pendingPosts.length} post{pendingPosts.length !== 1 ? "s" : ""} awaiting your approval
             </span>
-            <button onClick={() => onNavigate("approval")} style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: "#E30000", background: "none", border: "none", cursor: "pointer", fontWeight: 600, textDecoration: "underline", textUnderlineOffset: "3px", transition: "all 0.15s ease" }}>
+            <button onClick={() => onNavigate("approval")} style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: "#E30000", background: "none", border: "none", cursor: "pointer", fontWeight: 400, textDecoration: "underline", textUnderlineOffset: "3px", transition: "all 0.15s ease" }}>
               Review →
             </button>
           </div>
@@ -135,10 +135,10 @@ function DashboardTab({ client, pendingPosts, postedPosts, accentColor, onNaviga
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "24px" }}>
         {statCards.map((s, i) => (
           <div key={i} style={glass({ padding: "24px", borderTop: `3px solid ${s.color}` })}>
-            <div style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "13px", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "#999999", marginBottom: "12px" }}>{s.label}</div>
-            <div style={{ fontSize: "32px", fontWeight: 700, fontFamily: "var(--font-raleway), sans-serif", color: s.color, letterSpacing: "-0.02em", lineHeight: 1 }}>{s.value}</div>
+            <div style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "13px", fontWeight: 400, letterSpacing: "0.06em", textTransform: "uppercase", color: "#999999", marginBottom: "12px" }}>{s.label}</div>
+            <div style={{ fontSize: "32px", fontWeight: 400, fontFamily: "var(--font-raleway), sans-serif", color: s.color, letterSpacing: "-0.02em", lineHeight: 1 }}>{s.value}</div>
             {s.action && (
-              <button onClick={s.action} style={{ marginTop: "10px", fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: s.color, background: "none", border: "none", cursor: "pointer", fontWeight: 600, textDecoration: "underline", textUnderlineOffset: "3px", transition: "all 0.15s ease" }}>
+              <button onClick={s.action} style={{ marginTop: "10px", fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: s.color, background: "none", border: "none", cursor: "pointer", fontWeight: 400, textDecoration: "underline", textUnderlineOffset: "3px", transition: "all 0.15s ease" }}>
                 {s.actionLabel}
               </button>
             )}
@@ -150,14 +150,14 @@ function DashboardTab({ client, pendingPosts, postedPosts, accentColor, onNaviga
       {pendingPosts.length > 0 && (
         <div style={glass({ padding: "0", overflow: "hidden" })}>
           <div style={{ padding: "24px", borderBottom: "1px solid #E5E5E5", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "20px", fontWeight: 700, fontStyle: "normal", letterSpacing: "-0.01em", color: "#0A0A0A" }}>Needs Your Review</div>
+            <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "20px", fontWeight: 400, fontStyle: "normal", letterSpacing: "-0.01em", color: "#0A0A0A" }}>Needs Your Review</div>
             <StatusPill status="pending_approval" />
           </div>
           <div style={{ display: "flex", flexDirection: "column" }}>
             {pendingPosts.slice(0, 3).map((p, i) => (
               <div key={p.id} style={{ padding: "16px 24px", borderBottom: i < Math.min(pendingPosts.length, 3) - 1 ? "1px solid #E5E5E5" : "none" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
-                  <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", fontWeight: 600, color: "#666666", textTransform: "uppercase", letterSpacing: "0.06em" }}>{p.post_type}</span>
+                  <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", fontWeight: 400, color: "#666666", textTransform: "uppercase", letterSpacing: "0.06em" }}>{p.post_type}</span>
                   <span style={{ color: "#E5E5E5" }}>·</span>
                   <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: "#999999" }}>{p.scheduled_day}</span>
                   <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: "#999999", marginLeft: "auto" }}>{formatDate(p.created_at)}</span>
@@ -170,7 +170,7 @@ function DashboardTab({ client, pendingPosts, postedPosts, accentColor, onNaviga
           </div>
           {pendingPosts.length > 3 && (
             <div style={{ padding: "14px 24px", borderTop: "1px solid #E5E5E5", textAlign: "center" }}>
-              <button onClick={() => onNavigate("approval")} style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "13px", color: accentColor, background: "none", border: "none", cursor: "pointer", fontWeight: 600, transition: "all 0.15s ease" }}>
+              <button onClick={() => onNavigate("approval")} style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "13px", color: accentColor, background: "none", border: "none", cursor: "pointer", fontWeight: 400, transition: "all 0.15s ease" }}>
                 View all {pendingPosts.length} posts →
               </button>
             </div>
@@ -216,7 +216,7 @@ function ApprovalTab({ client, pendingPosts, accentColor, onRefresh, onToast }: 
             <path d="M5 13l4 4L19 7" stroke="#E30000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </div>
-        <div style={{ fontSize: "18px", fontWeight: 600, fontStyle: "normal", color: "#0A0A0A", marginBottom: "8px", fontFamily: "var(--font-raleway), sans-serif" }}>All caught up!</div>
+        <div style={{ fontSize: "18px", fontWeight: 400, fontStyle: "normal", color: "#0A0A0A", marginBottom: "8px", fontFamily: "var(--font-raleway), sans-serif" }}>All caught up!</div>
         <p style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "14px", color: "#999999" }}>No posts are waiting for your approval right now.</p>
       </div>
     );
@@ -225,8 +225,8 @@ function ApprovalTab({ client, pendingPosts, accentColor, onRefresh, onToast }: 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
-        <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "20px", fontWeight: 700, fontStyle: "normal", letterSpacing: "-0.01em", color: "#0A0A0A" }}>Approval Queue</div>
-        <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", fontWeight: 600, padding: "4px 12px", background: "rgba(227,0,0,0.10)", border: "1px solid rgba(227,0,0,0.30)", color: "#E30000", borderRadius: "999px" }}>
+        <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "20px", fontWeight: 400, fontStyle: "normal", letterSpacing: "-0.01em", color: "#0A0A0A" }}>Approval Queue</div>
+        <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", fontWeight: 400, padding: "4px 12px", background: "rgba(227,0,0,0.10)", border: "1px solid rgba(227,0,0,0.30)", color: "#E30000", borderRadius: "999px" }}>
           {pendingPosts.length} pending
         </span>
       </div>
@@ -234,7 +234,7 @@ function ApprovalTab({ client, pendingPosts, accentColor, onRefresh, onToast }: 
         <div key={p.id} style={glass({ overflow: "hidden" })}>
           {/* Header */}
           <div style={{ padding: "14px 24px", borderBottom: "1px solid #E5E5E5", display: "flex", alignItems: "center", gap: "10px", background: "#F5F5F5", flexWrap: "wrap" }}>
-            <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", fontWeight: 600, padding: "4px 12px", background: "rgba(227,0,0,0.10)", border: `1px solid rgba(227,0,0,0.30)`, color: accentColor, borderRadius: "999px", letterSpacing: "0.02em" }}>
+            <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", fontWeight: 400, padding: "4px 12px", background: "rgba(227,0,0,0.10)", border: `1px solid rgba(227,0,0,0.30)`, color: accentColor, borderRadius: "999px", letterSpacing: "0.02em" }}>
               {p.post_type}
             </span>
             <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: "#666666" }}>{p.scheduled_day}</span>
@@ -256,7 +256,7 @@ function ApprovalTab({ client, pendingPosts, accentColor, onRefresh, onToast }: 
           <div style={{ padding: "14px 24px", borderTop: "1px solid #E5E5E5", background: "#F5F5F5" }}>
             {requestingId === p.id ? (
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                <label style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999" }}>
+                <label style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", fontWeight: 400, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999" }}>
                   Describe what you&apos;d like changed
                 </label>
                 <textarea
@@ -273,7 +273,7 @@ function ApprovalTab({ client, pendingPosts, accentColor, onRefresh, onToast }: 
                   <button
                     onClick={() => requestChanges(p)}
                     disabled={!noteText[p.id]?.trim() || busy === p.id}
-                    style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "9px 18px", background: "#E30000", border: "1px solid #E30000", borderRadius: "8px", fontSize: "13px", fontWeight: 600, color: "#FFFFFF", cursor: !noteText[p.id]?.trim() || busy === p.id ? "not-allowed" : "pointer", opacity: !noteText[p.id]?.trim() || busy === p.id ? 0.5 : 1, fontFamily: "Helvetica, Arial, sans-serif", transition: "all 0.15s ease" }}
+                    style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "9px 18px", background: "#E30000", border: "1px solid #E30000", borderRadius: "8px", fontSize: "13px", fontWeight: 400, color: "#FFFFFF", cursor: !noteText[p.id]?.trim() || busy === p.id ? "not-allowed" : "pointer", opacity: !noteText[p.id]?.trim() || busy === p.id ? 0.5 : 1, fontFamily: "Helvetica, Arial, sans-serif", transition: "all 0.15s ease" }}
                   >
                     {busy === p.id ? <Spinner /> : null}
                     Submit request
@@ -288,7 +288,7 @@ function ApprovalTab({ client, pendingPosts, accentColor, onRefresh, onToast }: 
                 <button
                   onClick={() => approve(p)}
                   disabled={busy === p.id}
-                  style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "9px 22px", background: accentColor, border: `1px solid ${accentColor}`, borderRadius: "8px", fontSize: "13px", fontWeight: 600, color: "#FFFFFF", cursor: busy === p.id ? "not-allowed" : "pointer", fontFamily: "Helvetica, Arial, sans-serif", transition: "all 0.15s ease" }}
+                  style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "9px 22px", background: accentColor, border: `1px solid ${accentColor}`, borderRadius: "8px", fontSize: "13px", fontWeight: 400, color: "#FFFFFF", cursor: busy === p.id ? "not-allowed" : "pointer", fontFamily: "Helvetica, Arial, sans-serif", transition: "all 0.15s ease" }}
                   onMouseEnter={e => { if (busy !== p.id) (e.currentTarget as HTMLElement).style.opacity = "0.88"; }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}
                 >
@@ -326,7 +326,7 @@ function HistoryTab({ postedPosts, analytics, accentColor }: {
         <div style={{ width: "60px", height: "60px", borderRadius: "50%", background: "rgba(227,0,0,0.10)", border: "1px solid rgba(227,0,0,0.30)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
           <span style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#E30000" }} />
         </div>
-        <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "18px", fontWeight: 600, color: "#0A0A0A", marginBottom: "8px" }}>No published posts yet</div>
+        <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "18px", fontWeight: 400, color: "#0A0A0A", marginBottom: "8px" }}>No published posts yet</div>
         <p style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "14px", color: "#999999" }}>Your published posts will appear here once they go live.</p>
       </div>
     );
@@ -334,7 +334,7 @@ function HistoryTab({ postedPosts, analytics, accentColor }: {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-      <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "20px", fontWeight: 700, fontStyle: "normal", letterSpacing: "-0.01em", marginBottom: "8px", color: "#0A0A0A" }}>
+      <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "20px", fontWeight: 400, fontStyle: "normal", letterSpacing: "-0.01em", marginBottom: "8px", color: "#0A0A0A" }}>
         Post History
       </div>
       {postedPosts.map((p, i) => {
@@ -343,7 +343,7 @@ function HistoryTab({ postedPosts, analytics, accentColor }: {
           <div key={p.id} style={glass({ overflow: "hidden" })}>
             <div style={{ padding: "14px 24px", borderBottom: "1px solid #E5E5E5", display: "flex", alignItems: "center", gap: "10px", background: "#F5F5F5", flexWrap: "wrap" }}>
               <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#E30000", flexShrink: 0 }} />
-              <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", fontWeight: 600, padding: "4px 12px", background: "rgba(227,0,0,0.10)", border: `1px solid rgba(227,0,0,0.30)`, color: accentColor, borderRadius: "999px", letterSpacing: "0.02em" }}>{p.post_type}</span>
+              <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", fontWeight: 400, padding: "4px 12px", background: "rgba(227,0,0,0.10)", border: `1px solid rgba(227,0,0,0.30)`, color: accentColor, borderRadius: "999px", letterSpacing: "0.02em" }}>{p.post_type}</span>
               <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: "#666666" }}>{p.scheduled_day}</span>
               <StatusPill status="posted" />
               <span style={{ marginLeft: "auto", fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: "#999999" }}>{formatDate(p.updated_at)}</span>
@@ -364,8 +364,8 @@ function HistoryTab({ postedPosts, analytics, accentColor }: {
                   { label: "Reposts",      value: an.reposts.toLocaleString() },
                 ].map(m => (
                   <div key={m.label}>
-                    <div style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "13px", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "#999999", marginBottom: "2px" }}>{m.label}</div>
-                    <div style={{ fontSize: "32px", fontWeight: 700, color: "#0A0A0A", fontFamily: "var(--font-raleway), sans-serif" }}>{m.value}</div>
+                    <div style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "13px", fontWeight: 400, letterSpacing: "0.06em", textTransform: "uppercase", color: "#999999", marginBottom: "2px" }}>{m.label}</div>
+                    <div style={{ fontSize: "32px", fontWeight: 400, color: "#0A0A0A", fontFamily: "var(--font-raleway), sans-serif" }}>{m.value}</div>
                   </div>
                 ))}
               </div>
@@ -438,7 +438,7 @@ function ReportsTab({ client, accentColor }: {
         <div style={{ width: 60, height: 60, borderRadius: "50%", background: "rgba(227,0,0,0.10)", border: "1px solid rgba(227,0,0,0.30)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "8px" }}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M4 18V6a2 2 0 012-2h9l5 5v9a2 2 0 01-2 2H6a2 2 0 01-2-2z" stroke={accentColor} strokeWidth="1.5"/><path d="M14 4v5h5M8 12h8M8 16h5" stroke={accentColor} strokeWidth="1.5" strokeLinecap="round"/></svg>
         </div>
-        <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "18px", fontWeight: 600, fontStyle: "normal", color: "#0A0A0A" }}>No published reports yet</div>
+        <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "18px", fontWeight: 400, fontStyle: "normal", color: "#0A0A0A" }}>No published reports yet</div>
         <div style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "14px", color: "#999999" }}>Your Linkwright team will publish performance reports here.</div>
       </div>
     );
@@ -450,13 +450,13 @@ function ReportsTab({ client, accentColor }: {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
         <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
           {reports.map(r => (
-            <button key={r.id} onClick={() => setSelectedId(r.id)} style={{ padding: "7px 14px", borderRadius: "999px", border: `1px solid ${r.id === selectedId ? accentColor : "#E5E5E5"}`, background: r.id === selectedId ? "rgba(227,0,0,0.10)" : "#FFFFFF", color: r.id === selectedId ? accentColor : "#666666", fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", fontWeight: 600, cursor: "pointer", transition: "all 0.15s ease" }}>
+            <button key={r.id} onClick={() => setSelectedId(r.id)} style={{ padding: "7px 14px", borderRadius: "999px", border: `1px solid ${r.id === selectedId ? accentColor : "#E5E5E5"}`, background: r.id === selectedId ? "rgba(227,0,0,0.10)" : "#FFFFFF", color: r.id === selectedId ? accentColor : "#666666", fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", fontWeight: 400, cursor: "pointer", transition: "all 0.15s ease" }}>
               {r.period_start.slice(0, 7)} {r.type === "weekly" ? "(weekly)" : ""}
             </button>
           ))}
         </div>
         {selectedReport && (
-          <button onClick={handleExport} disabled={exporting} style={{ display: "inline-flex", alignItems: "center", gap: "7px", padding: "9px 18px", background: accentColor, border: `1px solid ${accentColor}`, borderRadius: "8px", fontFamily: "Helvetica, Arial, sans-serif", fontSize: "13px", fontWeight: 600, color: "#FFFFFF", cursor: "pointer", opacity: exporting ? 0.7 : 1, transition: "all 0.15s ease" }}>
+          <button onClick={handleExport} disabled={exporting} style={{ display: "inline-flex", alignItems: "center", gap: "7px", padding: "9px 18px", background: accentColor, border: `1px solid ${accentColor}`, borderRadius: "8px", fontFamily: "Helvetica, Arial, sans-serif", fontSize: "13px", fontWeight: 400, color: "#FFFFFF", cursor: "pointer", opacity: exporting ? 0.7 : 1, transition: "all 0.15s ease" }}>
             <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 9v2h9V9M6.5 1v7M4 6l2.5 2.5L9 6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
             {exporting ? "Generating…" : "Export PDF"}
           </button>
@@ -468,12 +468,12 @@ function ReportsTab({ client, accentColor }: {
           {/* Brand header */}
           <div style={{ background: "#FFFFFF", border: "1px solid #E5E5E5", borderRadius: "12px", borderTop: "3px solid #E30000", padding: "24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div>
-              <div style={{ fontSize: "32px", fontWeight: 700, fontStyle: "normal", fontFamily: "var(--font-raleway), sans-serif", color: "#0A0A0A", letterSpacing: "-0.02em", marginBottom: "4px" }}>{client.name}</div>
+              <div style={{ fontSize: "32px", fontWeight: 400, fontStyle: "normal", fontFamily: "var(--font-raleway), sans-serif", color: "#0A0A0A", letterSpacing: "-0.02em", marginBottom: "4px" }}>{client.name}</div>
               <div style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: "#666666" }}>{selectedReport.period_start} – {selectedReport.period_end}</div>
               {selectedReport.published_at && <div style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: "#999999", marginTop: "4px" }}>Published {new Date(selectedReport.published_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</div>}
             </div>
             <div style={{ textAlign: "right" }}>
-              <div style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "6px" }}>Prepared by</div>
+              <div style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", fontWeight: 400, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "6px" }}>Prepared by</div>
               <span style={{ fontFamily: "var(--font-raleway), sans-serif", fontWeight: 200, fontSize: "16px", letterSpacing: "0.1em", color: "#0A0A0A" }}>LINKWRIGHT</span>
             </div>
           </div>
@@ -490,8 +490,8 @@ function ReportsTab({ client, accentColor }: {
                 { label: "Follower Growth",   value: extracted.followerGrowth != null ? `${extracted.followerGrowth > 0 ? "+" : ""}${extracted.followerGrowth}` : "—", color: "#0A0A0A" },
               ].map(k => (
                 <div key={k.label} style={glass({ padding: "24px", borderTop: `3px solid ${k.color}` })}>
-                  <div style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "13px", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "#999999", marginBottom: "8px" }}>{k.label}</div>
-                  <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "32px", fontWeight: 700, color: k.color, letterSpacing: "-0.02em", lineHeight: 1 }}>{k.value}</div>
+                  <div style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "13px", fontWeight: 400, letterSpacing: "0.06em", textTransform: "uppercase", color: "#999999", marginBottom: "8px" }}>{k.label}</div>
+                  <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "32px", fontWeight: 400, color: k.color, letterSpacing: "-0.02em", lineHeight: 1 }}>{k.value}</div>
                 </div>
               ))}
             </div>
@@ -501,7 +501,7 @@ function ReportsTab({ client, accentColor }: {
           {extracted?.posts && extracted.posts.length > 0 && (
             <div style={glass({ overflow: "hidden" })}>
               <div style={{ padding: "24px", borderBottom: "1px solid #E5E5E5" }}>
-                <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "20px", fontWeight: 700, fontStyle: "normal", color: "#0A0A0A" }}>Top Posts This Period</div>
+                <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "20px", fontWeight: 400, fontStyle: "normal", color: "#0A0A0A" }}>Top Posts This Period</div>
               </div>
               <div>
                 {extracted.posts.slice(0, 5).map((p, i) => (
@@ -513,7 +513,7 @@ function ReportsTab({ client, accentColor }: {
                       </p>
                       <div style={{ display: "flex", gap: "16px" }}>
                         {p.impressions != null && <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: "#666666", fontWeight: 500 }}>{fmtN(p.impressions)} impressions</span>}
-                        {p.engagementRate != null && <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: accentColor, fontWeight: 600 }}>{fmtPct(p.engagementRate)} engagement</span>}
+                        {p.engagementRate != null && <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: accentColor, fontWeight: 400 }}>{fmtPct(p.engagementRate)} engagement</span>}
                         {p.date && <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: "#999999" }}>{p.date}</span>}
                       </div>
                     </div>
@@ -526,7 +526,7 @@ function ReportsTab({ client, accentColor }: {
           {/* Client narrative — NEVER show agency narrative */}
           {selectedReport.narrative_client && (
             <div style={glass({ padding: "24px" })}>
-              <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "20px", fontWeight: 700, fontStyle: "normal", marginBottom: "16px", color: "#0A0A0A" }}>Performance Summary</div>
+              <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "20px", fontWeight: 400, fontStyle: "normal", marginBottom: "16px", color: "#0A0A0A" }}>Performance Summary</div>
               <p style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "15px", lineHeight: 1.6, color: "#0A0A0A", whiteSpace: "pre-wrap" }}>{selectedReport.narrative_client}</p>
             </div>
           )}
@@ -612,19 +612,19 @@ function TeamTab({ myRole, accentColor, onToast }: {
   };
 
   const inputStyle: React.CSSProperties = { background: "#FFFFFF", border: "1px solid #E5E5E5", borderRadius: "8px", padding: "11px 13px", fontSize: "14px", fontFamily: "Helvetica, Arial, sans-serif", color: "#0A0A0A", outline: "none", width: "100%", boxSizing: "border-box", transition: "all 0.15s ease" };
-  const th: React.CSSProperties = { textAlign: "left", fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", fontWeight: 600, padding: "0 12px 10px" };
+  const th: React.CSSProperties = { textAlign: "left", fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", fontWeight: 400, padding: "0 12px 10px" };
   const td: React.CSSProperties = { fontFamily: "Helvetica, Arial, sans-serif", fontSize: "14px", color: "#0A0A0A", padding: "12px", borderTop: "1px solid #E5E5E5", verticalAlign: "middle" };
 
   return (
     <div style={{ maxWidth: "980px", margin: "0 auto" }}>
-      <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "20px", fontWeight: 700, fontStyle: "normal", marginBottom: "6px", color: "#0A0A0A" }}>Team</div>
+      <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "20px", fontWeight: 400, fontStyle: "normal", marginBottom: "6px", color: "#0A0A0A" }}>Team</div>
       <p style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "14px", color: "#666666", marginBottom: "24px" }}>
         Manage administrators and users for your company.
       </p>
 
       {/* Add form */}
       <div style={glass({ padding: "24px" })}>
-        <div style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "#666666", marginBottom: "16px" }}>
+        <div style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", fontWeight: 400, letterSpacing: "0.06em", textTransform: "uppercase", color: "#666666", marginBottom: "16px" }}>
           Add a team member
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "12px" }}>
@@ -641,7 +641,7 @@ function TeamTab({ myRole, accentColor, onToast }: {
           </select>
         </div>
         <button onClick={add} disabled={busy}
-          style={{ padding: "11px 22px", background: accentColor, color: "#FFFFFF", border: "none", borderRadius: "8px", fontSize: "13px", fontWeight: 600, cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1, fontFamily: "Helvetica, Arial, sans-serif", transition: "all 0.15s ease" }}>
+          style={{ padding: "11px 22px", background: accentColor, color: "#FFFFFF", border: "none", borderRadius: "8px", fontSize: "13px", fontWeight: 400, cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1, fontFamily: "Helvetica, Arial, sans-serif", transition: "all 0.15s ease" }}>
           {busy ? "Adding..." : "Add and send invite"}
         </button>
       </div>
@@ -674,7 +674,7 @@ function TeamTab({ myRole, accentColor, onToast }: {
                         </select>
                       ) : !isOwnerRow && myRole === "administrator" && m.role === "user" ? (
                         <button onClick={() => changeRole(m, "administrator")}
-                          style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: accentColor, background: "none", border: "none", cursor: "pointer", fontWeight: 600, textDecoration: "underline", textUnderlineOffset: "3px", padding: 0, transition: "all 0.15s ease" }}>
+                          style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: accentColor, background: "none", border: "none", cursor: "pointer", fontWeight: 400, textDecoration: "underline", textUnderlineOffset: "3px", padding: 0, transition: "all 0.15s ease" }}>
                           Promote to admin
                         </button>
                       ) : (
@@ -691,7 +691,7 @@ function TeamTab({ myRole, accentColor, onToast }: {
                             Resend
                           </button>
                           <button onClick={() => deactivate(m)}
-                            style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: "#E30000", background: "none", border: "none", cursor: "pointer", fontWeight: 600, transition: "all 0.15s ease" }}>
+                            style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: "#E30000", background: "none", border: "none", cursor: "pointer", fontWeight: 400, transition: "all 0.15s ease" }}>
                             Remove
                           </button>
                         </>
@@ -752,7 +752,7 @@ function MessagesTab({ accentColor, onViewed }: { accentColor: string; onViewed:
 
   return (
     <div style={{ maxWidth: "760px", margin: "0 auto" }}>
-      <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "20px", fontWeight: 700, fontStyle: "normal", marginBottom: "6px", color: "#0A0A0A" }}>Messages</div>
+      <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "20px", fontWeight: 400, fontStyle: "normal", marginBottom: "6px", color: "#0A0A0A" }}>Messages</div>
       <p style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "14px", color: "#666666", marginBottom: "24px" }}>Message your team at Linkwright. We reply here.</p>
 
       <div style={{ background: "#FFFFFF", border: "1px solid #E5E5E5", borderRadius: "12px", padding: "24px", minHeight: "320px", display: "flex", flexDirection: "column", gap: "14px" }}>
@@ -767,7 +767,7 @@ function MessagesTab({ accentColor, onViewed }: { accentColor: string; onViewed:
                 background: m.sender === "client" ? "rgba(227,0,0,0.10)" : "#F5F5F5",
                 border: `1px solid ${m.sender === "client" ? "rgba(227,0,0,0.30)" : "#E5E5E5"}`,
                 color: "#0A0A0A" }}>
-                <div style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", letterSpacing: "0.06em", textTransform: "uppercase", color: m.sender === "client" ? "#E30000" : "#999999", marginBottom: "4px", fontWeight: 600 }}>
+                <div style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", letterSpacing: "0.06em", textTransform: "uppercase", color: m.sender === "client" ? "#E30000" : "#999999", marginBottom: "4px", fontWeight: 400 }}>
                   {m.sender === "client" ? "You" : "Linkwright"}
                 </div>
                 {m.body}
@@ -788,7 +788,7 @@ function MessagesTab({ accentColor, onViewed }: { accentColor: string; onViewed:
           onBlur={e => e.target.style.borderColor = "#E5E5E5"}
         />
         <button onClick={send} disabled={sending || !text.trim()}
-          style={{ padding: "0 22px", background: accentColor, color: "#FFFFFF", border: "none", borderRadius: "8px", fontSize: "13px", fontWeight: 600, cursor: sending || !text.trim() ? "default" : "pointer", opacity: sending || !text.trim() ? 0.55 : 1, fontFamily: "Helvetica, Arial, sans-serif", transition: "all 0.15s ease" }}>
+          style={{ padding: "0 22px", background: accentColor, color: "#FFFFFF", border: "none", borderRadius: "8px", fontSize: "13px", fontWeight: 400, cursor: sending || !text.trim() ? "default" : "pointer", opacity: sending || !text.trim() ? 0.55 : 1, fontFamily: "Helvetica, Arial, sans-serif", transition: "all 0.15s ease" }}>
           Send
         </button>
       </div>
@@ -941,7 +941,7 @@ export default function PortalPage() {
           animation: "toastIn 0.3s cubic-bezier(0.16,1,0.3,1) both",
           boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
         }}>
-          <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: toast.type === "success" ? "#E30000" : toast.type === "error" ? "#E30000" : "#666666", fontWeight: 700 }}>
+          <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: toast.type === "success" ? "#E30000" : toast.type === "error" ? "#E30000" : "#666666", fontWeight: 400 }}>
             {toast.type === "success" ? "✓" : toast.type === "error" ? "✕" : "●"}
           </span>
           <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "13px", fontWeight: 500, color: "#0A0A0A" }}>{toast.msg}</span>
@@ -982,7 +982,7 @@ export default function PortalPage() {
                 style={{ position: "relative", padding: "8px 18px", background: "transparent", border: "none", borderBottom: tab === t.id ? "2px solid #E30000" : "2px solid transparent", fontSize: "13px", fontWeight: 400, letterSpacing: "0.04em", color: tab === t.id ? "#FFFFFF" : "#999999", cursor: "pointer", transition: "all 0.15s ease", fontFamily: "Helvetica, Arial, sans-serif", display: "inline-flex", alignItems: "center", gap: "6px", marginBottom: "-1px" }}>
                 {t.label}
                 {t.badge && t.badge > 0 ? (
-                  <span style={{ minWidth: "16px", height: "16px", borderRadius: "999px", background: "#E30000", color: "#FFFFFF", fontFamily: "Helvetica, Arial, sans-serif", fontSize: "9px", fontWeight: 600, display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "0 4px" }}>
+                  <span style={{ minWidth: "16px", height: "16px", borderRadius: "999px", background: "#E30000", color: "#FFFFFF", fontFamily: "Helvetica, Arial, sans-serif", fontSize: "9px", fontWeight: 400, display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "0 4px" }}>
                     {t.badge}
                   </span>
                 ) : null}
@@ -1011,11 +1011,11 @@ export default function PortalPage() {
         <img src="/images/red-circle.png" alt="" aria-hidden="true" style={{ position: "absolute", top: "-100px", right: "-90px", width: "340px", height: "340px", opacity: 0.6, mixBlendMode: "screen", pointerEvents: "none" }} />
         <div style={{ position: "relative", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "0 48px" }}>
           <div style={{ width: "28px", height: "2px", background: "#E30000", marginBottom: "20px" }} />
-          <p style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "clamp(22px, 3vw, 42px)", fontWeight: 700, fontStyle: "normal", color: "#FFFFFF", lineHeight: 1.2, maxWidth: "600px", letterSpacing: "-0.01em", margin: 0 }}>
+          <p style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "clamp(22px, 3vw, 42px)", fontWeight: 400, fontStyle: "normal", color: "#FFFFFF", lineHeight: 1.2, maxWidth: "600px", letterSpacing: "-0.01em", margin: 0 }}>
             {client.name}
           </p>
           {client.tagline && (
-            <p style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", color: "rgba(255,255,255,0.7)", marginTop: "10px", letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 600 }}>{client.tagline}</p>
+            <p style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", color: "rgba(255,255,255,0.7)", marginTop: "10px", letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 400 }}>{client.tagline}</p>
           )}
           <div style={{ width: "28px", height: "2px", background: "#E30000", marginTop: "20px" }} />
         </div>

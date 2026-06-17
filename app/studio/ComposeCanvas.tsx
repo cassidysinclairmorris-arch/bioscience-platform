@@ -224,7 +224,7 @@ const ComposeCanvas = forwardRef<ComposeCanvasHandle, {
         left: canvasSize / 2, top: canvasSize / 2,
         originX: "center", originY: "center",
         fontFamily: bFont, fontSize: Math.round(canvasSize * 0.065),
-        fill: bColors[0], fontWeight: "600",
+        fill: bColors[0], fontWeight: "400",
       });
       fabricRef.current.add(t);
       fabricRef.current.setActiveObject(t);
@@ -474,7 +474,7 @@ const ComposeCanvas = forwardRef<ComposeCanvasHandle, {
           saveSnapshot();
         } else if (preset === "Bolder typography") {
           objs.filter((o: FO) => o.type === "i-text" || o.type === "text").forEach((o: FO) => {
-            o.set({ fontSize: Math.round((o.fontSize || 20) * 1.2), fontWeight: "700" });
+            o.set({ fontSize: Math.round((o.fontSize || 20) * 1.2), fontWeight: "400" });
           });
           fabricRef.current.renderAll();
           saveSnapshot();
@@ -590,7 +590,7 @@ const ComposeCanvas = forwardRef<ComposeCanvasHandle, {
       {/* Provider badge — static, above canvas */}
       {imgProvider && (
         <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "6px" }}>
-          <span style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase" as const, padding: "3px 8px", background: "rgba(0,0,0,0.65)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: "6px", color: "rgba(255,255,255,0.65)" }}>
+          <span style={{ fontSize: "10px", fontWeight: 400, letterSpacing: "0.06em", textTransform: "uppercase" as const, padding: "3px 8px", background: "rgba(0,0,0,0.65)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: "6px", color: "rgba(255,255,255,0.65)" }}>
             {imgProvider}
           </span>
         </div>

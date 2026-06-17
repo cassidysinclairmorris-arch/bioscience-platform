@@ -338,7 +338,7 @@ function Nav() {
           href="/contact"
           style={{
             fontFamily: FONT,
-            fontWeight: 600,
+            fontWeight: 400,
             fontSize: 13,
             color: fg,
             textDecoration: "none",
@@ -664,7 +664,7 @@ function FloatingImages() {
                 display: "inline-block",
                 marginTop: 28,
                 fontFamily: FONT,
-                fontWeight: 600,
+                fontWeight: 400,
                 fontSize: 12,
                 letterSpacing: "0.15em",
                 color: RED,
@@ -1139,7 +1139,7 @@ function Pricing() {
             href="/contact"
             style={{
               fontFamily: FONT,
-              fontWeight: 600,
+              fontWeight: 400,
               fontSize: 12,
               letterSpacing: "0.15em",
               color: RED,
@@ -1207,7 +1207,7 @@ function Pricing() {
                     background: RED,
                     color: WHITE,
                     fontFamily: FONT,
-                    fontWeight: 600,
+                    fontWeight: 400,
                     fontSize: 11,
                     letterSpacing: "0.1em",
                     padding: "6px 14px",
@@ -1341,7 +1341,7 @@ function Pricing() {
                   textAlign: "center",
                   marginTop: 28,
                   fontFamily: FONT,
-                  fontWeight: 600,
+                  fontWeight: 400,
                   fontSize: 15,
                   color: WHITE,
                   background: p.popular ? RED : BLACK,
@@ -1477,7 +1477,7 @@ const FAQS: { q: string; a: ReactNode }[] = [
           ["Engagement Rate", "A measure of meaningful interactions relative to reach. Comments, shares, saves, and engagement help us understand whether content is resonating with the intended audience."],
         ].map(([t, d]) => (
           <p key={t} style={faqPara}>
-            <strong style={{ fontWeight: 600, color: BLACK }}>{t}</strong>
+            <strong style={{ fontWeight: 400, color: BLACK }}>{t}</strong>
             <br />
             {d}
           </p>
@@ -1628,7 +1628,7 @@ function Faq() {
                 href="/contact"
                 style={{
                   fontFamily: FONT,
-                  fontWeight: 600,
+                  fontWeight: 400,
                   fontSize: 12,
                   letterSpacing: "0.15em",
                   color: WHITE,
