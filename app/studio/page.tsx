@@ -513,12 +513,32 @@ function ComposeTab({
   const [genMode, setGenMode] = useState<"post" | "standalone">("post");
   const [standaloneBrief, setStandaloneBrief] = useState("");
   const [copySource, setCopySource] = useState<"generate" | "paste" | "upload">("generate");
+  const [pasteOpen, setPasteOpen] = useState(false);
+  const [pasteDraft, setPasteDraft] = useState("");
   const canvasRef = useRef<ComposeCanvasHandle>(null);
   const txtUploadRef = useRef<HTMLInputElement>(null);
   const visualUploadRef = useRef<HTMLInputElement>(null);
   const [addMenuOpen, setAddMenuOpen] = useState(false);
   const MAX_ASSETS = 10;
   const [composeSource, setComposeSource] = useState<"write" | "document">("write");
+
+  // Shared text ingestion for "Paste Text" and "Upload Text". Both normalize to
+  // the same { sourceType, content } shape and flow into the identical pipeline,
+  // so pasted copy is indistinguishable from uploaded copy downstream.
+  const ingestText = useCallback((raw: string, sourceType: "paste" | "upload") => {
+    // Strip invalid control chars; preserve line breaks and tabs. No truncation.
+    const content = raw.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "");
+    const normalized = { sourceType, content };
+    setPost(normalized.content);
+    notify(sourceType === "paste" ? "Pasted text added" : "Copy loaded from file", "success");
+  }, [setPost, notify]);
+
+  const openPaste = () => { setCopySource("paste"); setPasteDraft(""); setPasteOpen(true); };
+  const confirmPaste = () => {
+    if (!pasteDraft.trim()) { setPasteOpen(false); return; }
+    ingestText(pasteDraft, "paste");
+    setPasteOpen(false);
+  };
 
   // Append PDF-generated slides into the Visual Assets tray, preserving order.
   const addGeneratedAssets = useCallback((incoming: GeneratedAsset[]) => {
@@ -794,6 +814,43 @@ function ComposeTab({
 
         {composeSource === "write" && (
         <>
+        {/* Always-available text ingestion: hidden .txt input + Paste Text modal */}
+        <input
+          ref={txtUploadRef}
+          type="file"
+          accept=".txt,text/plain"
+          style={{ display: "none" }}
+          onChange={e => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => ingestText(String(reader.result || ""), "upload");
+            reader.onerror = () => notify("Could not read file", "error");
+            reader.readAsText(file);
+            e.target.value = "";
+          }}
+        />
+        {pasteOpen && (
+          <div onClick={() => setPasteOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(10,10,10,0.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
+            <div onClick={e => e.stopPropagation()} style={glass({ padding: "24px", width: "min(640px, 92vw)" })}>
+              <div className="label" style={{ marginBottom: "12px" }}>Paste Text</div>
+              <textarea
+                autoFocus
+                value={pasteDraft}
+                onChange={e => setPasteDraft(e.target.value)}
+                placeholder="Paste your content here…"
+                rows={14}
+                style={{ ...INPUT, resize: "vertical", width: "100%", minHeight: "260px" }}
+                onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
+                onBlur={e => e.target.style.borderColor = "#E5E5E5"}
+              />
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "14px" }}>
+                <GlassBtn onClick={() => setPasteOpen(false)}>Cancel</GlassBtn>
+                <GlassBtn onClick={confirmPaste} disabled={!pasteDraft.trim()} variant="primary">Use This Text</GlassBtn>
+              </div>
+            </div>
+          </div>
+        )}
         {/* Generator */}
         <div style={glass()}>
           <div style={{ padding: "20px 24px", borderBottom: "1px solid #E5E5E5", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -820,8 +877,9 @@ function ComposeTab({
                 <div>
                   {/* Copy source toggle */}
                   <div style={{ display: "flex", gap: "2px", background: "#F5F5F5", border: "1px solid #E5E5E5", borderRadius: "9px", padding: "3px", marginBottom: "10px", width: "fit-content" }}>
-                    {(["generate", "paste", "upload"] as const).map(m => (
+                    {([["generate", "Generate Text"], ["paste", "Paste Text"], ["upload", "Upload Text"]] as const).map(([m, label]) => (
                       <button key={m} onClick={() => {
+                        if (m === "paste") { openPaste(); return; }
                         setCopySource(m);
                         if (m === "upload") txtUploadRef.current?.click();
                       }}
@@ -830,28 +888,13 @@ function ComposeTab({
                           background: copySource === m ? "#E5E5E5" : "transparent",
                           border: "none", borderRadius: "8px",
                           color: copySource === m ? T : T3,
-                          cursor: "pointer", textTransform: "capitalize", letterSpacing: "0.04em",
+                          cursor: "pointer", letterSpacing: "0.04em",
                           transition: "all 0.15s ease", fontFamily: "inherit",
                         }}>
-                        {m}
+                        {label}
                       </button>
                     ))}
                   </div>
-                  <input
-                    ref={txtUploadRef}
-                    type="file"
-                    accept=".txt,text/plain"
-                    style={{ display: "none" }}
-                    onChange={e => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      const reader = new FileReader();
-                      reader.onload = () => { setPost(String(reader.result || "")); notify("Copy loaded from file", "success"); };
-                      reader.onerror = () => notify("Could not read file", "error");
-                      reader.readAsText(file);
-                      e.target.value = "";
-                    }}
-                  />
                   <div style={{ position: "relative" }}>
                     <textarea
                       value={post}
@@ -922,7 +965,11 @@ function ComposeTab({
             ) : (
               <div style={{ height: "180px", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #E5E5E5", borderRadius: "8px", flexDirection: "column", gap: "12px" }}>
                 <div style={{ width: "32px", height: "1px", background: GOLD, opacity: 0.4 }} />
-                <p style={{ fontSize: "13px", color: T3, fontFamily: "var(--font-raleway), sans-serif", fontStyle: "normal" }}>Select a pillar and generate</p>
+                <p style={{ fontSize: "13px", color: T3, fontFamily: "var(--font-raleway), sans-serif", fontStyle: "normal" }}>Generate, paste, or upload your text</p>
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <GlassBtn onClick={openPaste}>Paste Text</GlassBtn>
+                  <GlassBtn onClick={() => txtUploadRef.current?.click()}>Upload Text</GlassBtn>
+                </div>
               </div>
             )}
           </div>
