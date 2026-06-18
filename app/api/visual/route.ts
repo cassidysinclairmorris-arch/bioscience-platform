@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { getBrandBlock, resolveFonts } from "@/lib/brand-context";
 
+export const runtime = "nodejs";
+export const maxDuration = 60;
+
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 // ── Master brief — applied as system prompt to every generation ───────────────

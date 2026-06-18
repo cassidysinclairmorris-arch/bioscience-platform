@@ -28,12 +28,19 @@ export async function POST(req: NextRequest) {
     if (!(file instanceof File)) {
       return NextResponse.json({ error: "No file provided." }, { status: 400 });
     }
-    if (file.size > 15 * 1024 * 1024) {
-      return NextResponse.json({ error: "File too large (max 15MB)." }, { status: 400 });
+    if (file.size > 30 * 1024 * 1024) {
+      return NextResponse.json({ error: "File too large (max 30MB)." }, { status: 400 });
     }
-    const type = file.type || "application/octet-stream";
+    // Some browsers report no MIME for PDFs; fall back to the file extension.
+    const looksPdf = /\.pdf$/i.test(file.name || "");
+    const type =
+      file.type && file.type !== "application/octet-stream"
+        ? file.type
+        : looksPdf
+          ? "application/pdf"
+          : file.type || "application/octet-stream";
     if (!ALLOWED.includes(type)) {
-      return NextResponse.json({ error: "Unsupported file type." }, { status: 400 });
+      return NextResponse.json({ error: `Unsupported file type (${type || "unknown"}).` }, { status: 400 });
     }
     const safeName = (file.name || "asset").replace(/[^a-zA-Z0-9._-]/g, "_").slice(-60);
     const key = `post-assets/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safeName}`;

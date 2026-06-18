@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { Company, Pillar } from "@/lib/companies";
 import ComposeCanvas, { type ComposeCanvasHandle } from "./ComposeCanvas";
+import PdfStudio, { type GeneratedAsset } from "./PdfStudio";
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line,
   PieChart, Pie, Cell,
@@ -479,6 +480,7 @@ type ComposeAsset = {
   canvasJson?: string;
   previewUrl: string;
   mime?: string;
+  assetTitle?: string;
 };
 
 function ComposeTab({
@@ -516,6 +518,26 @@ function ComposeTab({
   const visualUploadRef = useRef<HTMLInputElement>(null);
   const [addMenuOpen, setAddMenuOpen] = useState(false);
   const MAX_ASSETS = 10;
+  const [composeSource, setComposeSource] = useState<"write" | "document">("write");
+
+  // Append PDF-generated slides into the Visual Assets tray, preserving order.
+  const addGeneratedAssets = useCallback((incoming: GeneratedAsset[]) => {
+    let firstId: string | null = null;
+    setAssets(prev => {
+      const room = MAX_ASSETS - prev.length;
+      const toAdd = incoming.slice(0, Math.max(0, room)).map(a => {
+        const id = crypto.randomUUID();
+        if (!firstId) firstId = id;
+        return {
+          id, kind: a.kind, source: a.source,
+          previewUrl: a.previewUrl, blobUrl: a.blobUrl, mime: a.mime,
+          assetTitle: a.assetTitle,
+        } as ComposeAsset;
+      });
+      return [...prev, ...toAdd];
+    });
+    if (firstId) setActiveAssetId(firstId);
+  }, [setAssets, setActiveAssetId]);
 
   // ── Visual Assets helpers ──
   const commitActive = useCallback(() => {
@@ -549,7 +571,7 @@ function ComposeTab({
     let previewUrl = "";
     if (kind === "svg") {
       if (!svg) return;
-      previewUrl = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+      previewUrl = `data:image/svg+xml,${encodeURIComponent(svg)}`;
     } else {
       if (!imgUrl) return;
       previewUrl = canvasRef.current?.getCanvasDataURL() ?? imgUrl;
@@ -717,6 +739,61 @@ function ComposeTab({
       {/* ── Right panels ── */}
       <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
 
+        {/* Compose source toggle */}
+        <div style={{ display: "flex", gap: "2px", background: "#F5F5F5", border: "1px solid #E5E5E5", borderRadius: "10px", padding: "3px", width: "fit-content" }}>
+          {([["write", "Write a post"], ["document", "From a document"]] as const).map(([m, label]) => (
+            <button key={m} onClick={() => setComposeSource(m)}
+              style={{
+                fontSize: "12px", fontWeight: 400, padding: "6px 16px",
+                background: composeSource === m ? "#fff" : "transparent",
+                border: "none", borderRadius: "8px",
+                color: composeSource === m ? T : T3,
+                boxShadow: composeSource === m ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
+                cursor: "pointer", letterSpacing: "0.02em",
+                transition: "all 0.15s ease", fontFamily: "inherit",
+              }}>
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {composeSource === "document" && (
+          <>
+          <div style={glass({ padding: "20px 24px" })}>
+            <PdfStudio
+              company={ac}
+              pillar={ap}
+              notify={notify}
+              remainingSlots={MAX_ASSETS - assets.length}
+              onAddAssets={addGeneratedAssets}
+              onPostCopy={(c) => setPost(c)}
+            />
+          </div>
+
+          {/* Save / approval bar — same backend flow as Write mode */}
+          {(post.trim() || assets.length > 0) && (
+            <div style={glass({ padding: "16px 24px" })}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
+                <div style={{ fontSize: "12px", color: T3 }}>
+                  {assets.length > 0 ? `${assets.length} slide${assets.length === 1 ? "" : "s"} ready` : "No slides yet"}
+                  {post.trim() ? " · post copy attached" : ""}
+                  {assets.length > 0 ? " · slide 1 is the cover" : ""}
+                </div>
+                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                  {post.trim() ? <GlassBtn onClick={() => copy(post)}>Copy</GlassBtn> : null}
+                  <GlassBtn onClick={() => savePost("draft")} disabled={isSave}>Save draft</GlassBtn>
+                  <GlassBtn onClick={() => sendForApproval()} disabled={isSave || (!post.trim() && assets.length === 0)} variant="primary">
+                    {isSave ? <><Spinner /> Sending…</> : "Send for Approval ↗"}
+                  </GlassBtn>
+                </div>
+              </div>
+            </div>
+          )}
+          </>
+        )}
+
+        {composeSource === "write" && (
+        <>
         {/* Generator */}
         <div style={glass()}>
           <div style={{ padding: "20px 24px", borderBottom: "1px solid #E5E5E5", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -1080,6 +1157,8 @@ function ComposeTab({
             )
           )}
         </div>
+        </>
+        )}
 
         {/* Visual Assets tray */}
         <div className="fade-up fade-up-2" style={glass({ padding: "20px 24px" })}>
@@ -4424,10 +4503,10 @@ useEffect(() => {
     setIsVisualRefining(false);
   };
 
-  const bundledAssets = () => assets.map(a => ({ url: a.blobUrl || a.previewUrl, kind: a.kind, source: a.source, mime: a.mime, canvas_json: a.canvasJson ?? null }));
+  const bundledAssets = () => assets.map(a => ({ url: a.blobUrl || a.previewUrl, kind: a.kind, source: a.source, mime: a.mime, canvas_json: a.canvasJson ?? null, asset_title: a.assetTitle ?? null }));
 
   const savePost = async (status: "draft" | "approved", imageUrl?: string) => {
-    if (!post) return;
+    if (!post && assets.length === 0) return;
     setIsSave(true);
     const body: Record<string, unknown> = { company_id: ac!.id, company_name: ac!.name, post_type: ap!.type, scheduled_day: ap!.day, content: post, status };
     if (assets.length > 0) body.assets = bundledAssets();
@@ -4437,7 +4516,7 @@ useEffect(() => {
   };
 
   const sendForApproval = async (imageUrl?: string) => {
-    if (!post) return;
+    if (!post && assets.length === 0) return;
     setIsSave(true);
     const body: Record<string, unknown> = { company_id: ac!.id, company_name: ac!.name, post_type: ap!.type, scheduled_day: ap!.day, content: post, status: "pending_approval" };
     if (assets.length > 0) body.assets = bundledAssets();
