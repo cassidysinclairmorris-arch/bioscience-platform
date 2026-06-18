@@ -295,12 +295,12 @@ Monthly/Yearly toggle. Save 30% on yearly (multiply by 0.7).
 Four cards 2x2 grid. Border 1px #E5E5E5, border-radius 16px, padding 32px. Includes items have red checkmark. Best For / Outcome labels red small caps. CTA full width black button. Authority card CTA is #E30000.
 
 FOUNDATION — $500/mo — Maintain a Professional Presence
-Includes: 4 custom posts / Custom branded visuals / Monthly content planning / Performance reporting
+Includes: 4 custom posts / Custom branded visuals / Monthly content planning
 Best For: Early-stage companies that want to stay visible and maintain a professional presence.
 Outcome: Stay active, stay relevant, and ensure your company has a voice between major milestones.
 
 GROWTH — $1,000/mo — Build Consistent Visibility
-Includes: Everything in Foundation / 8 custom posts / Content pillar development / Expanded content strategy
+Includes: Everything in Foundation / 8 custom posts / Performance reporting / Content pillar development / Expanded content strategy
 Best For: Companies seeking greater awareness among investors, partners, recruits, and industry stakeholders.
 Outcome: Build momentum through consistent, strategic communication that reinforces your expertise over time.
 

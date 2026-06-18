@@ -1069,7 +1069,6 @@ const PLANS = [
       "4 custom posts per month",
       "Custom branded visuals",
       "Monthly content planning",
-      "Performance reporting",
     ],
     bestFor:
       "Early-stage companies that want to stay visible, communicate progress, and maintain a professional presence.",
@@ -1084,6 +1083,7 @@ const PLANS = [
     includes: [
       "Everything in Foundation",
       "8 custom posts per month",
+      "Performance reporting",
       "Content pillar development",
       "Expanded content strategy",
     ],
