@@ -471,6 +471,16 @@ function OverviewTab({ ac, clients, posts, allPosts }: { ac: Company; clients: C
 }
 
 // ── Compose Tab ───────────────────────────────────────────────────────────────
+type ComposeAsset = {
+  id: string;
+  kind: "image" | "svg";
+  source: "generated" | "uploaded";
+  blobUrl?: string;
+  canvasJson?: string;
+  previewUrl: string;
+  mime?: string;
+};
+
 function ComposeTab({
   ac, ap, setAp, post, setPost,
   isGen, isSave, isVisual, isRefining, isVisualRefining,
@@ -479,6 +489,7 @@ function ComposeTab({
   svgRefineRequest, setSvgRefineRequest,
   imgUrl, imgProvider, imgPrompt, isImgGen, clearImgUrl,
   generate, generateVisual, generateAiImage, refinePost, refineVisual, savePost, sendForApproval, copy, downloadSvg, notify,
+  assets, setAssets, activeAssetId, setActiveAssetId,
 }: {
   ac: Company; ap: Pillar; setAp: (p: Pillar) => void;
   post: string; setPost: (s: string) => void;
@@ -492,12 +503,150 @@ function ComposeTab({
   savePost: (s: "draft" | "approved", imageUrl?: string) => void;
   sendForApproval: (imageUrl?: string) => void;
   copy: (t: string) => void; downloadSvg: () => void; notify: (m: string, t?: "default" | "success" | "error") => void;
+  assets: ComposeAsset[]; setAssets: React.Dispatch<React.SetStateAction<ComposeAsset[]>>;
+  activeAssetId: string | null; setActiveAssetId: React.Dispatch<React.SetStateAction<string | null>>;
 }) {
   const [imageMode, setImageMode] = useState<"ai" | "svg">("ai");
   const [imgEditRequest, setImgEditRequest] = useState("");
   const [genMode, setGenMode] = useState<"post" | "standalone">("post");
   const [standaloneBrief, setStandaloneBrief] = useState("");
+  const [copySource, setCopySource] = useState<"generate" | "paste" | "upload">("generate");
   const canvasRef = useRef<ComposeCanvasHandle>(null);
+  const txtUploadRef = useRef<HTMLInputElement>(null);
+  const visualUploadRef = useRef<HTMLInputElement>(null);
+  const [addMenuOpen, setAddMenuOpen] = useState(false);
+  const MAX_ASSETS = 10;
+
+  // ── Visual Assets helpers ──
+  const commitActive = useCallback(() => {
+    if (!activeAssetId) return;
+    const json = canvasRef.current?.getCanvasJSON() ?? undefined;
+    const dataUrl = canvasRef.current?.getCanvasDataURL() ?? undefined;
+    if (!json && !dataUrl) return;
+    setAssets(prev => prev.map(a => a.id === activeAssetId
+      ? { ...a, canvasJson: json ?? a.canvasJson, previewUrl: dataUrl ?? a.previewUrl }
+      : a));
+  }, [activeAssetId, setAssets]);
+
+  const selectAsset = (id: string) => {
+    commitActive();
+    setActiveAssetId(id);
+  };
+
+  // Load the selected asset's canvas JSON after it becomes active / renders.
+  useEffect(() => {
+    if (!activeAssetId) return;
+    const a = assets.find(x => x.id === activeAssetId);
+    if (!a?.canvasJson) return;
+    const json = a.canvasJson;
+    const t = setTimeout(() => { canvasRef.current?.loadJSON(json); }, 0);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeAssetId]);
+
+  const addGeneratedAsset = () => {
+    const kind: "image" | "svg" = imageMode === "svg" ? "svg" : "image";
+    let previewUrl = "";
+    if (kind === "svg") {
+      if (!svg) return;
+      previewUrl = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+    } else {
+      if (!imgUrl) return;
+      previewUrl = canvasRef.current?.getCanvasDataURL() ?? imgUrl;
+    }
+    const id = crypto.randomUUID();
+    const canvasJson = kind === "image" ? (canvasRef.current?.getCanvasJSON() ?? undefined) : undefined;
+    commitActive();
+    setAssets(prev => prev.length >= MAX_ASSETS ? prev : [...prev, { id, kind, source: "generated", previewUrl, canvasJson }]);
+    setActiveAssetId(id);
+  };
+
+  const pendingGenAsset = useRef(false);
+  const handleGenerateNew = () => {
+    setAddMenuOpen(false);
+    commitActive();
+    pendingGenAsset.current = true;
+    if (imageMode === "svg") generateVisual(genMode === "standalone" ? standaloneBrief : undefined);
+    else generateAiImage(undefined, genMode === "standalone" ? standaloneBrief : undefined);
+  };
+
+  // When a "Generate New Visual" result arrives, append it as a new asset.
+  useEffect(() => {
+    if (!pendingGenAsset.current) return;
+    if (isVisual || isImgGen) return; // still generating
+    const ready = imageMode === "svg" ? !!svg : !!imgUrl;
+    if (!ready) return;
+    pendingGenAsset.current = false;
+    addGeneratedAsset();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isVisual, isImgGen, svg, imgUrl]);
+
+  const handleUploadVisuals = async (files: FileList | null) => {
+    setAddMenuOpen(false);
+    if (!files || files.length === 0) return;
+    commitActive();
+    for (const file of Array.from(files)) {
+      let appended = false;
+      setAssets(prev => { appended = prev.length < MAX_ASSETS; return prev; });
+      if (!appended) { notify(`Limit of ${MAX_ASSETS} assets reached`, "error"); break; }
+      try {
+        const fd = new FormData();
+        fd.append("file", file);
+        const r = await fetch("/api/upload", { method: "POST", body: fd });
+        const d = await r.json();
+        if (!r.ok || !d.url) { notify(d.error || "Upload failed", "error"); continue; }
+        const id = crypto.randomUUID();
+        const kind: "image" | "svg" = (d.mime || "").includes("svg") ? "svg" : "image";
+        setAssets(prev => prev.length >= MAX_ASSETS ? prev : [...prev, { id, kind, source: "uploaded" as const, blobUrl: d.url, previewUrl: d.url, mime: d.mime }]);
+        setActiveAssetId(id);
+      } catch { notify("Upload failed", "error"); }
+    }
+  };
+
+  const swapAsset = (idx: number, dir: -1 | 1) => {
+    commitActive();
+    setAssets(prev => {
+      const j = idx + dir;
+      if (j < 0 || j >= prev.length) return prev;
+      const next = [...prev];
+      [next[idx], next[j]] = [next[j], next[idx]];
+      return next;
+    });
+  };
+
+  const duplicateAsset = (idx: number) => {
+    commitActive();
+    setAssets(prev => {
+      if (prev.length >= MAX_ASSETS) { notify(`Limit of ${MAX_ASSETS} assets reached`, "error"); return prev; }
+      const clone = { ...prev[idx], id: crypto.randomUUID() };
+      const next = [...prev];
+      next.splice(idx + 1, 0, clone);
+      return next;
+    });
+  };
+
+  const deleteAsset = (idx: number) => {
+    setAssets(prev => {
+      const removed = prev[idx];
+      const next = prev.filter((_, i) => i !== idx);
+      if (removed && removed.id === activeAssetId) {
+        const neighbor = next[idx] ?? next[idx - 1] ?? null;
+        setActiveAssetId(neighbor ? neighbor.id : null);
+      }
+      return next;
+    });
+  };
+
+  const setAsCover = (idx: number) => {
+    commitActive();
+    setAssets(prev => {
+      if (idx === 0) return prev;
+      const next = [...prev];
+      const [moved] = next.splice(idx, 1);
+      next.unshift(moved);
+      return next;
+    });
+  };
   const charCount = post.length;
   const charLimit = 3000;
   const charPct = Math.min(charCount / charLimit, 1);
@@ -592,6 +741,40 @@ function ComposeTab({
               <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: "16px", alignItems: "start" }}>
                 {/* Editor */}
                 <div>
+                  {/* Copy source toggle */}
+                  <div style={{ display: "flex", gap: "2px", background: "#F5F5F5", border: "1px solid #E5E5E5", borderRadius: "9px", padding: "3px", marginBottom: "10px", width: "fit-content" }}>
+                    {(["generate", "paste", "upload"] as const).map(m => (
+                      <button key={m} onClick={() => {
+                        setCopySource(m);
+                        if (m === "upload") txtUploadRef.current?.click();
+                      }}
+                        style={{
+                          fontSize: "11px", fontWeight: 400, padding: "4px 12px",
+                          background: copySource === m ? "#E5E5E5" : "transparent",
+                          border: "none", borderRadius: "8px",
+                          color: copySource === m ? T : T3,
+                          cursor: "pointer", textTransform: "capitalize", letterSpacing: "0.04em",
+                          transition: "all 0.15s ease", fontFamily: "inherit",
+                        }}>
+                        {m}
+                      </button>
+                    ))}
+                  </div>
+                  <input
+                    ref={txtUploadRef}
+                    type="file"
+                    accept=".txt,text/plain"
+                    style={{ display: "none" }}
+                    onChange={e => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = () => { setPost(String(reader.result || "")); notify("Copy loaded from file", "success"); };
+                      reader.onerror = () => notify("Could not read file", "error");
+                      reader.readAsText(file);
+                      e.target.value = "";
+                    }}
+                  />
                   <div style={{ position: "relative" }}>
                     <textarea
                       value={post}
@@ -619,14 +802,15 @@ function ComposeTab({
                   </div>
                   <div style={{ display: "flex", gap: "8px", marginTop: "12px", flexWrap: "wrap" }}>
                     <GlassBtn onClick={() => copy(post)}>Copy</GlassBtn>
-                    <GlassBtn onClick={() => savePost("draft", imageMode === "ai" ? imgUrl || undefined : undefined)} disabled={isSave}>Save draft</GlassBtn>
+                    <GlassBtn onClick={() => { commitActive(); savePost("draft", imageMode === "ai" ? imgUrl || undefined : undefined); }} disabled={isSave}>Save draft</GlassBtn>
                     <GlassBtn onClick={() => {
+                      commitActive();
                       const dataUrl = imgUrl ? (canvasRef.current?.getCanvasDataURL() ?? imgUrl) : undefined;
                       sendForApproval(dataUrl);
                     }} disabled={isSave || !post.trim()} variant="primary">
                       {isSave ? <><Spinner /> Sending…</> : "Send for Approval ↗"}
                     </GlassBtn>
-                    <GlassBtn onClick={() => savePost("approved", imageMode === "ai" ? imgUrl || undefined : undefined)} disabled={isSave} variant="teal">Approve & save</GlassBtn>
+                    <GlassBtn onClick={() => { commitActive(); savePost("approved", imageMode === "ai" ? imgUrl || undefined : undefined); }} disabled={isSave} variant="teal">Approve & save</GlassBtn>
                     <GlassBtn onClick={generate} disabled={isGen}>Regenerate</GlassBtn>
                   </div>
                 </div>
@@ -894,6 +1078,94 @@ function ComposeTab({
                 {isVisual ? <><Spinner /> Creating…</> : `Generate ${vizType} card ↗`}
               </GlassBtn>
             )
+          )}
+        </div>
+
+        {/* Visual Assets tray */}
+        <div className="fade-up fade-up-2" style={glass({ padding: "20px 24px" })}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px", flexWrap: "wrap", gap: "10px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <div className="label">Visual Assets</div>
+              <span style={{ fontSize: "11px", color: T3, fontWeight: 400 }}>{assets.length} / {MAX_ASSETS}</span>
+            </div>
+            <div style={{ position: "relative" }}>
+              <GlassBtn onClick={() => setAddMenuOpen(o => !o)} disabled={assets.length >= MAX_ASSETS}>+ Add Visual ▾</GlassBtn>
+              {addMenuOpen && (
+                <div style={{ position: "absolute", right: 0, top: "calc(100% + 4px)", zIndex: 20, background: "#fff", border: "1px solid #E5E5E5", borderRadius: "10px", boxShadow: "0 6px 20px rgba(0,0,0,0.08)", overflow: "hidden", minWidth: "200px" }}>
+                  <button onClick={handleGenerateNew}
+                    style={{ display: "block", width: "100%", textAlign: "left", padding: "10px 14px", background: "transparent", border: "none", borderBottom: "1px solid #E5E5E5", color: T, fontSize: "12px", fontWeight: 400, cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s ease" }}>
+                    Generate New Visual
+                  </button>
+                  <button onClick={() => visualUploadRef.current?.click()}
+                    style={{ display: "block", width: "100%", textAlign: "left", padding: "10px 14px", background: "transparent", border: "none", color: T, fontSize: "12px", fontWeight: 400, cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s ease" }}>
+                    Upload Existing Visual
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <input
+            ref={visualUploadRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/svg+xml"
+            multiple
+            style={{ display: "none" }}
+            onChange={e => { handleUploadVisuals(e.target.files); e.target.value = ""; }}
+          />
+
+          {assets.length === 0 ? (
+            <div style={{ padding: "24px", textAlign: "center", border: "1px dashed #E5E5E5", borderRadius: "10px", color: T3, fontSize: "12px", fontFamily: "var(--font-raleway), sans-serif" }}>
+              No assets yet. Use “+ Add Visual” to generate or upload. The first asset becomes the cover.
+            </div>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: "12px" }}>
+              {assets.map((a, idx) => {
+                const selected = a.id === activeAssetId;
+                return (
+                  <div key={a.id} onClick={() => selectAsset(a.id)}
+                    style={{
+                      background: "#fff",
+                      border: selected ? "2px solid #E30000" : "1px solid #E5E5E5",
+                      borderRadius: "10px", overflow: "hidden", cursor: "pointer",
+                      transition: "all 0.15s ease", position: "relative",
+                    }}>
+                    <div style={{ position: "relative", aspectRatio: "1 / 1", background: "#F5F5F5" }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={a.previewUrl || a.blobUrl} alt={`Slide ${idx + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                      {idx === 0 && (
+                        <div style={{ position: "absolute", top: "6px", left: "6px", background: "#E30000", color: "#fff", borderRadius: "6px", fontSize: "10px", fontWeight: 400, padding: "2px 6px", letterSpacing: "0.04em" }}>★ Cover</div>
+                      )}
+                    </div>
+                    <div style={{ padding: "8px 10px", borderTop: "1px solid #E5E5E5" }}>
+                      <div style={{ fontSize: "11px", color: T2, fontFamily: "var(--font-raleway), sans-serif", marginBottom: "6px", letterSpacing: "0.04em" }}>Slide {idx + 1}</div>
+                      <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+                        {([
+                          { label: "◀", title: "Move left", fn: () => swapAsset(idx, -1), disabled: idx === 0 },
+                          { label: "▶", title: "Move right", fn: () => swapAsset(idx, 1), disabled: idx === assets.length - 1 },
+                          { label: "⧉", title: "Duplicate", fn: () => duplicateAsset(idx), disabled: assets.length >= MAX_ASSETS },
+                          { label: "☆", title: "Set as cover", fn: () => setAsCover(idx), disabled: idx === 0 },
+                          { label: "✕", title: "Delete", fn: () => deleteAsset(idx), disabled: false },
+                        ] as const).map(btn => (
+                          <button key={btn.label} title={btn.title}
+                            onClick={e => { e.stopPropagation(); if (!btn.disabled) btn.fn(); }}
+                            disabled={btn.disabled}
+                            style={{
+                              fontSize: "11px", lineHeight: 1, padding: "5px 7px",
+                              background: "transparent", border: "1px solid #E5E5E5", borderRadius: "8px",
+                              color: btn.disabled ? "#CCCCCC" : T3,
+                              cursor: btn.disabled ? "default" : "pointer", fontFamily: "inherit", fontWeight: 400,
+                              transition: "all 0.15s ease",
+                            }}>
+                            {btn.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           )}
         </div>
 
@@ -4016,6 +4288,8 @@ const [loadingClients, setLoadingClients] = useState(true);
   const [imgProvider, setImgProvider] = useState("");
   const [imgPrompt, setImgPrompt]     = useState("");
   const [isImgGen, setIsImgGen]       = useState(false);
+  const [assets, setAssets]           = useState<ComposeAsset[]>([]);
+  const [activeAssetId, setActiveAssetId] = useState<string | null>(null);
   const [bellOpen, setBellOpen]       = useState(false);
   const [clientUsersUnread, setClientUsersUnread] = useState(0);
 
@@ -4085,7 +4359,7 @@ useEffect(() => {
   }, [tab, fetchClientUsersUnread]);
 
   const switchCompany = (c: Company) => {
-    setAc(c); setAp(c.pillars[0]); setPost(""); setSvg(""); setImgUrl(""); setImgProvider(""); setImgPrompt("");
+    setAc(c); setAp(c.pillars[0]); setPost(""); setSvg(""); setImgUrl(""); setImgProvider(""); setImgPrompt(""); setAssets([]); setActiveAssetId(null);
   };
 
   const generate = async () => {
@@ -4150,18 +4424,26 @@ useEffect(() => {
     setIsVisualRefining(false);
   };
 
+  const bundledAssets = () => assets.map(a => ({ url: a.blobUrl || a.previewUrl, kind: a.kind, source: a.source, mime: a.mime, canvas_json: a.canvasJson ?? null }));
+
   const savePost = async (status: "draft" | "approved", imageUrl?: string) => {
     if (!post) return;
     setIsSave(true);
-    await fetch("/api/posts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ company_id: ac!.id, company_name: ac!.name, post_type: ap!.type, scheduled_day: ap!.day, content: post, status, image_url: imageUrl || null }) });
-    setIsSave(false); notify(`Saved as ${status}`, "success"); fetchPosts(); fetchAllPosts();
+    const body: Record<string, unknown> = { company_id: ac!.id, company_name: ac!.name, post_type: ap!.type, scheduled_day: ap!.day, content: post, status };
+    if (assets.length > 0) body.assets = bundledAssets();
+    else body.image_url = imageUrl || null;
+    await fetch("/api/posts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    setIsSave(false); notify(`Saved as ${status}`, "success"); setAssets([]); setActiveAssetId(null); fetchPosts(); fetchAllPosts();
   };
 
   const sendForApproval = async (imageUrl?: string) => {
     if (!post) return;
     setIsSave(true);
-    await fetch("/api/posts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ company_id: ac!.id, company_name: ac!.name, post_type: ap!.type, scheduled_day: ap!.day, content: post, status: "pending_approval", image_url: imageUrl || null }) });
-    setIsSave(false); notify("Sent for client approval ✓", "success"); fetchPosts(); fetchAllPosts();
+    const body: Record<string, unknown> = { company_id: ac!.id, company_name: ac!.name, post_type: ap!.type, scheduled_day: ap!.day, content: post, status: "pending_approval" };
+    if (assets.length > 0) body.assets = bundledAssets();
+    else body.image_url = imageUrl || null;
+    await fetch("/api/posts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    setIsSave(false); notify("Sent for client approval ✓", "success"); setAssets([]); setActiveAssetId(null); fetchPosts(); fetchAllPosts();
   };
 
   const copy = (t: string) => { navigator.clipboard.writeText(t); notify("Copied to clipboard", "success"); };
@@ -4468,6 +4750,7 @@ if (loadingClients || !ac || !ap) {
             imgUrl={imgUrl} imgProvider={imgProvider} imgPrompt={imgPrompt} isImgGen={isImgGen} clearImgUrl={() => setImgUrl("")}
             generate={generate} generateVisual={generateVisual} generateAiImage={generateAiImage} refinePost={refinePost} refineVisual={refineVisual}
             savePost={savePost} sendForApproval={sendForApproval} copy={copy} downloadSvg={downloadSvg} notify={notify}
+            assets={assets} setAssets={setAssets} activeAssetId={activeAssetId} setActiveAssetId={setActiveAssetId}
           />
         )}
         {tab === "library"   && (

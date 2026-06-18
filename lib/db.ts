@@ -165,6 +165,19 @@ async function initialize(): Promise<void> {
         created_at     TEXT    DEFAULT (datetime('now')),
         read_at        TEXT
       );
+
+      CREATE TABLE IF NOT EXISTS post_assets (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        post_id     INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+        sort_order  INTEGER NOT NULL DEFAULT 0,
+        kind        TEXT    NOT NULL DEFAULT 'image',   -- image | svg | pdf
+        source      TEXT    NOT NULL DEFAULT 'uploaded', -- generated | uploaded
+        url         TEXT    NOT NULL,
+        canvas_json TEXT,
+        mime        TEXT,
+        asset_title TEXT,
+        created_at  TEXT    DEFAULT (datetime('now'))
+      );
     `);
 
     // Fire-and-forget migrations for existing databases (ignore "column exists").
@@ -328,6 +341,19 @@ export interface Invoice {
   status: "paid" | "pending" | "overdue";
   tax_rate: number;
   notes: string;
+  created_at: string;
+}
+
+export interface PostAsset {
+  id: number;
+  post_id: number;
+  sort_order: number;
+  kind: "image" | "svg" | "pdf";
+  source: "generated" | "uploaded";
+  url: string;
+  canvas_json: string | null;
+  mime: string | null;
+  asset_title: string | null;
   created_at: string;
 }
 

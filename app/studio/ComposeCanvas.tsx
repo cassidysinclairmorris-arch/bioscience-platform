@@ -23,6 +23,7 @@ export interface ComposeCanvasHandle {
   downloadCanvas: () => void;
   getCanvasDataURL: () => string | null;
   getCanvasJSON: () => string | null;
+  loadJSON: (json: string) => void;
 }
 
 type TextElement = {
@@ -510,7 +511,16 @@ const ComposeCanvas = forwardRef<ComposeCanvasHandle, {
         return JSON.stringify(fabricRef.current.toJSON(["isBg", "isTint", "isLogo"]));
       } catch { return null; }
     },
-  }), [applyTint, canvasSize, downloadCanvas, saveSnapshot]);
+    // Restore a previously-saved canvas state (used to switch between visual assets).
+    loadJSON: (json: string) => {
+      if (!fabricRef.current || !json) return;
+      try {
+        applySnapshot(json);
+        undoStack.current = [json];
+        redoStack.current = [];
+      } catch (err) { console.error("[ComposeCanvas] loadJSON:", err); }
+    },
+  }), [applyTint, applySnapshot, canvasSize, downloadCanvas, saveSnapshot]);
 
   // ── Measure container (once on mount) ────────────────────────────────────────
   useEffect(() => {

@@ -13,6 +13,7 @@
     "@libsql/client": "^0.17.4",
     "@types/better-sqlite3": "^7.6.13",
     "@types/nodemailer": "^8.0.0",
+    "@vercel/blob": "^2.4.0",
     "better-sqlite3": "^12.8.0",
     "framer-motion": "^12.40.0",
     "next": "16.2.1",

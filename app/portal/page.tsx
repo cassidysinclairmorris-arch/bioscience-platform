@@ -17,6 +17,7 @@ type Post = {
   scheduled_day: string; content: string;
   status: "draft" | "pending_approval" | "approved" | "scheduled" | "posted";
   notes: string | null; image_url: string | null; week_number: number | null; created_at: string; updated_at: string;
+  assets?: { id: number; url: string; kind: string; sort_order: number }[];
 };
 type PostAnalytic = {
   id: number; post_id: number; impressions: number; engagement_rate: number;
@@ -88,6 +89,44 @@ function StatusPill({ status }: { status: string }) {
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
+// ── Post visuals (single image, or a carousel when a post has multiple) ────────
+function PostVisuals({ post }: { post: Post }) {
+  const assets = (post.assets && post.assets.length)
+    ? [...post.assets].sort((a, b) => a.sort_order - b.sort_order)
+    : (post.image_url ? [{ id: 0, url: post.image_url, kind: "image", sort_order: 0 }] : []);
+  const [idx, setIdx] = useState(0);
+  if (!assets.length) return null;
+  const i = Math.min(idx, assets.length - 1);
+  const multi = assets.length > 1;
+  const arrow: React.CSSProperties = {
+    position: "absolute", top: "50%", transform: "translateY(-50%)",
+    width: "34px", height: "34px", borderRadius: "999px",
+    background: "rgba(10,10,10,0.55)", color: "#FFFFFF", border: "none",
+    fontSize: "18px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+    fontFamily: "Helvetica, Arial, sans-serif", transition: "all 0.15s ease",
+  };
+  return (
+    <div style={{ marginBottom: "16px" }}>
+      <div style={{ position: "relative", borderRadius: "8px", overflow: "hidden", border: "1px solid #E5E5E5", background: "#F5F5F5" }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={assets[i].url} alt={`Visual ${i + 1}`} style={{ width: "100%", maxHeight: "360px", objectFit: "cover", display: "block" }} />
+        {multi && (
+          <>
+            <button onClick={() => setIdx((i - 1 + assets.length) % assets.length)} aria-label="Previous visual" style={{ ...arrow, left: "10px" }}>‹</button>
+            <button onClick={() => setIdx((i + 1) % assets.length)} aria-label="Next visual" style={{ ...arrow, right: "10px" }}>›</button>
+            <div style={{ position: "absolute", top: "10px", right: "10px", background: "rgba(10,10,10,0.7)", color: "#FFFFFF", fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", padding: "3px 9px", borderRadius: "999px" }}>{i + 1} / {assets.length}</div>
+            <div style={{ position: "absolute", bottom: "10px", left: "50%", transform: "translateX(-50%)", display: "flex", gap: "6px" }}>
+              {assets.map((_, d) => (
+                <span key={d} style={{ width: "6px", height: "6px", borderRadius: "50%", background: d === i ? "#E30000" : "rgba(255,255,255,0.75)" }} />
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
 }
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
@@ -243,12 +282,7 @@ function ApprovalTab({ client, pendingPosts, accentColor, onRefresh, onToast }: 
 
           {/* Content */}
           <div style={{ padding: "24px" }}>
-            {p.image_url && (
-              <div style={{ marginBottom: "16px", borderRadius: "8px", overflow: "hidden", border: "1px solid #E5E5E5" }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={p.image_url} alt="Post visual" style={{ width: "100%", maxHeight: "360px", objectFit: "cover", display: "block" }} />
-              </div>
-            )}
+            <PostVisuals post={p} />
             <p style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "15px", lineHeight: 1.6, color: "#0A0A0A", whiteSpace: "pre-wrap" }}>{p.content}</p>
           </div>
 
