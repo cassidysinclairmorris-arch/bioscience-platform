@@ -1747,7 +1747,7 @@ function Footer() {
   const tags = ["Content Management", "Content Creation", "Data Optimized"];
   const marqueeTags = Array.from({ length: 6 }).flatMap(() => tags);
   const navLinks = [
-    { label: "Studio", href: "/studio" },
+    { label: "Studio", href: "/login" },
     { label: "Projects", href: "/projects" },
     { label: "Services", href: "#services" },
     { label: "Blog", href: "#blog" },
