@@ -1064,7 +1064,7 @@ const PLANS = [
   {
     name: "Foundation",
     subtitle: "Maintain a Professional Presence",
-    price: 500,
+    price: 650,
     includes: [
       "4 custom posts per month",
       "Custom branded visuals",
@@ -1079,11 +1079,11 @@ const PLANS = [
   {
     name: "Growth",
     subtitle: "Build Consistent Visibility",
-    price: 1000,
+    price: 1200,
     includes: [
       "Everything in Foundation",
       "8 custom posts per month",
-      "Performance reporting",
+      "Follower Quality Index reporting",
       "Content pillar development",
       "Expanded content strategy",
     ],
@@ -1096,13 +1096,13 @@ const PLANS = [
   {
     name: "Authority",
     subtitle: "Establish Industry Credibility",
-    price: 1800,
+    price: 2000,
     includes: [
       "Everything in Growth",
       "12 custom posts per month",
+      "Warm Signal Rate reporting",
       "Educational carousel creation",
       "Monthly strategy consultation",
-      "Enhanced performance analysis",
     ],
     bestFor:
       "Organizations focused on thought leadership, fundraising, hiring, partnership development, or market expansion.",
@@ -1113,13 +1113,13 @@ const PLANS = [
   {
     name: "Market Leadership",
     subtitle: "Own the Conversation",
-    price: 3200,
+    price: 3500,
     includes: [
       "Everything in Authority",
       "16 custom posts per month",
       "Full LinkedIn page management",
+      "Share of Voice reporting",
       "Strategic community engagement",
-      "Weekly performance monitoring",
       "Quarterly growth roadmap",
     ],
     bestFor: "Companies committed to building a dominant presence within their industry.",
