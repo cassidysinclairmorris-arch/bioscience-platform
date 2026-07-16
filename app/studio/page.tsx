@@ -1,12 +1,19 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { upload } from "@vercel/blob/client";
 import type { Company, Pillar } from "@/lib/companies";
+import {
+  TIERS, tierName, LINKEDIN_METRICS, SIGNAL_METRICS,
+  tierIncludesSignal, type Tier,
+} from "@/lib/tiers";
+import { buildSeries, yearsIn, type Granularity } from "@/lib/report-series";
 import ComposeCanvas, { type ComposeCanvasHandle } from "./ComposeCanvas";
 import PdfStudio, { type GeneratedAsset } from "./PdfStudio";
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line,
   PieChart, Pie, Cell,
+  RadialBarChart, RadialBar, PolarAngleAxis,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
 
@@ -72,7 +79,7 @@ type Post = {
   created_at: string;
   updated_at: string;
 };
-type Tab = "overview" | "compose" | "library" | "calendar" | "reports" | "invoices" | "clients" | "clientusers";
+type Tab = "overview" | "compose" | "library" | "assets" | "calendar" | "reports" | "invoices" | "clients" | "clientusers";
 
 // ── Client Users / Messages types ──────────────────────────────────────────────
 type ClientUser = {
@@ -483,6 +490,322 @@ type ComposeAsset = {
   assetTitle?: string;
 };
 
+// ── Client asset library (studio side) ──────────────────────────────────────
+type AssetFileType = "image" | "document" | "slideshow" | "video";
+type StudioAsset = {
+  id: number; client_id: string; pillar_id: number | null; uploaded_by: number | null;
+  file_url: string; file_name: string; file_type: AssetFileType; file_size: number;
+  notes: string | null; created_at: string; updated_at: string;
+  pillar_type?: string | null;
+};
+// A studio-side view of a pillar; DB-loaded pillars carry a numeric id that the
+// static Pillar type does not declare.
+type PillarWithId = Pillar & { id?: number };
+
+const ASSET_TYPE_TABS: { id: AssetFileType; label: string }[] = [
+  { id: "image", label: "Images" },
+  { id: "document", label: "Documents" },
+  { id: "slideshow", label: "Slideshows" },
+  { id: "video", label: "Video" },
+];
+
+function pickAssetType(file: File): AssetFileType {
+  const t = file.type.toLowerCase();
+  const n = file.name.toLowerCase();
+  if (t.startsWith("image/")) return "image";
+  if (t.startsWith("video/")) return "video";
+  if (t.includes("presentation") || t.includes("powerpoint") || /\.pptx?$/.test(n)) return "slideshow";
+  return "document";
+}
+
+function assetSizeLabel(bytes: number) {
+  if (!bytes) return "";
+  if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  if (bytes >= 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${bytes} B`;
+}
+
+function assetDate(iso: string) {
+  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
+function AssetGlyph({ type, size = 26 }: { type: AssetFileType; size?: number }) {
+  const common = { width: size, height: size, fill: "none", stroke: GOLD, strokeWidth: 1.4, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  if (type === "video") return <svg viewBox="0 0 24 24" {...common}><rect x="2" y="5" width="14" height="14" rx="2" /><path d="M16 10l6-3v10l-6-3z" /></svg>;
+  if (type === "slideshow") return <svg viewBox="0 0 24 24" {...common}><rect x="3" y="4" width="18" height="12" rx="1" /><path d="M8 20h8M12 16v4" /></svg>;
+  if (type === "document") return <svg viewBox="0 0 24 24" {...common}><path d="M6 2h9l5 5v15H6z" /><path d="M14 2v6h6M9 13h6M9 17h6" /></svg>;
+  return <svg viewBox="0 0 24 24" {...common}><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></svg>;
+}
+
+// Upload (asset === null) or edit (asset provided) modal for the studio side.
+// The agency has full access, so this is available regardless of role.
+function StudioAssetModal({ ac, asset, onClose, onDone, notify }: {
+  ac: Company; asset: StudioAsset | null;
+  onClose: () => void; onDone: () => void;
+  notify: (m: string, t?: "default" | "success" | "error") => void;
+}) {
+  const editing = asset !== null;
+  const [file, setFile] = useState<File | null>(null);
+  const [pillarId, setPillarId] = useState<string>(asset?.pillar_id != null ? String(asset.pillar_id) : "");
+  const [notes, setNotes] = useState(asset?.notes || "");
+  const [busy, setBusy] = useState(false);
+  const pillars = (ac.pillars || []) as PillarWithId[];
+
+  const inputStyle: React.CSSProperties = { background: "#FFFFFF", border: "1px solid #E5E5E5", borderRadius: "8px", padding: "11px 13px", fontSize: "14px", fontFamily: "Helvetica, Arial, sans-serif", color: T, outline: "none", width: "100%", boxSizing: "border-box" };
+
+  const submit = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      if (editing) {
+        const res = await fetch(`/api/assets/${asset!.id}`, {
+          method: "PATCH", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ pillar_id: pillarId || null, notes: notes.trim() || null }),
+        });
+        if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || "Could not save."); }
+        notify("Asset updated", "success");
+      } else {
+        if (!file) { notify("Choose a file first", "error"); setBusy(false); return; }
+        const blob = await upload(file.name, file, { access: "public", handleUploadUrl: "/api/assets/upload" });
+        const res = await fetch("/api/assets", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            client_id: ac.id,
+            pillar_id: pillarId || null,
+            file_url: blob.url,
+            file_name: file.name,
+            file_type: pickAssetType(file),
+            file_size: file.size,
+            notes: notes.trim() || null,
+          }),
+        });
+        if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || "Upload failed."); }
+        notify("File uploaded", "success");
+      }
+      onDone();
+      onClose();
+    } catch (e) {
+      notify(e instanceof Error ? e.message : "Something went wrong", "error");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(10,10,10,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
+      <div onClick={e => e.stopPropagation()} style={glass({ padding: "28px", width: "100%", maxWidth: "460px", boxShadow: "0 10px 40px rgba(0,0,0,0.18)" })}>
+        <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "20px", fontWeight: 300, color: T, marginBottom: "20px" }}>
+          {editing ? "Edit asset" : `Upload to ${ac.name}`}
+        </div>
+        {!editing && (
+          <div style={{ marginBottom: "16px" }}>
+            <label style={{ display: "block", fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: T3, marginBottom: "8px" }}>File</label>
+            <input type="file" onChange={e => setFile(e.target.files?.[0] || null)} style={{ ...inputStyle, padding: "9px 12px" }} />
+            {file && <div style={{ fontSize: "12px", color: T2, marginTop: "6px" }}>{file.name} · {assetSizeLabel(file.size)}</div>}
+          </div>
+        )}
+        {editing && <div style={{ marginBottom: "16px", fontSize: "14px", color: T }}>{asset!.file_name}</div>}
+        <div style={{ marginBottom: "16px" }}>
+          <label style={{ display: "block", fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: T3, marginBottom: "8px" }}>Content pillar (optional)</label>
+          <select value={pillarId} onChange={e => setPillarId(e.target.value)} style={inputStyle}>
+            <option value="">No pillar</option>
+            {pillars.map(p => p.id != null ? <option key={p.id} value={p.id}>{p.type}</option> : null)}
+          </select>
+        </div>
+        <div style={{ marginBottom: "24px" }}>
+          <label style={{ display: "block", fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: T3, marginBottom: "8px" }}>Notes (optional)</label>
+          <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} placeholder="Context or guidance for this file" style={{ ...inputStyle, resize: "none", lineHeight: 1.6 }} />
+        </div>
+        <div style={{ display: "flex", gap: "10px" }}>
+          <button onClick={submit} disabled={busy} style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "11px 22px", background: GOLD, border: `1px solid ${GOLD}`, borderRadius: "8px", fontSize: "13px", fontWeight: 500, color: "#FFFFFF", cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1, fontFamily: "Helvetica, Arial, sans-serif" }}>
+            {busy ? <Spinner /> : null}{editing ? "Save changes" : "Upload"}
+          </button>
+          <button onClick={onClose} style={{ padding: "11px 18px", background: "#FFFFFF", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", color: T2, cursor: "pointer", fontFamily: "Helvetica, Arial, sans-serif" }}>Cancel</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Full asset library for the selected client. Agency-internal: full edit/delete.
+function AssetsTab({ ac, clients, onSwitch }: { ac: Company; clients: Company[]; onSwitch: (c: Company) => void }) {
+  const [assets, setAssets] = useState<StudioAsset[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [typeTab, setTypeTab] = useState<AssetFileType>("image");
+  const [uploading, setUploading] = useState(false);
+  const [editing, setEditing] = useState<StudioAsset | null>(null);
+  const [note, setNote] = useState("");
+  const [noteType, setNoteType] = useState<"default" | "success" | "error">("default");
+  const notify = (m: string, t: "default" | "success" | "error" = "default") => { setNote(m); setNoteType(t); setTimeout(() => setNote(""), 3000); };
+
+  const load = useCallback(() => {
+    setLoading(true);
+    return fetch(`/api/assets?clientId=${ac.id}`)
+      .then(r => (r.ok ? r.json() : { assets: [] }))
+      .then(d => setAssets(d.assets || []))
+      .finally(() => setLoading(false));
+  }, [ac.id]);
+  useEffect(() => { load(); }, [load]);
+
+  const remove = async (a: StudioAsset) => {
+    if (!window.confirm(`Delete "${a.file_name}"? This cannot be undone.`)) return;
+    const res = await fetch(`/api/assets/${a.id}`, { method: "DELETE" });
+    if (res.ok) { notify("Asset deleted", "success"); load(); }
+    else notify("Could not delete asset", "error");
+  };
+
+  const shown = assets.filter(a => a.file_type === typeTab);
+  const countFor = (t: AssetFileType) => assets.filter(a => a.file_type === t).length;
+
+  return (
+    <div className="fade-up" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+      {note && <Toast message={note} type={noteType} />}
+
+      {/* Client switcher */}
+      <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+        <span style={{ fontSize: "11px", letterSpacing: "0.15em", textTransform: "uppercase", color: T3, marginRight: "4px" }}>Client</span>
+        {clients.map(c => {
+          const active = c.id === ac.id;
+          return (
+            <button key={c.id} onClick={() => onSwitch(c)} style={{ padding: "6px 13px", borderRadius: "999px", border: `1px solid ${active ? GOLD : "#E5E5E5"}`, background: active ? "rgba(227,0,0,0.10)" : "#FFFFFF", color: active ? GOLD : T2, fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", fontWeight: active ? 500 : 400, cursor: "pointer" }}>
+              {c.name}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
+        <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "22px", fontWeight: 300, color: T }}>Asset Library</div>
+        <button onClick={() => setUploading(true)} style={{ display: "inline-flex", alignItems: "center", gap: "7px", padding: "9px 18px", background: GOLD, border: `1px solid ${GOLD}`, borderRadius: "8px", fontFamily: "Helvetica, Arial, sans-serif", fontSize: "13px", fontWeight: 500, color: "#FFFFFF", cursor: "pointer" }}>
+          <span style={{ fontSize: "15px", lineHeight: 1 }}>+</span> Upload
+        </button>
+      </div>
+
+      {/* Type tabs */}
+      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+        {ASSET_TYPE_TABS.map(t => {
+          const active = typeTab === t.id;
+          return (
+            <button key={t.id} onClick={() => setTypeTab(t.id)} style={{ padding: "7px 14px", borderRadius: "999px", border: `1px solid ${active ? GOLD : "#E5E5E5"}`, background: active ? "rgba(227,0,0,0.10)" : "#FFFFFF", color: active ? GOLD : T2, fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", cursor: "pointer" }}>
+              {t.label} {countFor(t.id) > 0 ? `(${countFor(t.id)})` : ""}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Grid */}
+      {loading ? (
+        <div style={{ color: T3, fontSize: "14px" }}>Loading…</div>
+      ) : shown.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "64px 0" }}>
+          <div style={{ width: "56px", height: "56px", borderRadius: "50%", background: "rgba(227,0,0,0.10)", border: "1px solid rgba(227,0,0,0.30)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}><AssetGlyph type={typeTab} /></div>
+          <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "18px", fontWeight: 300, color: T, marginBottom: "6px" }}>No files here yet</div>
+          <p style={{ fontSize: "14px", color: T3 }}>Upload files for this client so they are available while drafting.</p>
+        </div>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "20px" }}>
+          {shown.map(a => (
+            <div key={a.id} style={glass({ overflow: "hidden", display: "flex", flexDirection: "column" })}>
+              <div style={{ height: "150px", background: "#F5F5F5", borderBottom: "1px solid #E5E5E5", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+                {a.file_type === "image" ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={a.file_url} alt={a.file_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                ) : <AssetGlyph type={a.file_type} size={30} />}
+              </div>
+              <div style={{ padding: "14px 16px", display: "flex", flexDirection: "column", gap: "8px", flex: 1 }}>
+                <div style={{ fontSize: "14px", fontWeight: 500, color: T, wordBreak: "break-word", lineHeight: 1.4 }}>{a.file_name}</div>
+                {a.pillar_type && <span style={{ alignSelf: "flex-start", fontSize: "11px", padding: "3px 10px", background: "rgba(227,0,0,0.10)", border: "1px solid rgba(227,0,0,0.30)", color: GOLD, borderRadius: "999px" }}>{a.pillar_type}</span>}
+                {a.notes && <p style={{ fontSize: "13px", color: T2, lineHeight: 1.5, margin: 0 }}>{a.notes}</p>}
+                <div style={{ fontSize: "11px", color: T3, marginTop: "auto" }}>{assetSizeLabel(a.file_size)} · {assetDate(a.created_at)}</div>
+              </div>
+              <div style={{ padding: "10px 16px", borderTop: "1px solid #E5E5E5", display: "flex", alignItems: "center", gap: "14px", background: "#F5F5F5" }}>
+                <a href={`${a.file_url}?download=1`} style={{ fontSize: "12px", color: T, textDecoration: "none", fontWeight: 500 }}>Download</a>
+                <button onClick={() => setEditing(a)} style={{ fontSize: "12px", color: T2, background: "none", border: "none", cursor: "pointer", padding: 0 }}>Edit</button>
+                <button onClick={() => remove(a)} style={{ fontSize: "12px", color: "#E30000", background: "none", border: "none", cursor: "pointer", padding: 0, marginLeft: "auto" }}>Delete</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {uploading && <StudioAssetModal ac={ac} asset={null} onClose={() => setUploading(false)} onDone={load} notify={notify} />}
+      {editing && <StudioAssetModal ac={ac} asset={editing} onClose={() => setEditing(null)} onDone={load} notify={notify} />}
+    </div>
+  );
+}
+
+// Collapsible drawer inside Compose: assets for the client being drafted for,
+// filterable by pillar, so they are visible without leaving Compose.
+function ComposeAssetPanel({ ac }: { ac: Company }) {
+  const [open, setOpen] = useState(false);
+  const [assets, setAssets] = useState<StudioAsset[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [pillarFilter, setPillarFilter] = useState<string>("all");
+  const pillars = (ac.pillars || []) as PillarWithId[];
+
+  const load = useCallback(() => {
+    setLoading(true);
+    fetch(`/api/assets?clientId=${ac.id}`)
+      .then(r => (r.ok ? r.json() : { assets: [] }))
+      .then(d => setAssets(d.assets || []))
+      .finally(() => setLoading(false));
+  }, [ac.id]);
+  // Load when opened (and refresh when switching client while open).
+  useEffect(() => { if (open) load(); }, [open, load]);
+
+  const shown = pillarFilter === "all" ? assets : assets.filter(a => String(a.pillar_id) === pillarFilter);
+
+  return (
+    <>
+      {/* Edge toggle tab */}
+      <button onClick={() => setOpen(o => !o)} style={{ position: "fixed", top: "120px", right: open ? "320px" : "0px", zIndex: 41, background: GOLD, color: "#FFFFFF", border: "none", borderRadius: "8px 0 0 8px", padding: "12px 8px", cursor: "pointer", fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", letterSpacing: "0.1em", writingMode: "vertical-rl", transition: "right 0.25s ease" }} title="Client assets">
+        {open ? "CLOSE" : "ASSETS"}
+      </button>
+
+      {/* Drawer */}
+      <div style={{ position: "fixed", top: "64px", right: 0, width: "320px", height: "calc(100vh - 64px)", background: "#FFFFFF", borderLeft: "1px solid #E5E5E5", zIndex: 40, transform: open ? "translateX(0)" : "translateX(100%)", transition: "transform 0.25s ease", display: "flex", flexDirection: "column", boxShadow: open ? "-6px 0 24px rgba(0,0,0,0.08)" : "none" }}>
+        <div style={{ padding: "18px 18px 12px", borderBottom: "1px solid #E5E5E5" }}>
+          <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "16px", fontWeight: 300, color: T }}>Assets</div>
+          <div style={{ fontSize: "11px", color: T3, marginTop: "2px" }}>{ac.name}</div>
+        </div>
+        {/* Pillar filter */}
+        <div style={{ padding: "12px 18px", borderBottom: "1px solid #E5E5E5", display: "flex", gap: "6px", flexWrap: "wrap" }}>
+          {[{ id: "all", label: "All" }, ...pillars.filter(p => p.id != null).map(p => ({ id: String(p.id), label: p.type }))].map(f => {
+            const active = pillarFilter === f.id;
+            return <button key={f.id} onClick={() => setPillarFilter(f.id)} style={{ padding: "5px 11px", borderRadius: "999px", border: `1px solid ${active ? GOLD : "#E5E5E5"}`, background: active ? "rgba(227,0,0,0.10)" : "#FFFFFF", color: active ? GOLD : T2, fontSize: "11px", cursor: "pointer", fontFamily: "Helvetica, Arial, sans-serif" }}>{f.label}</button>;
+          })}
+        </div>
+        {/* List */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "12px" }}>
+          {loading ? (
+            <div style={{ color: T3, fontSize: "13px", padding: "8px" }}>Loading…</div>
+          ) : shown.length === 0 ? (
+            <div style={{ color: T3, fontSize: "13px", padding: "8px", lineHeight: 1.6 }}>No assets{pillarFilter !== "all" ? " for this pillar" : ""} yet. Upload from the Assets tab.</div>
+          ) : (
+            shown.map(a => (
+              <a key={a.id} href={a.file_url} target="_blank" rel="noreferrer" style={{ display: "flex", gap: "10px", alignItems: "center", padding: "8px", borderRadius: "8px", textDecoration: "none", marginBottom: "4px", transition: "background 0.12s" }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#F5F5F5"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
+                <span style={{ width: "44px", height: "44px", borderRadius: "6px", background: "#F5F5F5", border: "1px solid #E5E5E5", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0 }}>
+                  {a.file_type === "image" ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={a.file_url} alt={a.file_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  ) : <AssetGlyph type={a.file_type} size={18} />}
+                </span>
+                <span style={{ minWidth: 0, flex: 1 }}>
+                  <span style={{ display: "block", fontSize: "12px", color: T, fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.file_name}</span>
+                  {a.notes && <span style={{ display: "block", fontSize: "11px", color: T3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.notes}</span>}
+                </span>
+              </a>
+            ))
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
 function ComposeTab({
   ac, ap, setAp, post, setPost,
   isGen, isSave, isVisual, isRefining, isVisualRefining,
@@ -696,6 +1019,9 @@ function ComposeTab({
 
   return (
     <div className="fade-up" style={{ display: "grid", gridTemplateColumns: "280px 1fr", gap: "20px" }}>
+
+      {/* Collapsible client asset drawer, so relevant files are visible while writing */}
+      <ComposeAssetPanel ac={ac} />
 
       {/* ── Left panel ── */}
       <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
@@ -1632,7 +1958,319 @@ function CalendarTab({ ac, clients, allPosts }: { ac: Company; clients: Company[
 }
 
 // ── Reports Tab ───────────────────────────────────────────────────────────────
-function ReportsTab({ ac }: { ac: Company }) {
+// One metric: a number input plus its raw LinkedIn screenshot. Saved to
+// report_uploads. Value stays empty until a real number is entered.
+type ReportUploadRow = { id: number; client_id: string; period: string; metric_key: string; value: number | null; image_url: string | null };
+
+function MetricEntryCard({ ac, period, metricKey, label, unit, value, onChange, row, onSaved, notify }: {
+  ac: Company; period: string; metricKey: string; label: string; unit: "number" | "percent";
+  value: string; onChange: (v: string) => void;
+  row: ReportUploadRow | undefined; onSaved: (r: ReportUploadRow) => void;
+  notify: (m: string, t?: "default" | "success" | "error") => void;
+}) {
+  const [file, setFile] = useState<File | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const pick = () => {
+    const inp = document.createElement("input");
+    inp.type = "file"; inp.accept = "image/*";
+    inp.onchange = e => { const f = (e.target as HTMLInputElement).files?.[0]; if (f) setFile(f); };
+    inp.click();
+  };
+
+  const save = async () => {
+    if (busy) return;
+    setBusy(true);
+    const fd = new FormData();
+    fd.append("clientId", ac.id);
+    fd.append("period", period);
+    fd.append("metricKey", metricKey);
+    fd.append("value", value);
+    if (file) fd.append("file", file);
+    try {
+      const r = await fetch("/api/reports/upload", { method: "POST", body: fd });
+      const d = await r.json();
+      if (!r.ok) { notify(d.error || "Save failed", "error"); setBusy(false); return; }
+      notify(`${label} saved`, "success");
+      setFile(null);
+      onSaved(d.upload);
+    } catch {
+      notify("Save failed", "error");
+    }
+    setBusy(false);
+  };
+
+  return (
+    <div style={glass({ padding: "16px 18px", display: "flex", flexDirection: "column", gap: "10px" })}>
+      <div className="label">{label}</div>
+      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+        <input type="number" value={value} onChange={e => onChange(e.target.value)} placeholder="Enter value"
+          style={{ ...INPUT, padding: "9px 12px", fontSize: "14px" }} />
+        {unit === "percent" && <span style={{ color: T3, fontSize: "13px" }}>%</span>}
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+        {row?.image_url && (
+          <a href={row.image_url} target="_blank" rel="noreferrer" style={{ display: "block", width: "44px", height: "44px", borderRadius: "6px", overflow: "hidden", border: "1px solid #E5E5E5", flexShrink: 0 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={row.image_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          </a>
+        )}
+        <button onClick={pick} style={{ fontSize: "12px", color: T2, background: "#F5F5F5", border: "1px solid #E5E5E5", borderRadius: "6px", padding: "7px 11px", cursor: "pointer", fontFamily: "inherit" }}>
+          {file ? "Change screenshot" : row?.image_url ? "Replace screenshot" : "Upload screenshot"}
+        </button>
+      </div>
+      {file && <div style={{ fontSize: "11px", color: T3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{file.name}</div>}
+      <button onClick={save} disabled={busy} style={{ alignSelf: "flex-start", fontSize: "12px", color: "#FFFFFF", background: GOLD, border: "none", borderRadius: "6px", padding: "8px 16px", cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1, fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+        {busy ? <Spinner /> : null}Save
+      </button>
+    </div>
+  );
+}
+
+// Colors for the over-time chart factor lines.
+const FACTOR_COLORS = ["#E30000", "#0A0A0A", "#666666", "#B00000", "#999999", "#333333", "#CC4422", "#7A7A7A", "#B85C00", "#555555", "#990000"];
+
+// Big month-over-month chart. Click factors to toggle their lines.
+function MetricsTrendChart({ clientId, tier }: { clientId: string; tier: string | null }) {
+  const factors = [...LINKEDIN_METRICS, ...SIGNAL_METRICS.filter(m => tierIncludesSignal(tier, m.key))];
+  const [history, setHistory] = useState<ReportUploadRow[]>([]);
+  const [mounted, setMounted] = useState(false);
+  const [active, setActive] = useState<string[]>(["impressions", "engagement_rate"]);
+  const [gran, setGran] = useState<Granularity>("monthly");
+  const [year, setYear] = useState<string>("all");
+
+  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    fetch(`/api/reports/upload?clientId=${clientId}`)
+      .then(r => (r.ok ? r.json() : { uploads: [] }))
+      .then(d => setHistory(d.uploads || []))
+      .catch(() => {});
+  }, [clientId]);
+
+  const years = yearsIn(history);
+  const data = buildSeries(history, gran, year);
+  const labelFor = (k: string) => factors.find(f => f.key === k)?.label ?? k;
+  const colorFor = (k: string) => FACTOR_COLORS[Math.max(0, factors.findIndex(f => f.key === k)) % FACTOR_COLORS.length];
+  const toggle = (k: string) => setActive(a => a.includes(k) ? a.filter(x => x !== k) : [...a, k]);
+
+  if (history.length === 0) return null;
+
+  const pill = (onSel: boolean) => ({ padding: "5px 12px", borderRadius: "999px", border: `1px solid ${onSel ? "#E30000" : "#E5E5E5"}`, background: onSel ? "rgba(227,0,0,0.10)" : "#FFFFFF", color: onSel ? "#E30000" : T2, fontSize: "12px", cursor: "pointer", fontFamily: "inherit" } as React.CSSProperties);
+
+  return (
+    <div style={glass({ padding: "24px" })}>
+      <div className="label" style={{ marginBottom: "4px", color: "#E30000" }}>( Over Time )</div>
+      <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "18px", fontWeight: 300, color: T, marginBottom: "14px" }}>Click a factor to see how it moves over time.</div>
+
+      {/* View: monthly / quarterly / yearly, and year filter */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "16px", marginBottom: "12px" }}>
+        <div style={{ display: "flex", gap: "6px" }}>
+          {(["monthly", "quarterly", "yearly"] as Granularity[]).map(g => (
+            <button key={g} onClick={() => setGran(g)} style={{ ...pill(gran === g), textTransform: "capitalize" }}>{g}</button>
+          ))}
+        </div>
+        {years.length > 1 && (
+          <div style={{ display: "flex", gap: "6px" }}>
+            <button onClick={() => setYear("all")} style={pill(year === "all")}>All years</button>
+            {years.map(y => <button key={y} onClick={() => setYear(y)} style={pill(year === y)}>{y}</button>)}
+          </div>
+        )}
+      </div>
+
+      {/* Factor toggles */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "16px" }}>
+        {factors.map(f => {
+          const on = active.includes(f.key);
+          return (
+            <button key={f.key} onClick={() => toggle(f.key)} style={{ padding: "6px 12px", borderRadius: "999px", border: `1px solid ${on ? colorFor(f.key) : "#E5E5E5"}`, background: on ? colorFor(f.key) : "#FFFFFF", color: on ? "#FFFFFF" : T2, fontSize: "12px", cursor: "pointer", fontFamily: "inherit" }}>
+              {f.label}
+            </button>
+          );
+        })}
+      </div>
+      {mounted && (
+        <ResponsiveContainer width="100%" height={320}>
+          <LineChart data={data}>
+            <CartesianGrid stroke="#E5E5E5" vertical={false} />
+            <XAxis dataKey="period" interval={0} tick={{ fill: "#999999", fontSize: 10 }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fill: "#999999", fontSize: 11 }} axisLine={false} tickLine={false} />
+            <Tooltip />
+            <Legend iconType="circle" iconSize={7} wrapperStyle={{ fontSize: "11px" }} />
+            {active.map(k => (
+              <Line key={k} type="monotone" dataKey={k} name={labelFor(k)} stroke={colorFor(k)} strokeWidth={2} dot={{ r: 3, fill: colorFor(k) }} connectNulls />
+            ))}
+          </LineChart>
+        </ResponsiveContainer>
+      )}
+      {active.length === 0 && <div style={{ fontSize: "12px", color: T3, textAlign: "center", padding: "12px" }}>Pick a factor above to plot it.</div>}
+    </div>
+  );
+}
+
+// The metric-entry layer: auto-fill from a screenshot or enter by hand, a live
+// summary chart (exportable) above, LinkedIn performance + tier-gated Linkwright
+// Signal cards, and the big over-time chart below.
+function ReportMetricsSection({ ac, period, notify }: {
+  ac: Company; period: string;
+  notify: (m: string, t?: "default" | "success" | "error") => void;
+}) {
+  const acTier = (ac as Company & { tier?: string | null }).tier ?? null;
+  const [rows, setRows] = useState<Record<string, ReportUploadRow>>({});
+  const [values, setValues] = useState<Record<string, string>>({});
+  const [extracting, setExtracting] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const summaryRef = useRef<HTMLDivElement>(null);
+  useEffect(() => { setMounted(true); }, []);
+
+  const load = useCallback(() => {
+    fetch(`/api/reports/upload?clientId=${ac.id}&period=${period}`)
+      .then(r => (r.ok ? r.json() : { uploads: [] }))
+      .then(d => {
+        const map: Record<string, ReportUploadRow> = {};
+        const vals: Record<string, string> = {};
+        (d.uploads || []).forEach((u: ReportUploadRow) => { map[u.metric_key] = u; if (u.value != null) vals[u.metric_key] = String(u.value); });
+        setRows(map); setValues(vals);
+      })
+      .catch(() => {});
+  }, [ac.id, period]);
+  useEffect(() => { load(); }, [load]);
+
+  const setValue = (k: string, v: string) => setValues(prev => ({ ...prev, [k]: v }));
+  const onSaved = (u: ReportUploadRow) => setRows(prev => ({ ...prev, [u.metric_key]: u }));
+
+  // Screenshot to auto-fill: extract numbers, populate inputs, leave saving to you.
+  const autoFill = () => {
+    const inp = document.createElement("input");
+    inp.type = "file"; inp.accept = "image/*";
+    inp.onchange = async e => {
+      const f = (e.target as HTMLInputElement).files?.[0];
+      if (!f) return;
+      setExtracting(true);
+      try {
+        const fd = new FormData(); fd.append("file", f);
+        const r = await fetch("/api/reports/extract", { method: "POST", body: fd });
+        const d = await r.json();
+        if (!r.ok) { notify(d.error || "Could not read the screenshot", "error"); setExtracting(false); return; }
+        const vals = (d.values || {}) as Record<string, number | null>;
+        let n = 0;
+        setValues(prev => {
+          const next = { ...prev };
+          Object.entries(vals).forEach(([k, v]) => { if (v != null) { next[k] = String(v); n++; } });
+          return next;
+        });
+        notify(n > 0 ? `Filled ${n} metric${n > 1 ? "s" : ""} from the screenshot. Review and save.` : "No numbers found. Enter them manually.", n > 0 ? "success" : "error");
+      } catch {
+        notify("Could not read the screenshot", "error");
+      }
+      setExtracting(false);
+    };
+    inp.click();
+  };
+
+  const summaryData = LINKEDIN_METRICS
+    .filter(m => m.unit === "number" && values[m.key] != null && values[m.key] !== "" && !Number.isNaN(Number(values[m.key])))
+    .map(m => ({ label: m.label, value: Number(values[m.key]) }));
+  const engagementVal = values["engagement_rate"];
+
+  // Export the real summary chart as an accurate PNG (never a fabricated image).
+  const exportPng = () => {
+    const svg = summaryRef.current?.querySelector("svg");
+    if (!svg) { notify("Nothing to export yet", "error"); return; }
+    const rect = svg.getBoundingClientRect();
+    const xml = new XMLSerializer().serializeToString(svg);
+    const svg64 = btoa(unescape(encodeURIComponent(xml)));
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = rect.width * 2; canvas.height = rect.height * 2;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.scale(2, 2);
+      ctx.drawImage(img, 0, 0, rect.width, rect.height);
+      const a = document.createElement("a");
+      a.href = canvas.toDataURL("image/png");
+      a.download = `${ac.id}-${period}-summary.png`;
+      a.click();
+    };
+    img.src = `data:image/svg+xml;base64,${svg64}`;
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+      {/* Auto-fill from screenshot */}
+      <div style={glass({ padding: "16px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", flexWrap: "wrap" })}>
+        <div style={{ fontSize: "13px", color: T2 }}>Upload a LinkedIn analytics screenshot to fill the numbers automatically, or enter them by hand below.</div>
+        <button onClick={autoFill} disabled={extracting} style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "9px 16px", background: GOLD, border: `1px solid ${GOLD}`, borderRadius: "8px", color: "#FFFFFF", fontSize: "13px", fontWeight: 500, cursor: extracting ? "default" : "pointer", opacity: extracting ? 0.6 : 1, fontFamily: "inherit", whiteSpace: "nowrap" }}>
+          {extracting ? <><Spinner /> Reading…</> : "Auto-fill from screenshot"}
+        </button>
+      </div>
+
+      {/* Live summary chart + export */}
+      {summaryData.length > 0 && (
+        <div style={glass({ padding: "20px 24px" })}>
+          <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: "8px", gap: "12px", flexWrap: "wrap" }}>
+            <div>
+              <div className="label" style={{ marginBottom: "4px", color: "#E30000" }}>( This Period )</div>
+              <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "18px", fontWeight: 300, color: T }}>At a glance{engagementVal ? ` · ${engagementVal}% engagement` : ""}</div>
+            </div>
+            <button onClick={exportPng} style={{ fontSize: "12px", color: T2, background: "#F5F5F5", border: "1px solid #E5E5E5", borderRadius: "6px", padding: "7px 13px", cursor: "pointer", fontFamily: "inherit" }}>Export image</button>
+          </div>
+          <div ref={summaryRef}>
+            {mounted && (
+              <ResponsiveContainer width="100%" height={240}>
+                <BarChart data={summaryData} layout="vertical" margin={{ left: 20, right: 40 }}>
+                  <CartesianGrid stroke="#E5E5E5" horizontal={false} />
+                  <XAxis type="number" tick={{ fill: "#999999", fontSize: 10 }} axisLine={false} tickLine={false} />
+                  <YAxis type="category" dataKey="label" width={110} tick={{ fill: "#666666", fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <Tooltip formatter={(v: unknown) => [Number(v).toLocaleString(), ""]} />
+                  <Bar dataKey="value" fill={GOLD} fillOpacity={0.85} radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* LinkedIn performance cards */}
+      <div>
+        <div className="label" style={{ marginBottom: "4px", color: "#E30000" }}>( LinkedIn Performance )</div>
+        <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "18px", fontWeight: 300, color: T, marginBottom: "12px" }}>Enter each number and upload its LinkedIn screenshot.</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))", gap: "12px" }}>
+          {LINKEDIN_METRICS.map(m => (
+            <MetricEntryCard key={m.key} ac={ac} period={period} metricKey={m.key} label={m.label} unit={m.unit} value={values[m.key] ?? ""} onChange={v => setValue(m.key, v)} row={rows[m.key]} onSaved={onSaved} notify={notify} />
+          ))}
+        </div>
+      </div>
+
+      {/* Linkwright Signal cards */}
+      <div>
+        <div className="label" style={{ marginBottom: "4px", color: "#E30000" }}>( Linkwright Signal )</div>
+        <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "18px", fontWeight: 300, color: T, marginBottom: "12px" }}>Proprietary metrics, included by plan. Enter these by hand.</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))", gap: "12px" }}>
+          {SIGNAL_METRICS.map(m => {
+            if (!tierIncludesSignal(acTier, m.key)) {
+              return (
+                <div key={m.key} style={glass({ padding: "16px 18px", display: "flex", flexDirection: "column", gap: "8px", background: "#FAFAFA" })}>
+                  <div className="label">{m.label}</div>
+                  <div style={{ fontSize: "12px", color: T3, lineHeight: 1.5 }}>Not part of this client&apos;s plan ({tierName(acTier)}).</div>
+                </div>
+              );
+            }
+            return (
+              <MetricEntryCard key={m.key} ac={ac} period={period} metricKey={m.key} label={m.label} unit={m.unit} value={values[m.key] ?? ""} onChange={v => setValue(m.key, v)} row={rows[m.key]} onSaved={onSaved} notify={notify} />
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Big over-time chart */}
+      <MetricsTrendChart clientId={ac.id} tier={acTier} />
+    </div>
+  );
+}
+
+function ReportsTab({ ac, notify }: { ac: Company; notify: (m: string, t?: "default" | "success" | "error") => void }) {
   const [mounted, setMounted] = useState(false);
   const [reports, setReports] = useState<Report[]>([]);
   const [loadingReports, setLoadingReports] = useState(true);
@@ -1644,7 +2282,8 @@ function ReportsTab({ ac }: { ac: Company }) {
   const [uploadType, setUploadType] = useState<"monthly" | "weekly">("monthly");
   const [uploadStart, setUploadStart] = useState("");
   const [uploadEnd, setUploadEnd] = useState("");
-  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [uploadFiles, setUploadFiles] = useState<File[]>([]);
+  const [uploadError, setUploadError] = useState("");
   const [dragging, setDragging] = useState(false);
   // Report interaction
   const [narrativeTab, setNarrativeTab] = useState<"agency" | "client">("agency");
@@ -1702,22 +2341,30 @@ function ReportsTab({ ac }: { ac: Company }) {
     setLoadingReports(false);
   };
 
+  // Accept PDFs and image screenshots (LinkedIn analytics often come as images).
+  const isReportFile = (f: File) =>
+    f.type === "application/pdf" || f.type.startsWith("image/") || /\.(pdf|jpe?g|png|webp|gif)$/i.test(f.name);
+
   const handleUpload = async () => {
-    if (!pdfFile || !uploadStart || !uploadEnd) return;
+    if (uploadFiles.length === 0 || !uploadStart || !uploadEnd) return;
     setUploading(true);
+    setUploadError("");
     const fd = new FormData();
-    fd.append("file", pdfFile);
+    // All selected files are merged into one report for the chosen period.
+    uploadFiles.forEach(f => fd.append("files", f));
     fd.append("clientId", ac.id);
     fd.append("type", uploadType);
     fd.append("periodStart", uploadStart);
     fd.append("periodEnd", uploadEnd);
     const res = await fetch("/api/reports/upload-pdf", { method: "POST", body: fd });
-    const data = await res.json();
-    if (data.report) {
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.report) {
       await fetchReports();
       setSelectedId(data.report.id);
       setUploadOpen(false);
-      setPdfFile(null);
+      setUploadFiles([]);
+    } else {
+      setUploadError(data.error || "Upload failed. Please try again.");
     }
     setUploading(false);
   };
@@ -1812,6 +2459,29 @@ function ReportsTab({ ac }: { ac: Company }) {
     ?.filter(p => p.date && p.impressions != null)
     .map(p => ({ date: p.date!.slice(5), impressions: p.impressions! })) ?? [];
 
+  // Per-post engagement over time, sorted by date, for the in-report trend line.
+  const engagementLine = (extracted?.posts
+    ?.filter(p => p.date && p.engagementRate != null)
+    .slice()
+    .sort((a, b) => (a.date! < b.date! ? -1 : 1))
+    .map(p => ({ date: p.date!.slice(5), engagement: p.engagementRate! }))) ?? [];
+
+  // Cadence-aware chart selection. With enough posts a daily trend line is
+  // meaningful; with only a few, a radial comparison avoids implying a trend
+  // that is not there. Post count for the period comes from the report's posts.
+  const periodPostCount = extracted?.posts?.length ?? 0;
+  const cadenceIsTrend = periodPostCount >= 8;
+  const engagementRadial = (extracted?.posts ?? [])
+    .filter(p => p.engagementRate != null)
+    .map((p, i) => ({
+      name: (p.content || p.type || `Post ${i + 1}`).slice(0, 30),
+      engagement: p.engagementRate!,
+      fill: i % 2 === 0 ? "#E30000" : "#0A0A0A",
+    }));
+  const engagementMean = engagementLine.length
+    ? engagementLine.reduce((s, d) => s + d.engagement, 0) / engagementLine.length
+    : 0;
+
   const postTypeBar = (() => {
     if (!extracted?.posts) return [];
     const c: Record<string, number> = {};
@@ -1831,7 +2501,7 @@ function ReportsTab({ ac }: { ac: Company }) {
       followerCount: d.followerCount ?? 0,
     };
   });
-  const showTrends = trendData.length >= 3;
+  const showTrends = trendData.length >= 2;
 
   const chartGrid = "#E5E5E5";
   const chartText = "#999999";
@@ -1884,39 +2554,47 @@ function ReportsTab({ ac }: { ac: Company }) {
             </div>
           </div>
 
-          {/* PDF drop zone */}
+          {/* File drop zone — multiple PDFs and/or image screenshots */}
           <div>
-            <div className="label" style={{ marginBottom: "8px" }}>LinkedIn analytics PDF</div>
+            <div className="label" style={{ marginBottom: "8px" }}>LinkedIn analytics files</div>
             <div
               onDragOver={e => { e.preventDefault(); setDragging(true); }}
               onDragLeave={() => setDragging(false)}
-              onDrop={e => { e.preventDefault(); setDragging(false); const f = e.dataTransfer.files[0]; if (f?.type === "application/pdf") setPdfFile(f); }}
-              onClick={() => { const inp = document.createElement("input"); inp.type = "file"; inp.accept = ".pdf"; inp.onchange = (e) => { const f = (e.target as HTMLInputElement).files?.[0]; if (f) setPdfFile(f); }; inp.click(); }}
-              style={{ border: `2px dashed ${dragging ? GOLD : "#E5E5E5"}`, borderRadius: "12px", padding: "32px", textAlign: "center", cursor: "pointer", background: dragging ? `${GOLD}08` : "#F5F5F5", transition: "all 0.15s ease" }}
+              onDrop={e => { e.preventDefault(); setDragging(false); const dropped = Array.from(e.dataTransfer.files).filter(isReportFile); if (dropped.length) setUploadFiles(prev => [...prev, ...dropped]); }}
+              onClick={() => { const inp = document.createElement("input"); inp.type = "file"; inp.multiple = true; inp.accept = ".pdf,image/*"; inp.onchange = (e) => { const picked = Array.from((e.target as HTMLInputElement).files ?? []).filter(isReportFile); if (picked.length) setUploadFiles(prev => [...prev, ...picked]); }; inp.click(); }}
+              style={{ border: `2px dashed ${dragging ? GOLD : "#E5E5E5"}`, borderRadius: "12px", padding: "28px", textAlign: "center", cursor: "pointer", background: dragging ? `${GOLD}08` : "#F5F5F5", transition: "all 0.15s ease" }}
             >
-              {pdfFile ? (
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="1" width="12" height="14" rx="2" stroke="#E30000" strokeWidth="1.5"/><path d="M5 5h6M5 8h6M5 11h4" stroke="#E30000" strokeWidth="1.3" strokeLinecap="round"/></svg>
-                  <span style={{ fontSize: "13px", color: "#E30000", fontWeight: 500 }}>{pdfFile.name}</span>
-                  <button onClick={e => { e.stopPropagation(); setPdfFile(null); }} style={{ background: "none", border: "none", cursor: "pointer", color: T3, fontSize: "16px", lineHeight: 1 }}>×</button>
-                </div>
-              ) : (
-                <div>
-                  <svg width="32" height="32" viewBox="0 0 32 32" fill="none" style={{ marginBottom: "8px", opacity: 0.3 }}><path d="M8 20v4a2 2 0 002 2h12a2 2 0 002-2v-4M16 6v14M10 12l6-6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                  <div style={{ fontSize: "13px", color: T2 }}>Drop PDF here or click to browse</div>
-                  <div style={{ fontSize: "11px", color: T3, marginTop: "4px" }}>LinkedIn analytics export, PDF format</div>
-                </div>
-              )}
+              <svg width="30" height="30" viewBox="0 0 32 32" fill="none" style={{ marginBottom: "8px", opacity: 0.3 }}><path d="M8 20v4a2 2 0 002 2h12a2 2 0 002-2v-4M16 6v14M10 12l6-6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              <div style={{ fontSize: "13px", color: T2 }}>Drop files here or click to browse</div>
+              <div style={{ fontSize: "11px", color: T3, marginTop: "4px" }}>PDF or image (JPEG, PNG). Add several at once, they merge into one report.</div>
             </div>
+
+            {/* Selected files */}
+            {uploadFiles.length > 0 && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "12px" }}>
+                {uploadFiles.map((f, i) => (
+                  <div key={`${f.name}-${i}`} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "8px 12px", background: "#F5F5F5", border: "1px solid #E5E5E5", borderRadius: "8px" }}>
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="2" y="1" width="12" height="14" rx="2" stroke="#E30000" strokeWidth="1.5"/><path d="M5 5h6M5 8h6M5 11h4" stroke="#E30000" strokeWidth="1.3" strokeLinecap="round"/></svg>
+                    <span style={{ fontSize: "13px", color: T, fontWeight: 500, flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{f.name}</span>
+                    <span style={{ fontSize: "11px", color: T3 }}>{assetSizeLabel(f.size)}</span>
+                    <button onClick={() => setUploadFiles(prev => prev.filter((_, idx) => idx !== i))} style={{ background: "none", border: "none", cursor: "pointer", color: T3, fontSize: "16px", lineHeight: 1 }}>×</button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
+
+          {uploadError && (
+            <div style={{ fontSize: "13px", color: "#E30000", background: "rgba(227,0,0,0.08)", border: "1px solid rgba(227,0,0,0.25)", borderRadius: "8px", padding: "10px 14px" }}>{uploadError}</div>
+          )}
 
           <GlassBtn
             variant="primary"
-            disabled={!pdfFile || !uploadStart || !uploadEnd || uploading}
+            disabled={uploadFiles.length === 0 || !uploadStart || !uploadEnd || uploading}
             onClick={handleUpload}
-            style={{ alignSelf: "flex-start", gap: "8px", opacity: (!pdfFile || !uploadStart || !uploadEnd) ? 0.5 : 1 }}
+            style={{ alignSelf: "flex-start", gap: "8px", opacity: (uploadFiles.length === 0 || !uploadStart || !uploadEnd) ? 0.5 : 1 }}
           >
-            {uploading ? <><Spinner /> Analysing…</> : "Upload & Analyse"}
+            {uploading ? <><Spinner /> Analysing…</> : `Upload & Analyse${uploadFiles.length > 1 ? ` (${uploadFiles.length} files)` : ""}`}
           </GlassBtn>
         </div>
       </div>
@@ -2123,8 +2801,49 @@ function ReportsTab({ ac }: { ac: Company }) {
                 )}
 
                 {/* Charts */}
-                {extracted && (impressionsLine.length > 0 || engagementPie.length > 0) && (
+                {extracted && (impressionsLine.length > 0 || engagementLine.length > 0 || engagementRadial.length > 0 || engagementPie.length > 0) && (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                    {/* Cadence-aware engagement chart: trend line (with spike-day
+                        markers) when there are enough posts, otherwise a radial
+                        comparison so a sparse period does not imply a trend. */}
+                    {(engagementLine.length > 0 || engagementRadial.length > 0) && (
+                      <div style={glass({ padding: "20px 24px" })}>
+                        <div className="label" style={{ marginBottom: "6px" }}>Engagement Over Time</div>
+                        <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "16px", fontWeight: 300, fontStyle: "normal", color: T, marginBottom: "14px" }}>
+                          {cadenceIsTrend ? "Engagement rate per post" : `Engagement by post (${periodPostCount} this period)`}
+                        </div>
+                        {mounted && cadenceIsTrend && (
+                          <ResponsiveContainer width="100%" height={170}>
+                            <AreaChart data={engagementLine}>
+                              <defs><linearGradient id="gEngPost" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#E30000" stopOpacity={0.3}/><stop offset="100%" stopColor="#E30000" stopOpacity={0}/></linearGradient></defs>
+                              <CartesianGrid stroke={chartGrid} vertical={false} />
+                              <XAxis dataKey="date" tick={{ fill: chartText, fontSize: 10 }} axisLine={false} tickLine={false} />
+                              <YAxis tick={{ fill: chartText, fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => `${v}%`} />
+                              <Tooltip formatter={(v: unknown) => [`${Number(v).toFixed(1)}%`, "Engagement"]} />
+                              <Area type="monotone" dataKey="engagement" stroke="#E30000" fill="url(#gEngPost)" strokeWidth={1.5}
+                                dot={(props: { cx?: number; cy?: number; value?: number; index?: number }) => {
+                                  const spike = (props.value ?? 0) >= engagementMean * 1.15 && engagementMean > 0;
+                                  return <circle key={props.index} cx={props.cx} cy={props.cy} r={spike ? 4.5 : 2} fill="#E30000" stroke={spike ? "#FFFFFF" : "none"} strokeWidth={spike ? 1.5 : 0} />;
+                                }}
+                              />
+                            </AreaChart>
+                          </ResponsiveContainer>
+                        )}
+                        {mounted && !cadenceIsTrend && (
+                          <ResponsiveContainer width="100%" height={200}>
+                            <RadialBarChart data={engagementRadial} innerRadius="28%" outerRadius="100%" startAngle={90} endAngle={-270}>
+                              <PolarAngleAxis type="number" domain={[0, Math.max(1, ...engagementRadial.map(d => d.engagement))]} tick={false} />
+                              <RadialBar dataKey="engagement" cornerRadius={4} background={{ fill: "#F0F0F0" }}>
+                                {engagementRadial.map((d, i) => <Cell key={i} fill={d.fill} />)}
+                              </RadialBar>
+                              <Legend iconType="circle" iconSize={6} layout="vertical" verticalAlign="middle" align="right" wrapperStyle={{ fontSize: "10px", maxWidth: "45%" }} />
+                              <Tooltip formatter={(v: unknown) => [`${Number(v).toFixed(1)}%`, "Engagement"]} />
+                            </RadialBarChart>
+                          </ResponsiveContainer>
+                        )}
+                      </div>
+                    )}
+
                     {/* Impressions line */}
                     {impressionsLine.length > 0 && (
                       <div style={glass({ padding: "20px 24px" })}>
@@ -2202,6 +2921,12 @@ function ReportsTab({ ac }: { ac: Company }) {
                       </div>
                     )}
                   </div>
+                )}
+
+                {/* Metric entry layer: LinkedIn performance + tier-gated Signal,
+                    with raw screenshots as the source of truth for each number. */}
+                {selectedReport && (
+                  <ReportMetricsSection ac={ac} period={selectedReport.period_start.slice(0, 7)} notify={notify} />
                 )}
 
                 {/* Posts table */}
@@ -2421,11 +3146,113 @@ function LogoUploadPanel({ logo, currentLogoSrc, onFile, onToggleInvert }: {
   );
 }
 
+// Company intake: name, plain description, service tier (with a read-only
+// inclusions summary from the shared TIERS constant), and a contact email for
+// the client login. Divs with onClick, no HTML form elements.
+function RegisterCompanyModal({ onClose, onDone, notify }: {
+  onClose: () => void; onDone: () => void;
+  notify: (m: string, t?: "default" | "success" | "error") => void;
+}) {
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [tier, setTier] = useState<Tier | "">("");
+  const [email, setEmail] = useState("");
+  const [busy, setBusy] = useState(false);
+  const selected = TIERS.find(t => t.key === tier) || null;
+
+  const submit = async () => {
+    if (busy) return;
+    if (!name.trim()) { notify("Company name is required", "error"); return; }
+    if (!tier) { notify("Choose a service tier", "error"); return; }
+    if (!email.trim()) { notify("A contact email is required", "error"); return; }
+    setBusy(true);
+    try {
+      const r = await fetch("/api/register-company", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name.trim(), description: description.trim(), tier, email: email.trim() }),
+      });
+      const d = await r.json();
+      if (!r.ok) { notify(d.error || "Could not register company", "error"); setBusy(false); return; }
+      notify(
+        d.emailSent === false ? `Company registered. Welcome email failed: ${d.emailError || ""}` : "Company registered. Owner invite sent.",
+        d.emailSent === false ? "error" : "success"
+      );
+      onDone();
+      onClose();
+    } catch {
+      notify("Could not register company", "error");
+    }
+    setBusy(false);
+  };
+
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(10,10,10,0.45)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "48px 24px", overflowY: "auto" }}>
+      <div onClick={e => e.stopPropagation()} style={glass({ padding: "28px", width: "100%", maxWidth: "520px", boxShadow: "0 10px 40px rgba(0,0,0,0.18)" })}>
+        <div className="label" style={{ marginBottom: "4px" }}>Intake</div>
+        <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "24px", fontWeight: 300, color: T, marginBottom: "20px" }}>Register a Company</div>
+
+        <div style={{ marginBottom: "16px" }}>
+          <div className="label" style={{ marginBottom: "6px" }}>Company name</div>
+          <input value={name} onChange={e => setName(e.target.value)} placeholder="Company name" style={INPUT} />
+        </div>
+
+        <div style={{ marginBottom: "16px" }}>
+          <div className="label" style={{ marginBottom: "6px" }}>What it is</div>
+          <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} placeholder="A plain description of the business, one or two sentences." style={{ ...INPUT, resize: "none", lineHeight: 1.6 }} />
+        </div>
+
+        <div style={{ marginBottom: "16px" }}>
+          <div className="label" style={{ marginBottom: "8px" }}>Service tier</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+            {TIERS.map(t => {
+              const active = tier === t.key;
+              return (
+                <button key={t.key} onClick={() => setTier(t.key)} style={{ textAlign: "left", padding: "12px 14px", borderRadius: "8px", border: `1px solid ${active ? GOLD : "#E5E5E5"}`, background: active ? "rgba(227,0,0,0.08)" : "#FFFFFF", cursor: "pointer", fontFamily: "inherit" }}>
+                  <div style={{ fontSize: "14px", fontWeight: 500, color: active ? GOLD : T }}>{t.name}</div>
+                  <div style={{ fontSize: "12px", color: T3, marginTop: "2px" }}>${t.price.toLocaleString()}/mo</div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Read-only inclusions summary from the shared constant */}
+        {selected && (
+          <div style={{ marginBottom: "20px", padding: "16px", background: "#F5F5F5", border: "1px solid #E5E5E5", borderRadius: "8px" }}>
+            <div style={{ fontSize: "11px", letterSpacing: "0.15em", textTransform: "uppercase", color: GOLD, marginBottom: "10px" }}>Included at {selected.name}</div>
+            {selected.inclusions.map(line => (
+              <div key={line} style={{ display: "flex", gap: "8px", alignItems: "flex-start", fontSize: "13px", color: T2, marginBottom: "6px" }}>
+                <span style={{ color: GOLD }}>✓</span>{line}
+              </div>
+            ))}
+            {selected.signals.length === 0 && (
+              <div style={{ fontSize: "12px", color: T3, marginTop: "4px" }}>No Linkwright Signal metrics at this tier.</div>
+            )}
+          </div>
+        )}
+
+        <div style={{ marginBottom: "24px" }}>
+          <div className="label" style={{ marginBottom: "6px" }}>Contact email for the client login</div>
+          <input value={email} onChange={e => setEmail(e.target.value)} placeholder="owner@company.com" style={INPUT} />
+        </div>
+
+        <div style={{ display: "flex", gap: "10px" }}>
+          <GlassBtn variant="primary" disabled={busy} onClick={submit} style={{ gap: "8px" }}>
+            {busy ? <><Spinner /> Registering…</> : "Register company"}
+          </GlassBtn>
+          <button onClick={onClose} style={{ padding: "8px 18px", background: "#FFFFFF", border: "1px solid #E5E5E5", borderRadius: "999px", fontSize: "13px", color: T2, cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ClientsTab({ clients, notify, onClientAdded }: {
   clients: Company[];
   notify: (m: string, t?: "default" | "success" | "error") => void;
   onClientAdded: () => void;
 }) {
+  const [showRegister, setShowRegister] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Company | null>(null);
   const [editForm, setEditForm] = useState<Record<string, unknown> | null>(null);
@@ -2667,10 +3494,19 @@ function ClientsTab({ clients, notify, onClientAdded }: {
           <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "32px", fontWeight: 300, fontStyle: "normal", color: T, lineHeight: 1 }}>Clients</div>
           <div style={{ fontSize: "11px", color: T3, marginTop: "4px" }}>{clients.length} active clients</div>
         </div>
-        <GlassBtn variant="primary" onClick={() => { setShowForm(s => !s); setSelectedClient(null); setEditForm(null); }}>
-          {showForm ? "Cancel" : "+ Add New Client"}
-        </GlassBtn>
+        <div style={{ display: "flex", gap: "8px" }}>
+          <GlassBtn variant="primary" onClick={() => setShowRegister(true)}>
+            + Register Company
+          </GlassBtn>
+          <GlassBtn variant="ghost" onClick={() => { setShowForm(s => !s); setSelectedClient(null); setEditForm(null); }}>
+            {showForm ? "Cancel" : "Add by hand"}
+          </GlassBtn>
+        </div>
       </div>
+
+      {showRegister && (
+        <RegisterCompanyModal onClose={() => setShowRegister(false)} onDone={onClientAdded} notify={notify} />
+      )}
 
       {/* Client cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "14px" }}>
@@ -2708,6 +3544,25 @@ function ClientsTab({ clients, notify, onClientAdded }: {
             </div>
             <div style={{ fontSize: "13px", color: "#666666", marginBottom: "12px", fontFamily: "Helvetica, Arial, sans-serif" }}>{c.tagline}</div>
             <div style={{ fontSize: "11px", color: "#999999", marginBottom: "12px", letterSpacing: "0.08em", textTransform: "uppercase" as const, fontFamily: "Helvetica, Arial, sans-serif" }}>{c.timezone}</div>
+
+            {/* Service tier — changing it unlocks/locks Signal reporting for this client */}
+            <div onClick={e => e.stopPropagation()} style={{ marginBottom: "12px" }}>
+              <div style={{ fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase" as const, color: T3, marginBottom: "4px", fontFamily: "Helvetica, Arial, sans-serif" }}>Payment tier</div>
+              <select
+                value={(c as Company & { tier?: string | null }).tier ?? ""}
+                onChange={async e => {
+                  const tier = e.target.value;
+                  const r = await fetch("/api/set-tier", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ clientId: c.id, tier }) });
+                  if (r.ok) { notify(`${c.name} moved to ${tierName(tier)}`, "success"); onClientAdded(); }
+                  else { const d = await r.json().catch(() => ({})); notify(d.error || "Could not update tier", "error"); }
+                }}
+                style={{ ...INPUT, padding: "7px 10px", fontSize: "12px" }}
+              >
+                <option value="" disabled>Select tier</option>
+                {TIERS.map(t => <option key={t.key} value={t.key}>{t.name} · ${t.price.toLocaleString()}/mo</option>)}
+              </select>
+            </div>
+
             <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
               {(Array.isArray(c.pillars) ? c.pillars : []).slice(0, 4).map((p: Record<string, unknown>, i: number) => (
                 <span key={i} style={{ fontSize: "9px", padding: "2px 8px", background: "#F5F5F5", border: "1px solid #E5E5E5", color: T3, borderRadius: "4px", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>
@@ -4613,6 +5468,7 @@ if (loadingClients || !ac || !ap) {
     { id: "overview",  label: "Overview"  },
     { id: "compose",   label: "Compose"   },
     { id: "library",   label: "Library", badge: changeRequestCount },
+    { id: "assets",    label: "Assets"    },
     { id: "calendar",  label: "Calendar"  },
     { id: "reports",   label: "Reports"   },
     { id: "invoices",  label: "Invoices"  },
@@ -4885,8 +5741,9 @@ if (loadingClients || !ac || !ap) {
             fetchPosts={() => { fetchPosts(); fetchAllPosts(); }} notify={notify} copy={copy}
           />
         )}
+        {tab === "assets"    && <AssetsTab    ac={ac} clients={clients} onSwitch={switchCompany} />}
         {tab === "calendar"  && <CalendarTab  ac={ac} clients={clients} allPosts={allPosts} />}
-        {tab === "reports"   && <ReportsTab   ac={ac} />}
+        {tab === "reports"   && <ReportsTab   ac={ac} notify={notify} />}
         {tab === "invoices"  && <InvoicesTab  ac={ac} notify={notify} />}
         {tab === "clients" && <ClientsTab clients={clients} notify={notify} onClientAdded={() => {
   fetch("/api/clients")

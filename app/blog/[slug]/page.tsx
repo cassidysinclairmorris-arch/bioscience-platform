@@ -44,7 +44,7 @@ export default async function BlogPostPage({
     <main style={{ background: WHITE, fontFamily: FONT, overflowX: "hidden" }}>
       <Nav />
 
-      <article style={{ maxWidth: 820, margin: "0 auto", padding: "80px 32px 0" }}>
+      <article className="lw-pad" style={{ maxWidth: 820, margin: "0 auto", padding: "80px 32px 0" }}>
         <Link
           href="/blog"
           style={{
@@ -216,7 +216,7 @@ export default async function BlogPostPage({
       </article>
 
       {/* Closing CTA */}
-      <section style={{ maxWidth: 820, margin: "0 auto", padding: "56px 32px 0" }}>
+      <section className="lw-pad" style={{ maxWidth: 820, margin: "0 auto", padding: "56px 32px 0" }}>
         <div
           style={{
             background: RED,
@@ -267,9 +267,10 @@ export default async function BlogPostPage({
       </section>
 
       {/* More posts */}
-      <section style={{ maxWidth: 1280, margin: "0 auto", padding: "96px 32px 128px" }}>
+      <section className="lw-pad" style={{ maxWidth: 1280, margin: "0 auto", padding: "96px 32px 128px" }}>
         <span style={labelStyle}>( More Insights )</span>
         <div
+          className="lw-grid-2"
           style={{
             marginTop: 32,
             display: "grid",

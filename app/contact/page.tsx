@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 
 // Brand tokens
@@ -21,14 +21,49 @@ const labelStyle: React.CSSProperties = {
   textTransform: "uppercase",
 };
 
+// Breakpoints: mobile < 768px, tablet 768-1024px, desktop > 1024px.
+const MOBILE_Q = "(max-width: 767px)";
+function useMediaQuery(query: string) {
+  const [matches, setMatches] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mql = window.matchMedia(query);
+    const onChange = () => setMatches(mql.matches);
+    onChange();
+    // Older iOS Safari exposes addListener/removeListener instead of the
+    // standard addEventListener; support both so the effect never throws.
+    if (mql.addEventListener) mql.addEventListener("change", onChange);
+    else if (mql.addListener) mql.addListener(onChange);
+    return () => {
+      if (mql.removeEventListener) mql.removeEventListener("change", onChange);
+      else if (mql.removeListener) mql.removeListener(onChange);
+    };
+  }, [query]);
+  return matches;
+}
+
 /* ─────────────────────────────── NAV ─────────────────────────────────── */
 function Nav() {
+  const isMobile = useMediaQuery(MOBILE_Q);
+  const [menuOpen, setMenuOpen] = useState(false);
   const navLinks = [
     { label: "Home", href: "/" },
     { label: "Studio", href: "/studio" },
     { label: "Services", href: "/#services" },
     { label: "Blog", href: "/#blog" },
   ];
+  useEffect(() => {
+    if (!isMobile) setMenuOpen(false);
+  }, [isMobile]);
+  useEffect(() => {
+    if (!menuOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [menuOpen]);
+
   return (
     <nav
       style={{
@@ -39,7 +74,7 @@ function Nav() {
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "0 32px",
+        padding: isMobile ? "0 20px" : "0 32px",
         background: WHITE,
         borderBottom: `1px solid ${BORDER}`,
         fontFamily: FONT,
@@ -56,41 +91,157 @@ function Nav() {
         />
       </Link>
 
-      <div style={{ display: "flex", gap: 36 }}>
-        {navLinks.map((l) => (
+      {isMobile ? (
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <Link
-            key={l.label}
-            href={l.href}
+            href="/contact"
             style={{
               fontFamily: FONT,
               fontWeight: 400,
-              fontSize: 14,
-              letterSpacing: "0.04em",
+              fontSize: 13,
               color: BLACK,
               textDecoration: "none",
+              border: `1px solid ${BLACK}`,
+              borderRadius: 999,
+              padding: "8px 18px",
+              whiteSpace: "nowrap",
             }}
           >
-            {l.label}
+            Let&apos;s Connect
           </Link>
-        ))}
-      </div>
+          <button
+            type="button"
+            aria-label="Open menu"
+            onClick={() => setMenuOpen(true)}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              gap: 5,
+              width: 28,
+              height: 28,
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              padding: 0,
+            }}
+          >
+            <span style={{ display: "block", height: 2, width: "100%", background: BLACK }} />
+            <span style={{ display: "block", height: 2, width: "100%", background: BLACK }} />
+            <span style={{ display: "block", height: 2, width: "100%", background: BLACK }} />
+          </button>
+        </div>
+      ) : (
+        <>
+          <div style={{ display: "flex", gap: 36 }}>
+            {navLinks.map((l) => (
+              <Link
+                key={l.label}
+                href={l.href}
+                style={{
+                  fontFamily: FONT,
+                  fontWeight: 400,
+                  fontSize: 14,
+                  letterSpacing: "0.04em",
+                  color: BLACK,
+                  textDecoration: "none",
+                }}
+              >
+                {l.label}
+              </Link>
+            ))}
+          </div>
 
-      <Link
-        href="/contact"
-        style={{
-          fontFamily: FONT,
-          fontWeight: 400,
-          fontSize: 13,
-          color: BLACK,
-          textDecoration: "none",
-          border: `1px solid ${BLACK}`,
-          borderRadius: 999,
-          padding: "9px 22px",
-          whiteSpace: "nowrap",
-        }}
-      >
-        Let&apos;s Connect
-      </Link>
+          <Link
+            href="/contact"
+            style={{
+              fontFamily: FONT,
+              fontWeight: 400,
+              fontSize: 13,
+              color: BLACK,
+              textDecoration: "none",
+              border: `1px solid ${BLACK}`,
+              borderRadius: 999,
+              padding: "9px 22px",
+              whiteSpace: "nowrap",
+            }}
+          >
+            Let&apos;s Connect
+          </Link>
+        </>
+      )}
+
+      {/* Mobile slide-in menu panel + backdrop */}
+      {isMobile && (
+        <>
+          <div
+            onClick={() => setMenuOpen(false)}
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 190,
+              background: "rgba(0,0,0,0.4)",
+              opacity: menuOpen ? 1 : 0,
+              pointerEvents: menuOpen ? "auto" : "none",
+              transition: "opacity 0.3s ease",
+            }}
+          />
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              right: 0,
+              zIndex: 200,
+              height: "100vh",
+              width: "min(320px, 82vw)",
+              background: BLACK,
+              transform: menuOpen ? "translateX(0)" : "translateX(100%)",
+              transition: "transform 0.3s ease",
+              display: "flex",
+              flexDirection: "column",
+              padding: "24px 28px",
+            }}
+          >
+            <button
+              type="button"
+              aria-label="Close menu"
+              onClick={() => setMenuOpen(false)}
+              style={{
+                alignSelf: "flex-end",
+                background: "transparent",
+                border: "none",
+                color: WHITE,
+                fontSize: 30,
+                lineHeight: 1,
+                cursor: "pointer",
+                padding: 0,
+                marginBottom: 24,
+              }}
+            >
+              ×
+            </button>
+            {navLinks.map((l) => (
+              <Link
+                key={l.label}
+                href={l.href}
+                onClick={() => setMenuOpen(false)}
+                style={{
+                  fontFamily: FONT,
+                  fontWeight: 300,
+                  fontSize: 24,
+                  letterSpacing: "0.02em",
+                  color: WHITE,
+                  textDecoration: "none",
+                  padding: "16px 0",
+                  borderBottom: "1px solid #222222",
+                }}
+              >
+                {l.label}
+              </Link>
+            ))}
+          </div>
+        </>
+      )}
     </nav>
   );
 }
@@ -228,6 +379,7 @@ function Field({
 
 /* ─────────────────────────────── PAGE ────────────────────────────────── */
 export default function ContactPage() {
+  const isMobile = useMediaQuery(MOBILE_Q);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [company, setCompany] = useState("");
@@ -275,7 +427,7 @@ export default function ContactPage() {
     <main style={{ background: WHITE, fontFamily: FONT, overflowX: "hidden" }}>
       <Nav />
 
-      <section style={{ maxWidth: 1280, margin: "0 auto", padding: "96px 32px 0" }}>
+      <section style={{ maxWidth: 1280, margin: "0 auto", padding: isMobile ? "72px 24px 0" : "96px 32px 0" }}>
         <span style={labelStyle}>( Contact )</span>
         <h1
           style={{
@@ -298,20 +450,20 @@ export default function ContactPage() {
         style={{
           maxWidth: 1280,
           margin: "0 auto",
-          padding: "64px 32px 128px",
+          padding: isMobile ? "48px 24px 96px" : "64px 32px 128px",
           display: "flex",
-          gap: 64,
+          gap: isMobile ? 40 : 64,
           alignItems: "flex-start",
           flexWrap: "wrap",
         }}
       >
-        {/* Left column 70% */}
-        <div style={{ flex: "1 1 60%", minWidth: 320 }}>
+        {/* Left column 70% (full width on mobile) */}
+        <div style={{ flex: "1 1 60%", minWidth: isMobile ? 0 : 320, width: isMobile ? "100%" : undefined }}>
           <div
             style={{
               background: GRAY_BG,
               borderRadius: 16,
-              padding: 40,
+              padding: isMobile ? 24 : 40,
             }}
           >
             {/* Row 1: name + email */}
@@ -391,8 +543,8 @@ export default function ContactPage() {
           </div>
         </div>
 
-        {/* Right column 30% */}
-        <div style={{ flex: "1 1 25%", minWidth: 280 }}>
+        {/* Right column 30% (full width on mobile) */}
+        <div style={{ flex: "1 1 25%", minWidth: isMobile ? 0 : 280, width: isMobile ? "100%" : undefined }}>
           {infoBlocks.map((b, i) => (
             <div
               key={b.label}

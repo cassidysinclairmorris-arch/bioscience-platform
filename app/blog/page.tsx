@@ -13,7 +13,7 @@ export default function BlogIndexPage() {
     <main style={{ background: WHITE, fontFamily: FONT, overflowX: "hidden" }}>
       <Nav />
 
-      <section style={{ maxWidth: 1280, margin: "0 auto", padding: "96px 32px 0" }}>
+      <section className="lw-pad" style={{ maxWidth: 1280, margin: "0 auto", padding: "96px 32px 0" }}>
         <span style={labelStyle}>( Blog )</span>
         <h1
           style={{
@@ -31,6 +31,7 @@ export default function BlogIndexPage() {
       </section>
 
       <section
+        className="lw-pad lw-grid-2"
         style={{
           maxWidth: 1280,
           margin: "0 auto",

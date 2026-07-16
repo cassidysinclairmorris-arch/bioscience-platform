@@ -40,7 +40,7 @@ Next.js 16 App Router platform for a LinkedIn content agency (Linkwright). Manag
 
 libSQL via `@libsql/client`, behind a small better-sqlite3-style async wrapper in `lib/db.ts` (call sites use `await db.prepare(sql).get/all/run(...)` and `await db.exec(...)`). Local dev uses a file (`file:data/posts.db`); production uses Turso when `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN` are set. All schema + migrations in `lib/db.ts` — fire-and-forget `ALTER TABLE` wrapped in try/catch. No migration framework. When adding a column, add an `ALTER TABLE` migration block there.
 
-Tables: `clients`, `brand_kits` (1:1 with clients), `pillars` (4 per client), `posts`, `post_analytics`, `invoices`, `users`, `client_users` (per-client portal accounts, roles owner/administrator/user with per-company limits), `messages` (client and agency message threads).
+Tables: `clients`, `brand_kits` (1:1 with clients), `pillars` (4 per client), `posts`, `post_analytics`, `invoices`, `users`, `client_users` (per-client portal accounts, roles owner/administrator/user with per-company limits), `messages` (client and agency message threads), `assets` (client asset library — files stored in Vercel Blob, this row is metadata: `client_id`, nullable `pillar_id`, `uploaded_by` → `client_users.id`, `file_url`, `file_name`, `file_type` one of `image`/`document`/`slideshow`/`video`, `file_size`, `notes`).
 
 `/api/clients` GET returns clients with `brand_kits` row merged into a `brand` object and `pillars` array attached. `brand` uses snake_case keys (`accent_color`, `dark_color`, `headline_font`, etc.).
 
@@ -64,17 +64,33 @@ All routes use `claude-sonnet-4-6` from `@anthropic-ai/sdk`.
 
 `lib/linkedin-trends.ts` called at start of generate/refine/image-generate. Makes one-off web search, caches in-memory for 24h per `(industry, audience, timezone)` key. Resets on server restart.
 
+### Asset library routes
+
+Non-AI CRUD for the client asset library. Files are stored in Vercel Blob (needs `BLOB_READ_WRITE_TOKEN`); the DB `assets` row holds metadata. Access via `lib/asset-access.ts`: agency (studio, `auth` cookie) has full access across all clients; portal clients (`client_session`) are scoped to their own company, and only owner/administrator may upload/edit/delete (regular users are view/download only, enforced server-side).
+
+| Route | Purpose | Key detail |
+|-------|---------|-----------|
+| `POST /api/assets/upload` | Issue a client-side upload token | Uses `handleUpload` from `@vercel/blob/client` so large files (video, decks) upload browser → Blob directly. Gated to owner/administrator before the token is issued. Blob size caps vary by plan tier — set `maximumSizeInBytes` in `onBeforeGenerateToken` once confirmed. |
+| `POST /api/assets` | Create the metadata row after upload completes | Portal clients are forced to their own `client_id` and stamped as `uploaded_by`. |
+| `GET /api/assets?clientId=&type=&pillarId=` | List assets, filterable | Portal scoped to own company; studio may pass any `clientId` or omit for all. Joins pillar type + uploader name. |
+| `PATCH /api/assets/:id` | Edit notes or pillar tag | Owner/administrator or agency; portal clients only their own company's assets. |
+| `DELETE /api/assets/:id` | Delete row + Blob file | Same permissions; Blob deletion is best-effort. |
+
 ### Studio page
 
-`app/studio/page.tsx` — ~3300 lines, single `"use client"` file. All UI here. Main exported component is `Platform`. Tabs: overview, compose, library, calendar, reports, invoices, clients.
+`app/studio/page.tsx` — single `"use client"` file. All UI here. Main exported component is `Platform`. Tabs: overview, compose, library, assets, calendar, reports, invoices, clients, clientusers.
 
-Compose tab manages full generation workflow: generate post, generate SVG or AI image, refine either, save/approve. State in `Platform`, passed as props to `ComposeTab`.
+Compose tab manages full generation workflow: generate post, generate SVG or AI image, refine either, save/approve. State in `Platform`, passed as props to `ComposeTab`. Compose also renders `ComposeAssetPanel`, a collapsible right-edge drawer showing the current client's assets filterable by pillar.
+
+The `assets` tab (`AssetsTab`) is the agency-side asset library for the selected client (client switcher pills, type sub-tabs Images/Documents/Slideshows/Video, upload/edit/delete with full access). Uploads go browser → Blob via `upload()` from `@vercel/blob/client` against `/api/assets/upload`.
 
 `LOGO_FILES` maps client IDs to `public/files/*_logo_final.png`. Logo files go in `public/files/`.
 
 ### Portal
 
-`app/portal/page.tsx` — client-facing read-only view. Approved posts, change requests, analytics. Uses same `/api/posts` and `/api/auth/me` endpoints as studio.
+`app/portal/page.tsx` — client-facing view. Approved posts, change requests, analytics. Uses same `/api/posts` and `/api/auth/me` endpoints as studio.
+
+Portal tabs: dashboard, approval, history, reports, library, team (owner/admin only), messages. The `library` tab (`LibraryTab`) is the client asset library: type sub-tabs (Images/Documents/Slideshows/Video) and asset cards. Owners and administrators see an upload button plus edit/delete on each card (upload goes browser → Blob via `upload()` against `/api/assets/upload`); regular users see the same grid with download only. Reads pillars from the `pillars` array `/api/clients` attaches to each client.
 
 ### Static data
 

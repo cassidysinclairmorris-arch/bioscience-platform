@@ -49,6 +49,30 @@ function fmtTime(d: Date | null) {
   return d ? d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }) : "";
 }
 
+/* ─────────────────── Responsive breakpoint hooks ─────────────────────── */
+// Breakpoints: mobile < 768px, tablet 768-1024px, desktop > 1024px.
+// SSR renders the desktop layout (matches false), then corrects on mount.
+function useMediaQuery(query: string) {
+  const [matches, setMatches] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mql = window.matchMedia(query);
+    const onChange = () => setMatches(mql.matches);
+    onChange();
+    // Older iOS Safari exposes addListener/removeListener instead of the
+    // standard addEventListener; support both so the effect never throws.
+    if (mql.addEventListener) mql.addEventListener("change", onChange);
+    else if (mql.addListener) mql.addListener(onChange);
+    return () => {
+      if (mql.removeEventListener) mql.removeEventListener("change", onChange);
+      else if (mql.removeListener) mql.removeListener(onChange);
+    };
+  }, [query]);
+  return matches;
+}
+const MOBILE_Q = "(max-width: 767px)";
+const TABLET_Q = "(min-width: 768px) and (max-width: 1023px)";
+
 /* ───────────────── In-view + count-up animation helpers ──────────────── */
 // Fires once when the element crosses the given visibility threshold.
 function useInView(ref: React.RefObject<HTMLElement | null>, threshold = 0.2) {
@@ -159,6 +183,7 @@ function ScrollHighlight({
 
 /* ───────────────────────── Hero radial dot grid ──────────────────────── */
 function DotRings() {
+  const isMobile = useMediaQuery(MOBILE_Q);
   const size = 900;
   const center = size / 2;
   const spacing = 18;
@@ -172,9 +197,13 @@ function DotRings() {
     const count = Math.max(1, Math.round(circumference / spacing));
     for (let i = 0; i < count; i++) {
       const angle = (i / count) * Math.PI * 2;
+      // Round to whole pixels so the server (Node) and client (Safari, etc.)
+      // serialize identical cx/cy values. Sub-pixel trig differences between
+      // JS engines otherwise cause a hydration mismatch that can stop the
+      // client from taking over, freezing the page in its desktop layout.
       dots.push({
-        x: center + radius * Math.cos(angle),
-        y: center + radius * Math.sin(angle),
+        x: Math.round(center + radius * Math.cos(angle)),
+        y: Math.round(center + radius * Math.sin(angle)),
       });
     }
   }
@@ -185,9 +214,10 @@ function DotRings() {
       viewBox={`0 0 ${size} ${size}`}
       style={{
         position: "absolute",
-        top: "-12%",
+        top: isMobile ? "-4%" : "-12%",
         right: "-6%",
-        width: "60vw",
+        // Cover ~30% of the width on mobile so the pattern never crowds the wordmark.
+        width: isMobile ? "34vw" : "60vw",
         maxWidth: 900,
         height: "auto",
         pointerEvents: "none",
@@ -204,6 +234,8 @@ function DotRings() {
 /* ─────────────────────────────── NAV ─────────────────────────────────── */
 function Nav() {
   const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const isMobile = useMediaQuery(MOBILE_Q);
   const now = useNow();
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 80);
@@ -211,12 +243,30 @@ function Nav() {
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+  // Close the panel when the viewport grows back to desktop.
+  useEffect(() => {
+    if (!isMobile) setMenuOpen(false);
+  }, [isMobile]);
+  // Lock body scroll while the slide-in panel is open.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [menuOpen]);
 
   const fg = scrolled ? BLACK : WHITE;
   const navLinks = [
     { label: "Home", href: "/" },
     { label: "Services", href: "#services" },
     { label: "Blog", href: "#blog" },
+  ];
+  const menuLinks = [
+    ...navLinks,
+    { label: "Client Login", href: "/client/login" },
+    { label: "Agency Login", href: "/login" },
   ];
 
   return (
@@ -231,7 +281,7 @@ function Nav() {
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "0 32px",
+        padding: isMobile ? "0 20px" : "0 32px",
         background: scrolled ? WHITE : "transparent",
         borderBottom: scrolled ? "1px solid #ECECEC" : "1px solid transparent",
         transition: "background 0.3s ease, border-color 0.3s ease",
@@ -258,106 +308,225 @@ function Nav() {
         />
       </Link>
 
-      {/* Center: nav links */}
-      <div style={{ display: "flex", gap: 36 }}>
-        {navLinks.map((l) => (
+      {isMobile ? (
+        /* Mobile: keep the Let's Connect pill, collapse everything else. */
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <Link
-            key={l.label}
-            href={l.href}
+            href="/contact"
             style={{
               fontFamily: FONT,
               fontWeight: 400,
-              fontSize: 14,
-              letterSpacing: "0.04em",
+              fontSize: 13,
               color: fg,
               textDecoration: "none",
-              transition: "color 0.3s ease",
+              border: `1px solid ${scrolled ? BLACK : "rgba(255,255,255,0.8)"}`,
+              borderRadius: 999,
+              padding: "8px 18px",
+              transition: "color 0.3s ease, border-color 0.3s ease",
+              whiteSpace: "nowrap",
             }}
           >
-            {l.label}
+            Let&apos;s Connect
           </Link>
-        ))}
-      </div>
+          <button
+            type="button"
+            aria-label="Open menu"
+            onClick={() => setMenuOpen(true)}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              gap: 5,
+              width: 28,
+              height: 28,
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              padding: 0,
+            }}
+          >
+            <span style={{ display: "block", height: 2, width: "100%", background: fg, transition: "background 0.3s ease" }} />
+            <span style={{ display: "block", height: 2, width: "100%", background: fg, transition: "background 0.3s ease" }} />
+            <span style={{ display: "block", height: 2, width: "100%", background: fg, transition: "background 0.3s ease" }} />
+          </button>
+        </div>
+      ) : (
+        <>
+          {/* Center: nav links */}
+          <div style={{ display: "flex", gap: 36 }}>
+            {navLinks.map((l) => (
+              <Link
+                key={l.label}
+                href={l.href}
+                style={{
+                  fontFamily: FONT,
+                  fontWeight: 400,
+                  fontSize: 14,
+                  letterSpacing: "0.04em",
+                  color: fg,
+                  textDecoration: "none",
+                  transition: "color 0.3s ease",
+                }}
+              >
+                {l.label}
+              </Link>
+            ))}
+          </div>
 
-      {/* Right: live clock + divider + Let's Connect */}
-      <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-        <span
-          style={{
-            fontFamily: FONT,
-            fontWeight: 400,
-            fontSize: 13,
-            color: fg,
-            transition: "color 0.3s ease",
-            fontVariantNumeric: "tabular-nums",
-            minWidth: 140,
-            textAlign: "right",
-          }}
-        >
-          {now ? `${fmtDate(now)} / ${fmtTime(now)}` : ""}
-        </span>
-        <span
-          style={{
-            width: 1,
-            height: 22,
-            background: scrolled ? "#D5D5D5" : "rgba(255,255,255,0.4)",
-            transition: "background 0.3s ease",
-          }}
-        />
-        {/* Password-protected entry points */}
-        <Link
-          href="/client/login"
-          style={{
-            fontFamily: FONT,
-            fontWeight: 400,
-            fontSize: 13,
-            letterSpacing: "0.04em",
-            color: fg,
-            textDecoration: "none",
-            transition: "color 0.3s ease",
-            whiteSpace: "nowrap",
-          }}
-        >
-          Client Login
-        </Link>
-        <Link
-          href="/login"
-          style={{
-            fontFamily: FONT,
-            fontWeight: 400,
-            fontSize: 13,
-            letterSpacing: "0.04em",
-            color: fg,
-            textDecoration: "none",
-            transition: "color 0.3s ease",
-            whiteSpace: "nowrap",
-          }}
-        >
-          Agency Login
-        </Link>
-        <Link
-          href="/contact"
-          style={{
-            fontFamily: FONT,
-            fontWeight: 400,
-            fontSize: 13,
-            color: fg,
-            textDecoration: "none",
-            border: `1px solid ${scrolled ? BLACK : "rgba(255,255,255,0.8)"}`,
-            borderRadius: 999,
-            padding: "9px 22px",
-            transition: "color 0.3s ease, border-color 0.3s ease",
-            whiteSpace: "nowrap",
-          }}
-        >
-          Let&apos;s Connect
-        </Link>
-      </div>
+          {/* Right: live clock + divider + Let's Connect */}
+          <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+            <span
+              style={{
+                fontFamily: FONT,
+                fontWeight: 400,
+                fontSize: 13,
+                color: fg,
+                transition: "color 0.3s ease",
+                fontVariantNumeric: "tabular-nums",
+                minWidth: 140,
+                textAlign: "right",
+              }}
+            >
+              {now ? `${fmtDate(now)} / ${fmtTime(now)}` : ""}
+            </span>
+            <span
+              style={{
+                width: 1,
+                height: 22,
+                background: scrolled ? "#D5D5D5" : "rgba(255,255,255,0.4)",
+                transition: "background 0.3s ease",
+              }}
+            />
+            {/* Password-protected entry points */}
+            <Link
+              href="/client/login"
+              style={{
+                fontFamily: FONT,
+                fontWeight: 400,
+                fontSize: 13,
+                letterSpacing: "0.04em",
+                color: fg,
+                textDecoration: "none",
+                transition: "color 0.3s ease",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Client Login
+            </Link>
+            <Link
+              href="/login"
+              style={{
+                fontFamily: FONT,
+                fontWeight: 400,
+                fontSize: 13,
+                letterSpacing: "0.04em",
+                color: fg,
+                textDecoration: "none",
+                transition: "color 0.3s ease",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Agency Login
+            </Link>
+            <Link
+              href="/contact"
+              style={{
+                fontFamily: FONT,
+                fontWeight: 400,
+                fontSize: 13,
+                color: fg,
+                textDecoration: "none",
+                border: `1px solid ${scrolled ? BLACK : "rgba(255,255,255,0.8)"}`,
+                borderRadius: 999,
+                padding: "9px 22px",
+                transition: "color 0.3s ease, border-color 0.3s ease",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Let&apos;s Connect
+            </Link>
+          </div>
+        </>
+      )}
+
+      {/* Mobile slide-in menu panel + backdrop */}
+      {isMobile && (
+        <>
+          <div
+            onClick={() => setMenuOpen(false)}
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 190,
+              background: "rgba(0,0,0,0.4)",
+              opacity: menuOpen ? 1 : 0,
+              pointerEvents: menuOpen ? "auto" : "none",
+              transition: "opacity 0.3s ease",
+            }}
+          />
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              right: 0,
+              zIndex: 200,
+              height: "100vh",
+              width: "min(320px, 82vw)",
+              background: BLACK,
+              transform: menuOpen ? "translateX(0)" : "translateX(100%)",
+              transition: "transform 0.3s ease",
+              display: "flex",
+              flexDirection: "column",
+              padding: "24px 28px",
+            }}
+          >
+            <button
+              type="button"
+              aria-label="Close menu"
+              onClick={() => setMenuOpen(false)}
+              style={{
+                alignSelf: "flex-end",
+                background: "transparent",
+                border: "none",
+                color: WHITE,
+                fontSize: 30,
+                lineHeight: 1,
+                cursor: "pointer",
+                padding: 0,
+                marginBottom: 24,
+              }}
+            >
+              ×
+            </button>
+            {menuLinks.map((l) => (
+              <Link
+                key={l.label}
+                href={l.href}
+                onClick={() => setMenuOpen(false)}
+                style={{
+                  fontFamily: HERO_FONT,
+                  fontWeight: 300,
+                  fontSize: 24,
+                  letterSpacing: "0.02em",
+                  color: WHITE,
+                  textDecoration: "none",
+                  padding: "16px 0",
+                  borderBottom: "1px solid #222222",
+                }}
+              >
+                {l.label}
+              </Link>
+            ))}
+          </div>
+        </>
+      )}
     </nav>
   );
 }
 
 /* ─────────────────────────────── HERO ────────────────────────────────── */
 function Hero() {
+  const isMobile = useMediaQuery(MOBILE_Q);
   return (
     <section
       style={{
@@ -371,17 +540,25 @@ function Hero() {
     >
       <DotRings />
 
-      {/* Wordmark bottom-left */}
+      {/* Wordmark bottom-left. Tighter size + spacing on mobile so the ten
+          characters never run past the viewport edge, and lifted well clear of
+          the bottom so the mobile browser toolbar never covers it. */}
       <h1
         style={{
           position: "relative",
           zIndex: 2,
           margin: 0,
-          padding: "0 0 140px 32px",
+          padding: isMobile ? "0 0 190px 20px" : "0 0 140px 32px",
           fontFamily: HERO_FONT,
           fontWeight: 100,
-          fontSize: "clamp(80px, 12vw, 160px)",
-          letterSpacing: "0.15em",
+          // Single viewport-based clamp: fits from ~320px up to desktop with no
+          // JavaScript needed, so the wordmark can never overflow even if the
+          // mobile layout switch has not run yet.
+          fontSize: "clamp(34px, 10.5vw, 160px)",
+          letterSpacing: isMobile ? "0.08em" : "0.12em",
+          // Never let the word run past the viewport, whatever the width.
+          maxWidth: "calc(100vw - 40px)",
+          overflowWrap: "normal",
           color: WHITE,
           lineHeight: 1,
         }}
@@ -416,6 +593,7 @@ function Hero() {
 function About() {
   const statsRef = useRef<HTMLDivElement>(null);
   const statsInView = useInView(statsRef, 0.3);
+  const isMobile = useMediaQuery(MOBILE_Q);
   const stats = [
     { from: 158, to: 168, suffix: "h", label: "Hours of Weekly Market Monitoring" },
     { from: 42, to: 52, suffix: "+", label: "LinkedIn Performance Indicators Tracked" },
@@ -426,15 +604,15 @@ function About() {
     <section
       style={{
         background: WHITE,
-        padding: "128px 32px",
+        padding: isMobile ? "80px 24px" : "128px 32px",
       }}
     >
       <div style={{ maxWidth: 1280, margin: "0 auto" }}>
-        <div style={{ display: "flex", gap: 48, flexWrap: "wrap" }}>
-          <div style={{ width: 160, flexShrink: 0 }}>
+        <div style={{ display: "flex", gap: isMobile ? 20 : 48, flexWrap: "wrap" }}>
+          <div style={{ width: isMobile ? "100%" : 160, flexShrink: 0 }}>
             <span style={labelStyle}>( About Us )</span>
           </div>
-          <div style={{ flex: 1, minWidth: 320, maxWidth: "65%" }}>
+          <div style={{ flex: 1, minWidth: 0, maxWidth: isMobile ? "100%" : "65%" }}>
             <ScrollHighlight
               text="We help companies turn LinkedIn into a growth engine through algorithm-informed content, performance analytics, and intelligent content optimization."
               style={{
@@ -449,8 +627,8 @@ function About() {
         <div
           style={{
             display: "flex",
-            gap: 56,
-            marginTop: 80,
+            gap: isMobile ? 40 : 56,
+            marginTop: isMobile ? 56 : 80,
             alignItems: "flex-start",
             flexWrap: "wrap",
           }}
@@ -459,7 +637,9 @@ function About() {
             src="/images/19.png"
             alt="Linkwright team at work"
             style={{
-              width: 280,
+              width: isMobile ? "100%" : 280,
+              maxWidth: isMobile ? 360 : undefined,
+              height: "auto",
               borderRadius: 12,
               objectFit: "cover",
               flexShrink: 0,
@@ -469,10 +649,10 @@ function About() {
             ref={statsRef}
             style={{
               flex: 1,
-              minWidth: 360,
+              minWidth: isMobile ? 0 : 360,
               display: "grid",
               gridTemplateColumns: "1fr 1fr",
-              gap: "48px 56px",
+              gap: isMobile ? "32px 24px" : "48px 56px",
             }}
           >
             {stats.map((s) => (
@@ -577,7 +757,84 @@ function FloatImage({
   );
 }
 
+// Below 768px the scroll-jacking spread breaks, so we render a completely
+// separate static component. Splitting the two means the desktop useScroll
+// hooks never mount on mobile and their scroll listeners never fire.
 function FloatingImages() {
+  const isMobile = useMediaQuery(MOBILE_Q);
+  return isMobile ? <FloatingImagesMobile /> : <FloatingImagesDesktop />;
+}
+
+function FloatingImagesMobile() {
+  const images = [
+    { src: "/images/13.png", w: 220, h: 280 },
+    { src: "/images/4.png", w: 260, h: 320 },
+    { src: "/images/6.png", w: 300, h: 300 },
+    { src: "/images/14.png", w: 240, h: 300 },
+  ];
+  return (
+    <section style={{ background: WHITE, padding: "80px 24px" }}>
+      <h2
+        style={{
+          fontFamily: FONT,
+          fontWeight: 400,
+          fontSize: "clamp(32px, 8vw, 48px)",
+          lineHeight: 1.1,
+          color: BLACK,
+          margin: 0,
+          textAlign: "center",
+        }}
+      >
+        <span style={{ display: "block" }}>Powerful Presence.</span>
+        <span style={{ display: "block" }}>Meaningful Connections.</span>
+        <span style={{ display: "block" }}>Measurable Growth.</span>
+      </h2>
+      <div style={{ textAlign: "center", marginTop: 24 }}>
+        <Link
+          href="/contact"
+          style={{
+            display: "inline-block",
+            fontFamily: FONT,
+            fontWeight: 400,
+            fontSize: 12,
+            letterSpacing: "0.15em",
+            color: RED,
+            textDecoration: "none",
+          }}
+        >
+          CONTACT US NOW ↗
+        </Link>
+      </div>
+      <div
+        style={{
+          marginTop: 48,
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 16,
+        }}
+      >
+        {images.map((img) => (
+          <Image
+            key={img.src}
+            src={img.src}
+            alt=""
+            width={img.w}
+            height={img.h}
+            style={{
+              width: "100%",
+              height: "auto",
+              borderRadius: 12,
+              objectFit: "cover",
+              display: "block",
+            }}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function FloatingImagesDesktop() {
   const outerRef = useRef<HTMLDivElement>(null);
   // Pins from the moment the section hits the top of the viewport and stays
   // pinned for the full 300vh, so scrollYProgress runs 0 to 1 across that span.
@@ -708,8 +965,12 @@ const SERVICES = [
 function Services() {
   const [active, setActive] = useState(0);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const isMobile = useMediaQuery(MOBILE_Q);
 
   useEffect(() => {
+    // The sticky/scroll-swap behavior is desktop-only. On mobile we render
+    // stacked blocks instead, so the observer must not run.
+    if (isMobile) return;
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -723,7 +984,116 @@ function Services() {
     );
     itemRefs.current.forEach((el) => el && observer.observe(el));
     return () => observer.disconnect();
-  }, []);
+  }, [isMobile]);
+
+  if (isMobile) {
+    return (
+      <section id="services" style={{ background: WHITE, padding: "48px 0 80px" }}>
+        {/* Double red rule */}
+        <div style={{ height: 1, background: RED }} />
+        <div style={{ height: 6 }} />
+        <div style={{ height: 1, background: RED }} />
+
+        <div style={{ padding: "48px 24px 0" }}>
+          <span style={labelStyle}>( Services )</span>
+          <p
+            style={{
+              fontFamily: FONT,
+              fontWeight: 400,
+              fontSize: 16,
+              lineHeight: 1.6,
+              color: "#444444",
+              margin: "16px 0 40px",
+            }}
+          >
+            We help organizations maximize their LinkedIn presence through
+            data-driven content creation, performance intelligence, and continuous
+            optimization.
+          </p>
+
+          {/* Each service is its own stacked block. Scroll-driven highlighting
+              does not work on touch, so instead each block is tappable: tapping
+              lights it up (name turns black, red underline grows) independently. */}
+          {SERVICES.map((s, i) => {
+            const lit = active === i;
+            return (
+              <div
+                key={s.name}
+                onClick={() => setActive(i)}
+                style={{ marginBottom: 40, cursor: "pointer" }}
+              >
+                <div style={{ display: "flex", alignItems: "baseline", gap: 14 }}>
+                  <span style={{ fontFamily: FONT, fontWeight: 400, fontSize: 13, color: MUTED }}>
+                    0{i + 1}
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: FONT,
+                      fontWeight: 400,
+                      fontSize: 24,
+                      lineHeight: 1.2,
+                      color: lit ? BLACK : "#C9C9C9",
+                      transition: "color 0.3s ease",
+                    }}
+                  >
+                    {s.name}
+                  </span>
+                </div>
+                <div
+                  style={{
+                    height: 2,
+                    background: RED,
+                    marginTop: 12,
+                    width: lit ? "100%" : 40,
+                    opacity: lit ? 1 : 0.3,
+                    transition: "width 0.3s ease, opacity 0.3s ease",
+                  }}
+                />
+                <p
+                  style={{
+                    fontFamily: FONT,
+                    fontWeight: 400,
+                    fontSize: 15,
+                    lineHeight: 1.6,
+                    color: "#444444",
+                    margin: "18px 0 20px",
+                  }}
+                >
+                  {s.copy}
+                </p>
+                {/* Natural-height image: displays on every browser (no reliance
+                    on CSS aspect-ratio, which collapses on older iOS Safari). */}
+                <div style={{ borderRadius: 16, overflow: "hidden" }}>
+                  <img
+                    src={s.image}
+                    alt={s.name}
+                    style={{ width: "100%", height: "auto", display: "block" }}
+                  />
+                </div>
+                <a
+                  href="#pricing"
+                  onClick={(e) => e.stopPropagation()}
+                  style={{
+                    display: "inline-block",
+                    marginTop: 16,
+                    fontFamily: FONT,
+                    fontWeight: 400,
+                    fontSize: 12,
+                    letterSpacing: "0.15em",
+                    color: BLACK,
+                    textDecoration: "underline",
+                    textUnderlineOffset: 4,
+                  }}
+                >
+                  SEE PRICING ↗
+                </a>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section id="services" style={{ background: WHITE, padding: "64px 0 128px" }}>
@@ -789,10 +1159,12 @@ function Services() {
               ref={(el) => {
                 itemRefs.current[i] = el;
               }}
+              onClick={() => setActive(i)}
               style={{
                 borderTop: "1px solid #E5E5E5",
                 padding: "40px 0",
                 minHeight: 160,
+                cursor: "pointer",
               }}
             >
               <div style={{ display: "flex", alignItems: "baseline", gap: 16 }}>
@@ -994,8 +1366,12 @@ function ProcessIcon({ type }: { type: string }) {
 function Process() {
   const cardsRef = useRef<HTMLDivElement>(null);
   const cardsInView = useInView(cardsRef, 0.2);
+  const [hovered, setHovered] = useState<number | null>(null);
+  const isMobile = useMediaQuery(MOBILE_Q);
+  const isTablet = useMediaQuery(TABLET_Q);
+  const columns = isMobile ? "1fr" : isTablet ? "1fr 1fr" : "repeat(4, 1fr)";
   return (
-    <section style={{ background: WHITE, padding: "128px 32px" }}>
+    <section style={{ background: WHITE, padding: isMobile ? "80px 24px" : "128px 32px" }}>
       <div style={{ maxWidth: 1280, margin: "0 auto" }}>
         <span style={labelStyle}>( Our Process )</span>
         <div style={{ maxWidth: 1000, margin: "28px 0 72px" }}>
@@ -1009,21 +1385,26 @@ function Process() {
           ref={cardsRef}
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(4, 1fr)",
+            gridTemplateColumns: columns,
             gap: 24,
           }}
         >
-          {PROCESS_CARDS.map((c) => (
+          {PROCESS_CARDS.map((c, i) => (
             <div
               key={c.title}
+              onMouseEnter={() => setHovered(i)}
+              onMouseLeave={() => setHovered(null)}
               style={{
                 background: RED,
                 borderRadius: 16,
                 padding: 32,
                 color: WHITE,
                 opacity: cardsInView ? 1 : 0,
-                transform: cardsInView ? "translateY(0)" : "translateY(16px)",
-                transition: "opacity 350ms ease-out, transform 350ms ease-out",
+                transform: cardsInView
+                  ? `translateY(0) scale(${hovered === i ? 1.04 : 1})`
+                  : "translateY(16px) scale(1)",
+                transition: "opacity 350ms ease-out, transform 300ms ease-out",
+                willChange: "transform",
               }}
             >
               <div style={{ marginBottom: 28 }}>
@@ -1130,8 +1511,15 @@ const PLANS = [
 ];
 
 function Pricing() {
+  const [hovered, setHovered] = useState<number | null>(null);
+  const isMobile = useMediaQuery(MOBILE_Q);
+  // Mobile shows the plans as a tap-to-expand accordion; start with the popular
+  // plan open so there is content visible without a tap.
+  const [openPlan, setOpenPlan] = useState<number | null>(
+    PLANS.findIndex((p) => p.popular)
+  );
   return (
-    <section id="pricing" style={{ background: WHITE, padding: "128px 32px 96px" }}>
+    <section id="pricing" style={{ background: WHITE, padding: isMobile ? "80px 24px 64px" : "128px 32px 96px" }}>
       <div style={{ maxWidth: 1280, margin: "0 auto" }}>
         {/* Top row: contact link */}
         <div style={{ display: "flex", justifyContent: "flex-end" }}>
@@ -1178,7 +1566,184 @@ function Pricing() {
           </h2>
         </div>
 
-        {/* Cards 2x2 */}
+        {isMobile ? (
+          /* Mobile: tap-to-expand accordion, one plan at a time */
+          <div style={{ marginTop: 40 }}>
+            {PLANS.map((p, i) => {
+              const open = openPlan === i;
+              return (
+                <div key={p.name} style={{ borderTop: "1px solid #E5E5E5" }}>
+                  <button
+                    onClick={() => setOpenPlan(open ? null : i)}
+                    style={{
+                      width: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: 12,
+                      padding: "20px 0",
+                      background: "transparent",
+                      border: "none",
+                      cursor: "pointer",
+                      textAlign: "left",
+                    }}
+                  >
+                    <span style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                      <span style={{ fontFamily: FONT, fontWeight: 400, fontSize: 20, color: BLACK }}>
+                        {p.name}
+                      </span>
+                      {p.popular && (
+                        <span
+                          style={{
+                            background: RED,
+                            color: WHITE,
+                            fontFamily: FONT,
+                            fontWeight: 400,
+                            fontSize: 10,
+                            letterSpacing: "0.1em",
+                            padding: "4px 10px",
+                            borderRadius: 999,
+                          }}
+                        >
+                          Most Popular
+                        </span>
+                      )}
+                    </span>
+                    <span style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
+                      <span style={{ fontFamily: FONT, fontWeight: 400, fontSize: 16, color: BLACK }}>
+                        ${p.price.toLocaleString()}
+                        <span style={{ color: MUTED }}>/mo</span>
+                      </span>
+                      <motion.span
+                        animate={{ rotate: open ? 180 : 0 }}
+                        transition={{ duration: 0.25 }}
+                        style={{ color: RED, fontSize: 18, lineHeight: 1, display: "inline-block" }}
+                      >
+                        ⌄
+                      </motion.span>
+                    </span>
+                  </button>
+                  <AnimatePresence initial={false}>
+                    {open && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: "easeInOut" }}
+                        style={{ overflow: "hidden" }}
+                      >
+                        <div style={{ padding: "0 0 28px" }}>
+                          <p
+                            style={{
+                              fontFamily: FONT,
+                              fontWeight: 400,
+                              fontSize: 14,
+                              color: "#666666",
+                              margin: "0 0 20px",
+                            }}
+                          >
+                            {p.subtitle}
+                          </p>
+                          <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+                            {p.includes.map((item) => (
+                              <li
+                                key={item}
+                                style={{
+                                  display: "flex",
+                                  gap: 10,
+                                  alignItems: "flex-start",
+                                  fontFamily: FONT,
+                                  fontWeight: 400,
+                                  fontSize: 14,
+                                  color: "#333333",
+                                  marginBottom: 12,
+                                }}
+                              >
+                                <span style={{ color: RED }}>✓</span>
+                                {item}
+                              </li>
+                            ))}
+                          </ul>
+                          <div style={{ marginTop: 20 }}>
+                            <span
+                              style={{
+                                fontFamily: FONT,
+                                fontWeight: 400,
+                                fontSize: 11,
+                                letterSpacing: "0.2em",
+                                color: RED,
+                                textTransform: "uppercase",
+                              }}
+                            >
+                              Best For
+                            </span>
+                            <p
+                              style={{
+                                fontFamily: FONT,
+                                fontWeight: 400,
+                                fontSize: 14,
+                                lineHeight: 1.6,
+                                color: "#444444",
+                                margin: "8px 0 0",
+                              }}
+                            >
+                              {p.bestFor}
+                            </p>
+                          </div>
+                          <div style={{ marginTop: 16 }}>
+                            <span
+                              style={{
+                                fontFamily: FONT,
+                                fontWeight: 400,
+                                fontSize: 11,
+                                letterSpacing: "0.2em",
+                                color: RED,
+                                textTransform: "uppercase",
+                              }}
+                            >
+                              Outcome
+                            </span>
+                            <p
+                              style={{
+                                fontFamily: FONT,
+                                fontWeight: 400,
+                                fontSize: 14,
+                                lineHeight: 1.6,
+                                color: "#444444",
+                                margin: "8px 0 0",
+                              }}
+                            >
+                              {p.outcome}
+                            </p>
+                          </div>
+                          <Link
+                            href="/contact"
+                            style={{
+                              display: "block",
+                              textAlign: "center",
+                              marginTop: 24,
+                              fontFamily: FONT,
+                              fontWeight: 400,
+                              fontSize: 15,
+                              color: WHITE,
+                              background: p.popular ? RED : BLACK,
+                              borderRadius: 8,
+                              padding: "14px 0",
+                              textDecoration: "none",
+                            }}
+                          >
+                            Get Started ↗
+                          </Link>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+        /* Desktop: cards 2x2 */
         <div
           style={{
             display: "grid",
@@ -1355,6 +1920,7 @@ function Pricing() {
             </div>
           ))}
         </div>
+        )}
       </div>
     </section>
   );
@@ -1555,13 +2121,14 @@ function FaqItem({ q, a }: { q: string; a: ReactNode }) {
 }
 
 function Faq() {
+  const isMobile = useMediaQuery(MOBILE_Q);
   return (
-    <section style={{ background: WHITE, padding: "96px 32px 128px" }}>
+    <section style={{ background: WHITE, padding: isMobile ? "80px 24px" : "96px 32px 128px" }}>
       <div style={{ maxWidth: 1280, margin: "0 auto" }}>
         {/* Main FAQ layout */}
-        <div style={{ display: "flex", gap: 64, flexWrap: "wrap", alignItems: "flex-start" }}>
-          {/* Left */}
-          <div style={{ width: "40%", minWidth: 320 }}>
+        <div style={{ display: "flex", gap: isMobile ? 40 : 64, flexWrap: "wrap", alignItems: "flex-start" }}>
+          {/* Left: label, headline, and CTA card (stacks first on mobile) */}
+          <div style={{ width: isMobile ? "100%" : "40%", minWidth: isMobile ? 0 : 320 }}>
             <span style={labelStyle}>( FAQ )</span>
             <h3
               style={{
@@ -1642,7 +2209,7 @@ function Faq() {
           </div>
 
           {/* Right: accordion */}
-          <div style={{ flex: 1, minWidth: 360 }}>
+          <div style={{ flex: 1, minWidth: isMobile ? 0 : 360, width: isMobile ? "100%" : undefined }}>
             {FAQS.map((f) => (
               <FaqItem key={f.q} q={f.q} a={f.a} />
             ))}
@@ -1657,8 +2224,9 @@ function Faq() {
 function Blog() {
   // Show the two most recent posts; full list lives at /blog.
   const posts = blogPosts.slice(0, 2);
+  const isMobile = useMediaQuery(MOBILE_Q);
   return (
-    <section id="blog" style={{ background: WHITE, padding: "96px 32px 128px" }}>
+    <section id="blog" style={{ background: WHITE, padding: isMobile ? "80px 24px" : "96px 32px 128px" }}>
       <div style={{ maxWidth: 1280, margin: "0 auto" }}>
         <div
           style={{
@@ -1703,7 +2271,7 @@ function Blog() {
           </Link>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 32 }}>
           {posts.map((p) => (
             <Link
               key={p.slug}
@@ -1744,6 +2312,7 @@ function Blog() {
 /* ────────────────────────────── FOOTER ───────────────────────────────── */
 function Footer() {
   const now = useNow();
+  const isMobile = useMediaQuery(MOBILE_Q);
   const tags = ["Content Management", "Content Creation", "Data Optimized"];
   const marqueeTags = Array.from({ length: 6 }).flatMap(() => tags);
   const navLinks = [
@@ -1788,10 +2357,18 @@ function Footer() {
 
       <div style={{ height: 1, background: "#222222" }} />
 
-      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "64px 32px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 48, flexWrap: "wrap" }}>
+      <div style={{ maxWidth: 1280, margin: "0 auto", padding: isMobile ? "48px 24px" : "64px 32px" }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: isMobile ? "column" : "row",
+            justifyContent: "space-between",
+            gap: 48,
+            flexWrap: "wrap",
+          }}
+        >
           {/* Left: nav links */}
-          <div style={{ minWidth: 280, flex: 1, maxWidth: 380 }}>
+          <div style={{ minWidth: 0, flex: 1, maxWidth: isMobile ? "100%" : 380 }}>
             {navLinks.map((l) => (
               <Link
                 key={l.label}

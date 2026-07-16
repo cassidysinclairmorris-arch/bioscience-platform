@@ -178,6 +178,31 @@ async function initialize(): Promise<void> {
         asset_title TEXT,
         created_at  TEXT    DEFAULT (datetime('now'))
       );
+
+      CREATE TABLE IF NOT EXISTS assets (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        client_id   TEXT    NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+        pillar_id   INTEGER REFERENCES pillars(id) ON DELETE SET NULL,
+        uploaded_by INTEGER REFERENCES client_users(id),
+        file_url    TEXT    NOT NULL,
+        file_name   TEXT    NOT NULL,
+        file_type   TEXT    NOT NULL,   -- image | document | slideshow | video
+        file_size   INTEGER NOT NULL DEFAULT 0,
+        notes       TEXT,
+        created_at  TEXT    DEFAULT (datetime('now')),
+        updated_at  TEXT    DEFAULT (datetime('now'))
+      );
+
+      CREATE TABLE IF NOT EXISTS report_uploads (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        client_id  TEXT NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+        period     TEXT NOT NULL,           -- month, e.g. '2026-06'
+        metric_key TEXT NOT NULL,           -- impressions | follower_growth | ... | share_of_voice
+        value      REAL,                    -- nullable: left null until a real number is entered
+        image_url  TEXT,                    -- nullable: LinkedIn screenshot in Vercel Blob
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      );
     `);
 
     // Fire-and-forget migrations for existing databases (ignore "column exists").
@@ -203,6 +228,12 @@ async function initialize(): Promise<void> {
       `ALTER TABLE clients ADD COLUMN linkedin_name TEXT`,
       `ALTER TABLE clients ADD COLUMN linkedin_token_expires_at TEXT`,
       `ALTER TABLE reports ADD COLUMN updated_at TEXT DEFAULT (datetime('now'))`,
+      // Service tier gates the Linkwright Signal metrics; set at company registration.
+      `ALTER TABLE clients ADD COLUMN tier TEXT`,
+      // Plain description of the business, used later to inform brand voice/pillars.
+      `ALTER TABLE clients ADD COLUMN description TEXT`,
+      // Keep report_uploads.updated_at for older databases created before this column.
+      `ALTER TABLE report_uploads ADD COLUMN updated_at TEXT DEFAULT (datetime('now'))`,
     ];
     for (const m of migrations) {
       try { await c.execute(m); } catch { /* column already exists */ }
@@ -297,6 +328,8 @@ export interface Client {
   best_post_times: string;
   active: number;
   logo_file: string | null;
+  tier: string | null;
+  description: string | null;
   created_at: string;
   linkedin_access_token: string | null;
   linkedin_refresh_token: string | null;
@@ -355,6 +388,36 @@ export interface PostAsset {
   mime: string | null;
   asset_title: string | null;
   created_at: string;
+}
+
+// Client asset library. Files live in Vercel Blob; this row is the metadata.
+export type AssetFileType = "image" | "document" | "slideshow" | "video";
+export const ASSET_FILE_TYPES: AssetFileType[] = ["image", "document", "slideshow", "video"];
+
+export interface Asset {
+  id: number;
+  client_id: string;
+  pillar_id: number | null;
+  uploaded_by: number | null;
+  file_url: string;
+  file_name: string;
+  file_type: AssetFileType;
+  file_size: number;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// One entered metric for a client + month, with its LinkedIn screenshot source.
+export interface ReportUpload {
+  id: number;
+  client_id: string;
+  period: string;      // 'YYYY-MM'
+  metric_key: string;
+  value: number | null;
+  image_url: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface PostAnalytic {
