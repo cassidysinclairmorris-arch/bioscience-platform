@@ -456,12 +456,18 @@ function PortalTrendChart({ history, tier }: { history: ReportUploadRow[]; tier:
   const [mounted, setMounted] = useState(false);
   const [active, setActive] = useState<string[]>(["impressions", "engagement_rate"]);
   const [gran, setGran] = useState<Granularity>("monthly");
-  const [year, setYear] = useState<string>("all");
+  const [year, setYear] = useState<string>("");
 
   useEffect(() => { setMounted(true); }, []);
+  // Default to the most recent year with data, so monthly shows a full Jan-Dec axis.
+  useEffect(() => {
+    const ys = yearsIn(history);
+    if (ys.length && !ys.includes(year)) setYear(ys[ys.length - 1]);
+  }, [history]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const years = yearsIn(history);
-  const data = buildSeries(history, gran, year);
+  const effYear = gran === "yearly" ? "all" : (year || years[years.length - 1] || "all");
+  const data = buildSeries(history, gran, effYear);
   const labelFor = (k: string) => factors.find(f => f.key === k)?.label ?? k;
   const colorFor = (k: string) => FACTOR_COLORS[Math.max(0, factors.findIndex(f => f.key === k)) % FACTOR_COLORS.length];
   const toggle = (k: string) => setActive(a => a.includes(k) ? a.filter(x => x !== k) : [...a, k]);
@@ -484,10 +490,9 @@ function PortalTrendChart({ history, tier }: { history: ReportUploadRow[]; tier:
               <button key={g} onClick={() => setGran(g)} style={{ ...pill(gran === g), textTransform: "capitalize" }}>{g}</button>
             ))}
           </div>
-          {years.length > 1 && (
+          {gran !== "yearly" && years.length > 0 && (
             <div style={{ display: "flex", gap: "6px" }}>
-              <button onClick={() => setYear("all")} style={pill(year === "all")}>All years</button>
-              {years.map(y => <button key={y} onClick={() => setYear(y)} style={pill(year === y)}>{y}</button>)}
+              {years.map(y => <button key={y} onClick={() => setYear(y)} style={pill(effYear === y)}>{y}</button>)}
             </div>
           )}
         </div>
@@ -694,7 +699,7 @@ function ReportsTab({ client, accentColor }: {
             return (
               <div style={glass({ overflow: "hidden" })}>
                 <div style={{ padding: "24px", borderBottom: "1px solid #E5E5E5" }}>
-                  <div style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", fontWeight: 400, letterSpacing: "0.18em", textTransform: "uppercase", color: accentColor, marginBottom: "6px" }}>This Period</div>
+                  <div style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", fontWeight: 400, letterSpacing: "0.18em", textTransform: "uppercase", color: accentColor, marginBottom: "6px" }}>This Month</div>
                   <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "20px", fontWeight: 400, color: "#0A0A0A" }}>At a glance{eng != null ? ` · ${eng}% engagement` : ""}</div>
                 </div>
                 <div style={{ padding: "24px" }}>

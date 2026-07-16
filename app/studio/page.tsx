@@ -2037,7 +2037,7 @@ function MetricsTrendChart({ clientId, tier }: { clientId: string; tier: string 
   const [mounted, setMounted] = useState(false);
   const [active, setActive] = useState<string[]>(["impressions", "engagement_rate"]);
   const [gran, setGran] = useState<Granularity>("monthly");
-  const [year, setYear] = useState<string>("all");
+  const [year, setYear] = useState<string>("");
 
   useEffect(() => { setMounted(true); }, []);
   useEffect(() => {
@@ -2046,9 +2046,16 @@ function MetricsTrendChart({ clientId, tier }: { clientId: string; tier: string 
       .then(d => setHistory(d.uploads || []))
       .catch(() => {});
   }, [clientId]);
+  // Default the year to the most recent one with data, so the monthly view shows
+  // that whole year's Jan-Dec axis.
+  useEffect(() => {
+    const ys = yearsIn(history);
+    if (ys.length && !ys.includes(year)) setYear(ys[ys.length - 1]);
+  }, [history]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const years = yearsIn(history);
-  const data = buildSeries(history, gran, year);
+  const effYear = gran === "yearly" ? "all" : (year || years[years.length - 1] || "all");
+  const data = buildSeries(history, gran, effYear);
   const labelFor = (k: string) => factors.find(f => f.key === k)?.label ?? k;
   const colorFor = (k: string) => FACTOR_COLORS[Math.max(0, factors.findIndex(f => f.key === k)) % FACTOR_COLORS.length];
   const toggle = (k: string) => setActive(a => a.includes(k) ? a.filter(x => x !== k) : [...a, k]);
@@ -2069,10 +2076,9 @@ function MetricsTrendChart({ clientId, tier }: { clientId: string; tier: string 
             <button key={g} onClick={() => setGran(g)} style={{ ...pill(gran === g), textTransform: "capitalize" }}>{g}</button>
           ))}
         </div>
-        {years.length > 1 && (
+        {gran !== "yearly" && years.length > 0 && (
           <div style={{ display: "flex", gap: "6px" }}>
-            <button onClick={() => setYear("all")} style={pill(year === "all")}>All years</button>
-            {years.map(y => <button key={y} onClick={() => setYear(y)} style={pill(year === y)}>{y}</button>)}
+            {years.map(y => <button key={y} onClick={() => setYear(y)} style={pill(effYear === y)}>{y}</button>)}
           </div>
         )}
       </div>
@@ -2211,7 +2217,7 @@ function ReportMetricsSection({ ac, period, notify }: {
         <div style={glass({ padding: "20px 24px" })}>
           <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: "8px", gap: "12px", flexWrap: "wrap" }}>
             <div>
-              <div className="label" style={{ marginBottom: "4px", color: "#E30000" }}>( This Period )</div>
+              <div className="label" style={{ marginBottom: "4px", color: "#E30000" }}>( This Month )</div>
               <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "18px", fontWeight: 300, color: T }}>At a glance{engagementVal ? ` · ${engagementVal}% engagement` : ""}</div>
             </div>
             <button onClick={exportPng} style={{ fontSize: "12px", color: T2, background: "#F5F5F5", border: "1px solid #E5E5E5", borderRadius: "6px", padding: "7px 13px", cursor: "pointer", fontFamily: "inherit" }}>Export image</button>
