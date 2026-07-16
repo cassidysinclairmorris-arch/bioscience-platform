@@ -32,6 +32,7 @@ type Post = {
   scheduled_day: string; content: string;
   status: "draft" | "pending_approval" | "approved" | "scheduled" | "posted";
   notes: string | null; image_url: string | null; week_number: number | null; created_at: string; updated_at: string;
+  posted_at?: string | null; scheduled_at?: string | null;
   assets?: { id: number; url: string; kind: string; sort_order: number }[];
 };
 type PostAnalytic = {
@@ -145,18 +146,21 @@ function PostVisuals({ post }: { post: Post }) {
 }
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
-function DashboardTab({ client, pendingPosts, postedPosts, accentColor, onNavigate }: {
-  client: Client; pendingPosts: Post[]; postedPosts: Post[]; accentColor: string;
+function DashboardTab({ client, pendingPosts, historyPosts, accentColor, onNavigate }: {
+  client: Client; pendingPosts: Post[]; historyPosts: Post[]; accentColor: string;
   onNavigate: (tab: PortalTab) => void;
 }) {
-  const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-  const publishedThisMonth = postedPosts.filter(p => p.updated_at >= monthStart).length;
+  // Published = posts that have gone live, taken straight from the Post History
+  // dataset and categorized by the month they were posted.
+  const posted = historyPosts.filter(p => p.status === "posted");
+  const postedDate = (p: Post) => p.posted_at || p.updated_at || p.created_at;
+  const nowYm = new Date().toISOString().slice(0, 7);
+  const publishedThisMonth = posted.filter(p => (postedDate(p) || "").slice(0, 7) === nowYm).length;
 
   const statCards = [
     { label: "Awaiting Your Approval", value: pendingPosts.length, color: "#E30000",  action: pendingPosts.length > 0 ? () => onNavigate("approval") : undefined, actionLabel: "Review now →" },
     { label: "Published This Month",   value: publishedThisMonth,  color: "#0A0A0A",  action: () => onNavigate("history"),  actionLabel: "View history →" },
-    { label: "Total Published",        value: postedPosts.length,  color: "#E30000" },
+    { label: "Total Published",        value: posted.length,       color: "#E30000" },
   ];
 
   return (
@@ -366,10 +370,52 @@ function ApprovalTab({ client, pendingPosts, accentColor, onRefresh, onToast }: 
 }
 
 // ── Post History ──────────────────────────────────────────────────────────────
-function HistoryTab({ postedPosts, analytics, accentColor }: {
-  postedPosts: Post[]; analytics: Record<number, PostAnalytic>; accentColor: string;
+// The date a post belongs on in the calendar: when it went live, else scheduled,
+// else last updated.
+function postWhen(p: Post): string {
+  return p.posted_at || p.scheduled_at || p.updated_at || p.created_at;
+}
+function shiftYm(ym: string, delta: number): string {
+  const [y, m] = ym.split("-").map(Number);
+  const d = new Date(y, m - 1 + delta, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+function ymLabel(ym: string): string {
+  const [y, m] = ym.split("-").map(Number);
+  return new Date(y, m - 1, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+}
+const HISTORY_DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+function HistoryTab({ posts, analytics, accentColor }: {
+  posts: Post[]; analytics: Record<number, PostAnalytic>; accentColor: string;
 }) {
-  if (postedPosts.length === 0) {
+  const [ym, setYm] = useState<string>(() => {
+    if (posts.length) {
+      const ms = posts.map(p => postWhen(p).slice(0, 7)).sort();
+      return ms[ms.length - 1];
+    }
+    return new Date().toISOString().slice(0, 7);
+  });
+  const [selected, setSelected] = useState<Post | null>(null);
+
+  const monthPosts = posts
+    .filter(p => postWhen(p).slice(0, 7) === ym)
+    .sort((a, b) => (postWhen(a) < postWhen(b) ? -1 : 1));
+
+  const [yy, mm] = ym.split("-").map(Number);
+  const daysInMonth = new Date(yy, mm, 0).getDate();
+  const startDow = new Date(yy, mm - 1, 1).getDay();
+  const byDay: Record<number, Post[]> = {};
+  monthPosts.forEach(p => { const d = new Date(postWhen(p)).getDate(); (byDay[d] ||= []).push(p); });
+  const cells: (number | null)[] = [...Array(startDow).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => i + 1)];
+  const today = new Date();
+  const todayYm = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
+  const todayDay = today.getDate();
+
+  const navBtn: React.CSSProperties = { width: "32px", height: "32px", borderRadius: "8px", border: "1px solid #E5E5E5", background: "#FFFFFF", color: "#0A0A0A", cursor: "pointer", fontSize: "16px", lineHeight: 1, fontFamily: "Helvetica, Arial, sans-serif" };
+  const an = selected ? analytics[selected.id] : undefined;
+
+  if (posts.length === 0) {
     return (
       <div style={{ textAlign: "center", padding: "80px 0" }}>
         <div style={{ width: "60px", height: "60px", borderRadius: "50%", background: "rgba(227,0,0,0.10)", border: "1px solid rgba(227,0,0,0.30)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
@@ -383,45 +429,109 @@ function HistoryTab({ postedPosts, analytics, accentColor }: {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-      <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "20px", fontWeight: 400, fontStyle: "normal", letterSpacing: "-0.01em", marginBottom: "8px", color: "#0A0A0A" }}>
-        Post History
+      {/* Header + month navigation */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
+        <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "20px", fontWeight: 400, color: "#0A0A0A" }}>Post History</div>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <button onClick={() => setYm(y => shiftYm(y, -1))} style={navBtn} aria-label="Previous month">‹</button>
+          <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "14px", fontWeight: 500, color: "#0A0A0A", minWidth: "150px", textAlign: "center" }}>{ymLabel(ym)}</span>
+          <button onClick={() => setYm(y => shiftYm(y, 1))} style={navBtn} aria-label="Next month">›</button>
+        </div>
       </div>
-      {postedPosts.map((p, i) => {
-        const an = analytics[p.id];
-        return (
-          <div key={p.id} style={glass({ overflow: "hidden" })}>
+
+      {/* Calendar — white with red accents; each posted day shows its title + category */}
+      <div style={glass({ padding: "20px" })}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "6px", marginBottom: "8px" }}>
+          {HISTORY_DOW.map((d, i) => <div key={i} style={{ textAlign: "center", fontFamily: "Helvetica, Arial, sans-serif", fontSize: "10px", letterSpacing: "0.14em", textTransform: "uppercase", color: "#999999" }}>{d.slice(0, 1)}</div>)}
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "6px" }}>
+          {cells.map((day, i) => {
+            if (!day) return <div key={i} />;
+            const dayPosts = byDay[day] || [];
+            const has = dayPosts.length > 0;
+            const isToday = ym === todayYm && day === todayDay;
+            const title = has ? (dayPosts[0].content.split("\n").find(l => l.trim()) || "").trim() : "";
+            return (
+              <div key={i} onClick={() => has && setSelected(dayPosts[0])}
+                style={{
+                  minHeight: "78px", borderRadius: "10px", padding: "6px 8px", overflow: "hidden",
+                  cursor: has ? "pointer" : "default", display: "flex", flexDirection: "column", gap: "3px",
+                  background: has ? "#FFFFFF" : "#FAF8F6",
+                  border: isToday ? `2px solid ${accentColor}` : `1px solid ${has ? "rgba(227,0,0,0.35)" : "#EDEBE8"}`,
+                  borderLeft: has ? `3px solid ${accentColor}` : (isToday ? `2px solid ${accentColor}` : "1px solid #EDEBE8"),
+                }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", fontWeight: has ? 700 : 400, color: has ? "#0A0A0A" : "#BBBBBB" }}>{day}</span>
+                  {dayPosts.length > 1 && (
+                    <span style={{ minWidth: "15px", height: "15px", borderRadius: "999px", background: accentColor, color: "#FFFFFF", fontFamily: "Helvetica, Arial, sans-serif", fontSize: "9px", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px" }}>{dayPosts.length}</span>
+                  )}
+                </div>
+                {has && (
+                  <>
+                    <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "8px", fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase", color: accentColor, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{dayPosts[0].post_type}</span>
+                    <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "10px", lineHeight: 1.25, color: "#444444", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{title}</span>
+                  </>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Posts this month */}
+      {monthPosts.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "32px 0", fontFamily: "Helvetica, Arial, sans-serif", fontSize: "14px", color: "#999999" }}>No posts this month. Use the arrows to browse other months.</div>
+      ) : (
+        monthPosts.map(p => (
+          <div key={p.id} onClick={() => setSelected(p)} style={glass({ overflow: "hidden", cursor: "pointer" })}>
             <div style={{ padding: "14px 24px", borderBottom: "1px solid #E5E5E5", display: "flex", alignItems: "center", gap: "10px", background: "#F5F5F5", flexWrap: "wrap" }}>
-              <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#E30000", flexShrink: 0 }} />
               <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", fontWeight: 400, padding: "4px 12px", background: "rgba(227,0,0,0.10)", border: `1px solid rgba(227,0,0,0.30)`, color: accentColor, borderRadius: "999px", letterSpacing: "0.02em" }}>{p.post_type}</span>
-              <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: "#666666" }}>{p.scheduled_day}</span>
               <StatusPill status={p.status} />
-              <span style={{ marginLeft: "auto", fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: "#999999" }}>{formatDate(p.updated_at)}</span>
+              <span style={{ marginLeft: "auto", fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: "#999999" }}>{formatDate(postWhen(p))}</span>
             </div>
-            <div style={{ padding: "24px" }}>
-              <p style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "15px", lineHeight: 1.6, color: "#0A0A0A", whiteSpace: "pre-wrap", display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+            <div style={{ padding: "20px 24px" }}>
+              <p style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "15px", lineHeight: 1.6, color: "#0A0A0A", whiteSpace: "pre-wrap", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden", marginBottom: "8px" }}>
                 {p.content}
               </p>
+              <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: accentColor, fontWeight: 500 }}>Read full post →</span>
+            </div>
+          </div>
+        ))
+      )}
+
+      {/* Full post modal */}
+      {selected && (
+        <div onClick={() => setSelected(null)} style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(10,10,10,0.5)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "48px 24px", overflowY: "auto" }}>
+          <div onClick={e => e.stopPropagation()} style={glass({ width: "100%", maxWidth: "640px", overflow: "hidden", boxShadow: "0 10px 40px rgba(0,0,0,0.2)" })}>
+            <div style={{ padding: "16px 24px", borderBottom: "1px solid #E5E5E5", display: "flex", alignItems: "center", gap: "10px", background: "#F5F5F5", flexWrap: "wrap" }}>
+              <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", fontWeight: 400, padding: "4px 12px", background: "rgba(227,0,0,0.10)", border: `1px solid rgba(227,0,0,0.30)`, color: accentColor, borderRadius: "999px" }}>{selected.post_type}</span>
+              <StatusPill status={selected.status} />
+              <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: "#999999" }}>{formatDate(postWhen(selected))}</span>
+              <button onClick={() => setSelected(null)} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "#666666", fontSize: "22px", lineHeight: 1 }} aria-label="Close">×</button>
+            </div>
+            <div style={{ padding: "24px" }}>
+              <PostVisuals post={selected} />
+              <p style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "15px", lineHeight: 1.7, color: "#0A0A0A", whiteSpace: "pre-wrap" }}>{selected.content}</p>
             </div>
             {an && (
-              <div style={{ padding: "12px 24px", borderTop: "1px solid #E5E5E5", display: "flex", gap: "24px", flexWrap: "wrap" }}>
+              <div style={{ padding: "12px 24px 24px", borderTop: "1px solid #E5E5E5", display: "flex", gap: "24px", flexWrap: "wrap" }}>
                 {[
-                  { label: "Impressions",  value: an.impressions.toLocaleString() },
-                  { label: "Engagement",   value: `${an.engagement_rate.toFixed(1)}%` },
-                  { label: "Clicks",       value: an.clicks.toLocaleString() },
-                  { label: "Likes",        value: an.likes.toLocaleString() },
-                  { label: "Comments",     value: an.comments.toLocaleString() },
-                  { label: "Reposts",      value: an.reposts.toLocaleString() },
+                  { label: "Impressions", value: an.impressions.toLocaleString() },
+                  { label: "Engagement", value: `${an.engagement_rate.toFixed(1)}%` },
+                  { label: "Likes", value: an.likes.toLocaleString() },
+                  { label: "Comments", value: an.comments.toLocaleString() },
+                  { label: "Reposts", value: an.reposts.toLocaleString() },
                 ].map(m => (
                   <div key={m.label}>
-                    <div style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "13px", fontWeight: 400, letterSpacing: "0.06em", textTransform: "uppercase", color: "#999999", marginBottom: "2px" }}>{m.label}</div>
-                    <div style={{ fontSize: "32px", fontWeight: 400, color: "#0A0A0A", fontFamily: "var(--font-raleway), sans-serif" }}>{m.value}</div>
+                    <div style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", fontWeight: 400, letterSpacing: "0.06em", textTransform: "uppercase", color: "#999999", marginBottom: "2px" }}>{m.label}</div>
+                    <div style={{ fontSize: "26px", fontWeight: 400, color: "#0A0A0A", fontFamily: "var(--font-raleway), sans-serif" }}>{m.value}</div>
                   </div>
                 ))}
               </div>
             )}
           </div>
-        );
-      })}
+        </div>
+      )}
     </div>
   );
 }
@@ -1129,10 +1239,9 @@ function AssetModal({ client, asset, accentColor, onClose, onDone, onToast }: {
 }) {
   const editing = asset !== null;
   const [file, setFile] = useState<File | null>(null);
-  const [pillarId, setPillarId] = useState<string>(asset?.pillar_id != null ? String(asset.pillar_id) : "");
   const [notes, setNotes] = useState(asset?.notes || "");
   const [busy, setBusy] = useState(false);
-  const pillars = client.pillars || [];
+  // Pillar tagging is agency-only; clients never choose a pillar here.
 
   const inputStyle: React.CSSProperties = { background: "#FFFFFF", border: "1px solid #E5E5E5", borderRadius: "8px", padding: "11px 13px", fontSize: "14px", fontFamily: "Helvetica, Arial, sans-serif", color: "#0A0A0A", outline: "none", width: "100%", boxSizing: "border-box", transition: "all 0.15s ease" };
 
@@ -1143,7 +1252,7 @@ function AssetModal({ client, asset, accentColor, onClose, onDone, onToast }: {
       if (editing) {
         const res = await fetch(`/api/assets/${asset!.id}`, {
           method: "PATCH", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ pillar_id: pillarId || null, notes: notes.trim() || null }),
+          body: JSON.stringify({ notes: notes.trim() || null }),
         });
         if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || "Could not save."); }
         onToast("Asset updated.", "success");
@@ -1155,7 +1264,6 @@ function AssetModal({ client, asset, accentColor, onClose, onDone, onToast }: {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             client_id: client.id,
-            pillar_id: pillarId || null,
             file_url: blob.url,
             file_name: file.name,
             file_type: assetTypeForFile(file),
@@ -1192,14 +1300,6 @@ function AssetModal({ client, asset, accentColor, onClose, onDone, onToast }: {
         {editing && (
           <div style={{ marginBottom: "16px", fontFamily: "Helvetica, Arial, sans-serif", fontSize: "14px", color: "#0A0A0A" }}>{asset!.file_name}</div>
         )}
-
-        <div style={{ marginBottom: "16px" }}>
-          <label style={{ display: "block", fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", fontWeight: 400, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "8px" }}>Content pillar (optional)</label>
-          <select value={pillarId} onChange={e => setPillarId(e.target.value)} style={inputStyle} onFocus={e => e.target.style.borderColor = "#0A0A0A"} onBlur={e => e.target.style.borderColor = "#E5E5E5"}>
-            <option value="">No pillar</option>
-            {pillars.map(p => <option key={p.id} value={p.id}>{p.type}</option>)}
-          </select>
-        </div>
 
         <div style={{ marginBottom: "24px" }}>
           <label style={{ display: "block", fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", fontWeight: 400, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999999", marginBottom: "8px" }}>Notes (optional)</label>
@@ -1342,7 +1442,6 @@ export default function PortalPage() {
   const [clients, setClients]       = useState<Client[]>([]);
   const [tab, setTab]               = useState<PortalTab>("dashboard");
   const [pendingPosts, setPendingPosts] = useState<Post[]>([]);
-  const [postedPosts, setPostedPosts]   = useState<Post[]>([]);
   const [historyPosts, setHistoryPosts] = useState<Post[]>([]);
   const [analytics, setAnalytics]   = useState<Record<number, PostAnalytic>>({});
   const [unreadMessages, setUnreadMessages] = useState(0);
@@ -1366,7 +1465,6 @@ export default function PortalPage() {
       pendingRes.json(), approvedRes.json(), scheduledRes.json(), postedRes.json(),
     ]);
     setPendingPosts(pendingData.posts || []);
-    setPostedPosts(postedData.posts || []);
     // Post History holds everything the client has signed off on: approved,
     // scheduled, and already posted. Newest first.
     const hist = [
@@ -1577,13 +1675,13 @@ export default function PortalPage() {
       {/* Main */}
       <main style={{ maxWidth: "1100px", margin: "0 auto", padding: "36px 32px 80px" }}>
         {tab === "dashboard" && (
-          <DashboardTab client={client} pendingPosts={pendingPosts} postedPosts={postedPosts} accentColor={accentColor} onNavigate={setTab} />
+          <DashboardTab client={client} pendingPosts={pendingPosts} historyPosts={historyPosts} accentColor={accentColor} onNavigate={setTab} />
         )}
         {tab === "approval" && (
           <ApprovalTab client={client} pendingPosts={pendingPosts} accentColor={accentColor} onRefresh={handleRefresh} onToast={notify} />
         )}
         {tab === "history" && (
-          <HistoryTab postedPosts={historyPosts} analytics={analytics} accentColor={accentColor} />
+          <HistoryTab posts={historyPosts} analytics={analytics} accentColor={accentColor} />
         )}
         {tab === "reports" && (
           <ReportsTab client={client} accentColor={accentColor} />
