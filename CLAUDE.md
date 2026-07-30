@@ -310,23 +310,30 @@ Monthly/Yearly toggle. Save 30% on yearly (multiply by 0.7).
 
 Four cards 2x2 grid. Border 1px #E5E5E5, border-radius 16px, padding 32px. Includes items have red checkmark. Best For / Outcome labels red small caps. CTA full width black button. Authority card CTA is #E30000.
 
-FOUNDATION — $500/mo — Maintain a Professional Presence
+Each plan may carry one or more `signals` entries (red small-caps label + body paragraph, same styling as Best For / Outcome). These render between the includes list and Best For, on both desktop cards and the mobile accordion.
+
+FOUNDATION — $650/mo — Maintain a Professional Presence
 Includes: 4 custom posts / Custom branded visuals / Monthly content planning
-Best For: Early-stage companies that want to stay visible and maintain a professional presence.
+Reporting: No Signal reporting at this tier. Native LinkedIn analytics only.
+Best For: Early-stage companies that want to stay visible, communicate progress, and maintain a professional presence.
 Outcome: Stay active, stay relevant, and ensure your company has a voice between major milestones.
 
-GROWTH — $1,000/mo — Build Consistent Visibility
-Includes: Everything in Foundation / 8 custom posts / Performance reporting / Content pillar development / Expanded content strategy
+GROWTH — $1,200/mo — Build Consistent Visibility
+Includes: Everything in Foundation / 8 custom posts / Audience Traction reporting / Content pillar development / Expanded content strategy
+Audience Traction: See what % of your engagement comes from investors, hiring managers, and strategic partners. Monthly dashboard. Six-month trend.
 Best For: Companies seeking greater awareness among investors, partners, recruits, and industry stakeholders.
 Outcome: Build momentum through consistent, strategic communication that reinforces your expertise over time.
 
-AUTHORITY — $1,800/mo — Establish Industry Credibility — "Most Popular" badge #E30000
-Includes: Everything in Growth / 12 custom posts / Educational carousel creation / Monthly strategy consultation / Enhanced performance analysis
+AUTHORITY — $2,000/mo — Establish Industry Credibility — "Most Popular" badge #E30000
+Includes: Everything in Growth / 12 custom posts / Monthly strategy consultation / Enhanced performance analysis / Relationship Momentum tracking
+Relationship Momentum: Track which decision-makers keep coming back. You see their names, companies, and how often they engage across your posts.
 Best For: Organizations focused on thought leadership, fundraising, hiring, partnership development, or market expansion.
 Outcome: Transform LinkedIn from a communication channel into a platform for industry influence and credibility.
 
-MARKET LEADERSHIP — $3,200/mo — Own the Conversation
-Includes: Everything in Authority / 16 custom posts / Full LinkedIn page management / Strategic community engagement / Weekly performance monitoring / Quarterly growth roadmap
+MARKET LEADERSHIP — $3,500/mo — Own the Conversation
+Includes: Everything in Authority / 16 custom posts / Full LinkedIn page management / Strategic community engagement / Weekly performance monitoring / Quarterly growth roadmap / Content Authority / Monthly Strategic Memo
+Content Authority: Which of your four pillars drives the most engagement from target audiences? Strategic recommendations on content mix and topic emphasis.
+Strategic Memo: Every month, Linkwright delivers a written recommendation (2 to 3 pages). Analysis of what worked, what didn't, and what to focus on next month. Not just data. Direction.
 Best For: Companies committed to building a dominant presence within their industry.
 Outcome: Maximize visibility, strengthen industry relationships, and position your company at the center of the conversation.
 
@@ -372,7 +379,7 @@ Background #0A0A0A.
 Marquee: pill tags right to left, 30s linear infinite. translateX(0) to translateX(-50%). Pills: border #333333, rounded-full, padding x-6 y-3, white Raleway 400 18px. Text: "Content Management" / "Content Creation" / "Data Optimized" (repeat 6x, duplicated for seamless loop).
 
 Left column: Studio / Projects / Services / Blog links with arrows, gray dividers. Privacy policy / Terms of service below.
-Right column: LOCATION (200 Roy St, Seattle WA 98109) / CONTACT US (+1 360 409 3762) / MO-FR (09.00am - 06.00pm) / EMAIL (info@linkwrightstudio.com)
+Right column: CONTACT US (+1 360 409 3762) / MO-FR (09.00am - 06.00pm) / EMAIL (info@linkwrightstudio.com). No street address anywhere on the site.
 Bottom row: LW left / live date+time center / "2025 Linkwright" right. All #666666.
 
 ---

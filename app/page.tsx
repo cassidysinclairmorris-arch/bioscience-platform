@@ -1451,6 +1451,12 @@ const PLANS = [
       "Custom branded visuals",
       "Monthly content planning",
     ],
+    signals: [
+      {
+        label: "Reporting",
+        body: "No Signal reporting at this tier. Native LinkedIn analytics only.",
+      },
+    ],
     bestFor:
       "Early-stage companies that want to stay visible, communicate progress, and maintain a professional presence.",
     outcome:
@@ -1464,9 +1470,15 @@ const PLANS = [
     includes: [
       "Everything in Foundation",
       "8 custom posts per month",
-      "Follower Quality Index reporting",
+      "Audience Traction reporting",
       "Content pillar development",
       "Expanded content strategy",
+    ],
+    signals: [
+      {
+        label: "Audience Traction",
+        body: "See what % of your engagement comes from investors, hiring managers, and strategic partners. Monthly dashboard. Six-month trend.",
+      },
     ],
     bestFor:
       "Companies seeking greater awareness among investors, partners, recruits, and industry stakeholders.",
@@ -1481,9 +1493,15 @@ const PLANS = [
     includes: [
       "Everything in Growth",
       "12 custom posts per month",
-      "Warm Signal Rate reporting",
-      "Educational carousel creation",
       "Monthly strategy consultation",
+      "Enhanced performance analysis",
+      "Relationship Momentum tracking",
+    ],
+    signals: [
+      {
+        label: "Relationship Momentum",
+        body: "Track which decision-makers keep coming back. You see their names, companies, and how often they engage across your posts.",
+      },
     ],
     bestFor:
       "Organizations focused on thought leadership, fundraising, hiring, partnership development, or market expansion.",
@@ -1499,9 +1517,21 @@ const PLANS = [
       "Everything in Authority",
       "16 custom posts per month",
       "Full LinkedIn page management",
-      "Share of Voice reporting",
       "Strategic community engagement",
+      "Weekly performance monitoring",
       "Quarterly growth roadmap",
+      "Content Authority",
+      "Monthly Strategic Memo",
+    ],
+    signals: [
+      {
+        label: "Content Authority",
+        body: "Which of your four pillars drives the most engagement from target audiences? Strategic recommendations on content mix and topic emphasis.",
+      },
+      {
+        label: "Strategic Memo",
+        body: "Every month, Linkwright delivers a written recommendation (2 to 3 pages). Analysis of what worked, what didn't, and what to focus on next month. Not just data. Direction.",
+      },
     ],
     bestFor: "Companies committed to building a dominant presence within their industry.",
     outcome:
@@ -1664,6 +1694,34 @@ function Pricing() {
                               </li>
                             ))}
                           </ul>
+                          {p.signals.map((s) => (
+                            <div key={s.label} style={{ marginTop: 20 }}>
+                              <span
+                                style={{
+                                  fontFamily: FONT,
+                                  fontWeight: 400,
+                                  fontSize: 11,
+                                  letterSpacing: "0.2em",
+                                  color: RED,
+                                  textTransform: "uppercase",
+                                }}
+                              >
+                                {s.label}
+                              </span>
+                              <p
+                                style={{
+                                  fontFamily: FONT,
+                                  fontWeight: 400,
+                                  fontSize: 14,
+                                  lineHeight: 1.6,
+                                  color: "#444444",
+                                  margin: "8px 0 0",
+                                }}
+                              >
+                                {s.body}
+                              </p>
+                            </div>
+                          ))}
                           <div style={{ marginTop: 20 }}>
                             <span
                               style={{
@@ -1748,6 +1806,8 @@ function Pricing() {
           style={{
             display: "grid",
             gridTemplateColumns: "1fr 1fr",
+            // Equal-height rows so all four cards match and the CTAs line up.
+            gridAutoRows: "1fr",
             gap: 24,
             marginTop: 64,
           }}
@@ -1757,6 +1817,8 @@ function Pricing() {
               key={p.name}
               style={{
                 position: "relative",
+                display: "flex",
+                flexDirection: "column",
                 border: "1px solid #E5E5E5",
                 borderRadius: 16,
                 padding: 32,
@@ -1845,6 +1907,35 @@ function Pricing() {
                 ))}
               </ul>
 
+              {p.signals.map((s) => (
+                <div key={s.label} style={{ marginTop: 24 }}>
+                  <span
+                    style={{
+                      fontFamily: FONT,
+                      fontWeight: 400,
+                      fontSize: 11,
+                      letterSpacing: "0.2em",
+                      color: RED,
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    {s.label}
+                  </span>
+                  <p
+                    style={{
+                      fontFamily: FONT,
+                      fontWeight: 400,
+                      fontSize: 14,
+                      lineHeight: 1.6,
+                      color: "#444444",
+                      margin: "8px 0 0",
+                    }}
+                  >
+                    {s.body}
+                  </p>
+                </div>
+              ))}
+
               <div style={{ marginTop: 24 }}>
                 <span
                   style={{
@@ -1899,24 +1990,26 @@ function Pricing() {
                 </p>
               </div>
 
-              <Link
-                href="/contact"
-                style={{
-                  display: "block",
-                  textAlign: "center",
-                  marginTop: 28,
-                  fontFamily: FONT,
-                  fontWeight: 400,
-                  fontSize: 15,
-                  color: WHITE,
-                  background: p.popular ? RED : BLACK,
-                  borderRadius: 8,
-                  padding: "14px 0",
-                  textDecoration: "none",
-                }}
-              >
-                Get Started ↗
-              </Link>
+              {/* marginTop auto pins the CTA to the bottom of every card */}
+              <div style={{ marginTop: "auto", paddingTop: 28 }}>
+                <Link
+                  href="/contact"
+                  style={{
+                    display: "block",
+                    textAlign: "center",
+                    fontFamily: FONT,
+                    fontWeight: 400,
+                    fontSize: 15,
+                    color: WHITE,
+                    background: p.popular ? RED : BLACK,
+                    borderRadius: 8,
+                    padding: "14px 0",
+                    textDecoration: "none",
+                  }}
+                >
+                  Get Started ↗
+                </Link>
+              </div>
             </div>
           ))}
         </div>
@@ -2416,7 +2509,6 @@ function Footer() {
             }}
           >
             {[
-              ["Location", "200 Roy St, Seattle WA 98109"],
               ["Contact Us", "+1 360 409 3762"],
               ["Mo-Fr", "09.00am - 06.00pm"],
               ["Email", "cassidy@linkwrightstudio.com"],
