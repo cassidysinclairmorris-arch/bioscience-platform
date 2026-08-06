@@ -31,10 +31,12 @@ Next.js 16 App Router platform for a LinkedIn content agency (Linkwright). Manag
 
 | Role | Login route | Cookie | Primary UI |
 |------|-------------|--------|------------|
-| Agency (internal) | `/login` password `#M0llydog!` | `auth=gorlin_authenticated` | `/studio` |
+| Agency (internal) | `/login` email + password | `auth=gorlin_authenticated` | `/studio` |
 | Client | `/client/login` email+password | `client_session` (base64 JSON) | `/portal` |
 
 `middleware.ts` enforces this split on every request. `/api/*` routes always allowed through for authenticated users.
+
+Agency credentials live in the `users` table (role `agency`), never in code. There is one agency account. Set or change it per database with `npx tsx scripts/set-agency-login.ts`, adding `--env-file=.env.local` to target production Turso. `/api/auth` checks email + password against that row, then sets the `auth` cookie for authorization and a `user_session` cookie carrying the signed-in email.
 
 ### Database
 
@@ -226,7 +228,7 @@ White background. Two columns. Left: ( ABOUT US ) label. Right 65%: scroll-highl
 
 Scroll-highlight: split into words, each motion.span. useScroll + useTransform. Words start #CCCCCC, animate to #0A0A0A sequentially as section scrolls in.
 
-Headline: "We help companies turn LinkedIn into a growth engine through algorithm-informed content, performance analytics, and intelligent content optimization."
+Headline: "We help biotech companies turn LinkedIn into a growth engine through algorithm-informed content, performance analytics, and intelligent content optimization."
 
 Below: left photo 19.png (rounded 12px, ~280px wide), right 2x2 stat grid.
 

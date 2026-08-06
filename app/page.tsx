@@ -614,7 +614,7 @@ function About() {
           </div>
           <div style={{ flex: 1, minWidth: 0, maxWidth: isMobile ? "100%" : "65%" }}>
             <ScrollHighlight
-              text="We help companies turn LinkedIn into a growth engine through algorithm-informed content, performance analytics, and intelligent content optimization."
+              text="We help biotech companies turn LinkedIn into a growth engine through algorithm-informed content, performance analytics, and intelligent content optimization."
               style={{
                 fontSize: "clamp(28px, 4vw, 52px)",
                 lineHeight: 1.25,

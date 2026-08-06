@@ -4,11 +4,22 @@ import { getClientSession } from "@/lib/client-session";
 export async function GET(req: NextRequest) {
   // 1. Agency/admin always takes precedence, so an agency user with a leftover
   //    client session still gets full agency access in the studio and portal.
+  const userSession = req.cookies.get("user_session")?.value;
+
   if (req.cookies.get("auth")?.value === "gorlin_authenticated") {
-    return NextResponse.json({ role: "agency", clientId: null, email: "admin@gorlin.com" });
+    // The login route stores the signed-in email alongside the auth cookie.
+    let email = "admin@gorlin.com";
+    if (userSession) {
+      try {
+        const data = JSON.parse(Buffer.from(userSession, "base64").toString("utf8"));
+        if (data?.email) email = data.email;
+      } catch {
+        // invalid cookie, keep the fallback
+      }
+    }
+    return NextResponse.json({ role: "agency", clientId: null, email });
   }
 
-  const userSession = req.cookies.get("user_session")?.value;
   if (userSession) {
     try {
       const data = JSON.parse(Buffer.from(userSession, "base64").toString("utf8"));

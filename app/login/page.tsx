@@ -25,7 +25,7 @@ export default function LoginPage() {
     const res = await fetch("/api/auth", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password }),
+      body: JSON.stringify({ email, password }),
     });
     if (res.ok) {
       router.push("/studio");
@@ -139,7 +139,7 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              disabled={loading || !password}
+              disabled={loading || !email || !password}
               style={{
                 width: "100%",
                 background: BLACK,
@@ -150,8 +150,8 @@ export default function LoginPage() {
                 border: "none",
                 borderRadius: 999,
                 padding: "15px 0",
-                cursor: loading || !password ? "default" : "pointer",
-                opacity: loading || !password ? 0.55 : 1,
+                cursor: loading || !email || !password ? "default" : "pointer",
+                opacity: loading || !email || !password ? 0.55 : 1,
               }}
             >
               {loading ? "Signing in..." : "Sign In"}
