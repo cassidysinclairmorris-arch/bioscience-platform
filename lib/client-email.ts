@@ -125,3 +125,30 @@ export async function sendRoleChangeEmail(opts: {
     html: buildHtml(opts.firstName, paragraphs, "Go to Portal", `${opts.baseUrl}/client/login`, opts.baseUrl),
   });
 }
+
+// Email 5: the agency replied to a comment on a post. Deliberately short. The
+// conversation itself stays in the portal; this only says something is waiting
+// and links straight to the post it belongs to.
+export async function sendCommentReplyEmail(opts: {
+  to: string;
+  firstName: string;
+  companyName: string;
+  postId: number;
+  baseUrl: string;
+}): Promise<void> {
+  if (!isEmailConfigured()) throw new Error("Email service is not configured.");
+
+  const link = `${opts.baseUrl}/portal?tab=approval&post=${opts.postId}`;
+  await transporter().sendMail({
+    from: `"Linkwright" <${process.env.SMTP_USER}>`,
+    to: opts.to,
+    subject: "You have a new message in your Linkwright portal",
+    html: buildHtml(
+      opts.firstName,
+      ["Your Linkwright team has replied to your comment on a post."],
+      "View Message",
+      link,
+      opts.baseUrl
+    ),
+  });
+}

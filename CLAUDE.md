@@ -42,9 +42,23 @@ Agency credentials live in the `users` table (role `agency`), never in code. The
 
 libSQL via `@libsql/client`, behind a small better-sqlite3-style async wrapper in `lib/db.ts` (call sites use `await db.prepare(sql).get/all/run(...)` and `await db.exec(...)`). Local dev uses a file (`file:data/posts.db`); production uses Turso when `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN` are set. All schema + migrations in `lib/db.ts` — fire-and-forget `ALTER TABLE` wrapped in try/catch. No migration framework. When adding a column, add an `ALTER TABLE` migration block there.
 
-Tables: `clients`, `brand_kits` (1:1 with clients), `pillars` (4 per client), `posts`, `post_analytics`, `invoices`, `users`, `client_users` (per-client portal accounts, roles owner/administrator/user with per-company limits), `messages` (client and agency message threads), `assets` (client asset library — files stored in Vercel Blob, this row is metadata: `client_id`, nullable `pillar_id`, `uploaded_by` → `client_users.id`, `file_url`, `file_name`, `file_type` one of `image`/`document`/`slideshow`/`video`, `file_size`, `notes`).
+Tables: `clients`, `brand_kits` (1:1 with clients), `pillars` (per client, renameable, `active` flag for retired ones), `posts`, `post_analytics`, `invoices`, `users`, `client_users` (per-client portal accounts, roles owner/administrator/user with per-company limits), `messages` (client and agency message threads), `assets` (client asset library — files stored in Vercel Blob, this row is metadata: `client_id`, nullable `pillar_id`, `uploaded_by` → `client_users.id`, `file_url`, `file_name`, `file_type` one of `image`/`document`/`slideshow`/`video`, `file_size`, `notes`).
 
 `/api/clients` GET returns clients with `brand_kits` row merged into a `brand` object and `pillars` array attached. `brand` uses snake_case keys (`accent_color`, `dark_color`, `headline_font`, etc.).
+
+### Content pillars
+
+Pillar names belong to the client, not the platform. `posts.pillar_id` points at the `pillars` row and `posts.post_type` keeps the name as it read when the post was written, so a rename updates the label everywhere without detaching history. A pillar with posts is retired (`active = 0`) rather than deleted. `lib/db.ts` backfills `pillar_id` on boot by matching `post_type` to a pillar name, filling blanks only.
+
+`/api/pillars` GET (agency any client, portal own company) / POST / PATCH / DELETE. DELETE archives when the pillar has posts, hard-deletes when it does not. Managed in the studio Clients tab under the edit panel.
+
+### Scheduling
+
+`posts.scheduled_at` holds the exact wall-clock datetime and `posts.timezone` the zone it was chosen in. Setting a date records it at any status; the status only flips to `scheduled` when the post is already approved or scheduled, so drafts and posts awaiting approval keep their state. Studio Calendar is a real dated month view driven by `posted_at ?? scheduled_at`; the weekday pillar template sits below it.
+
+### Post comments
+
+`post_comments` threads one level deep on a post: `parent_id` null for a top-level comment, set for a reply. `author_role` is `client` or `agency`. `/api/post-comments` GET (`?postId=` or `?postIds=` for counts, `&markRead=1`) / POST / DELETE, scoped so a portal user only reaches their own company's posts. An agency reply emails the client via `sendCommentReplyEmail` in `lib/client-email.ts`, sent to the client users who commented plus every owner and administrator, best effort so a mail failure never blocks the comment. This sits alongside the existing `posts.notes` change-request field rather than replacing it.
 
 ### Brand context pipeline
 

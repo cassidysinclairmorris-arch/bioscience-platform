@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { upload } from "@vercel/blob/client";
 import { LINKEDIN_METRICS, SIGNAL_METRICS, tierIncludesSignal } from "@/lib/tiers";
 import { buildSeries, yearsIn, type Granularity } from "@/lib/report-series";
+import { formatScheduled, formatScheduledTime } from "@/lib/schedule";
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -29,10 +30,11 @@ type Asset = {
 };
 type Post = {
   id: number; company_id: string; company_name: string; post_type: string;
+  pillar_id: number | null;
   scheduled_day: string; content: string;
   status: "draft" | "pending_approval" | "approved" | "scheduled" | "posted";
   notes: string | null; image_url: string | null; week_number: number | null; created_at: string; updated_at: string;
-  posted_at?: string | null; scheduled_at?: string | null;
+  posted_at?: string | null; scheduled_at?: string | null; timezone?: string | null;
   assets?: { id: number; url: string; kind: string; sort_order: number }[];
 };
 type PostAnalytic = {
@@ -79,6 +81,18 @@ type ExtractedData = {
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+const sectionLabel: React.CSSProperties = {
+  fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", fontWeight: 400,
+  letterSpacing: "0.18em", textTransform: "uppercase", color: "#999999", marginBottom: "10px",
+};
+const metaLabel: React.CSSProperties = {
+  fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", letterSpacing: "0.1em",
+  textTransform: "uppercase", color: "#999999", margin: 0, whiteSpace: "nowrap",
+};
+const metaValue: React.CSSProperties = {
+  fontFamily: "Helvetica, Arial, sans-serif", fontSize: "13px", color: "#0A0A0A", margin: 0, lineHeight: 1.5,
+};
+
 function glass(extra?: React.CSSProperties): React.CSSProperties {
   return { background: "#FFFFFF", border: "1px solid #E5E5E5", borderRadius: "12px", ...extra };
 }
@@ -104,11 +118,27 @@ function StatusPill({ status }: { status: string }) {
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  return new Date(String(iso).replace(" ", "T")).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+// Timestamps arrive either as a datetime-local value ("2026-08-12T09:00") or as
+// SQLite text ("2026-08-12 09:00:00").
+function parseWhen(v: string | null | undefined): Date | null {
+  if (!v) return null;
+  const d = new Date(String(v).replace(" ", "T"));
+  return isNaN(d.getTime()) ? null : d;
+}
+// Date plus the time of day the post is set for, which is what the agency chose.
+function formatDateTime(v: string | null | undefined) {
+  const d = parseWhen(v);
+  return d ? d.toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }) : "";
+}
+function formatTimeOnly(v: string | null | undefined) {
+  const d = parseWhen(v);
+  return d ? d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }) : "";
 }
 
 // ── Post visuals (single image, or a carousel when a post has multiple) ────────
-function PostVisuals({ post }: { post: Post }) {
+function PostVisuals({ post, maxHeight = 340 }: { post: Post; maxHeight?: number }) {
   const assets = (post.assets && post.assets.length)
     ? [...post.assets].sort((a, b) => a.sort_order - b.sort_order)
     : (post.image_url ? [{ id: 0, url: post.image_url, kind: "image", sort_order: 0 }] : []);
@@ -125,9 +155,11 @@ function PostVisuals({ post }: { post: Post }) {
   };
   return (
     <div style={{ marginBottom: "16px" }}>
-      <div style={{ position: "relative", borderRadius: "8px", overflow: "hidden", border: "1px solid #E5E5E5", background: "#F5F5F5" }}>
+      {/* The whole creative is shown, never cropped: object-fit contain inside a
+          fixed-height frame keeps the original aspect ratio at a compact size. */}
+      <div style={{ position: "relative", borderRadius: "8px", overflow: "hidden", border: "1px solid #E5E5E5", background: "#F5F5F5", display: "flex", alignItems: "center", justifyContent: "center", padding: "8px", minHeight: "180px" }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={assets[i].url} alt={`Visual ${i + 1}`} style={{ width: "100%", maxHeight: "360px", objectFit: "cover", display: "block" }} />
+        <img src={assets[i].url} alt={`Visual ${i + 1}`} style={{ maxWidth: "100%", maxHeight: maxHeight, width: "auto", height: "auto", objectFit: "contain", display: "block", borderRadius: "4px" }} />
         {multi && (
           <>
             <button onClick={() => setIdx((i - 1 + assets.length) % assets.length)} aria-label="Previous visual" style={{ ...arrow, left: "10px" }}>‹</button>
@@ -141,6 +173,112 @@ function PostVisuals({ post }: { post: Post }) {
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+// ── Post comment thread (client side) ─────────────────────────────────────────
+// Comments live on the post, so the conversation stays with the thing being
+// discussed. Replies nest one level under the comment they answer.
+type PostCommentRow = {
+  id: number; post_id: number; parent_id: number | null;
+  author_role: "client" | "agency"; author_name: string;
+  body: string; created_at: string; read_at: string | null;
+};
+
+function PostThread({ postId, accentColor }: { postId: number; accentColor: string }) {
+  const [comments, setComments] = useState<PostCommentRow[]>([]);
+  const [draft, setDraft] = useState("");
+  const [replyTo, setReplyTo] = useState<number | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [composing, setComposing] = useState(false);
+
+  const load = useCallback(async (markRead = false) => {
+    const res = await fetch(`/api/post-comments?postId=${postId}${markRead ? "&markRead=1" : ""}`);
+    if (res.ok) setComments((await res.json()).comments || []);
+  }, [postId]);
+  useEffect(() => { load(true); }, [load]);
+
+  const send = async () => {
+    if (!draft.trim()) return;
+    setBusy(true);
+    await fetch("/api/post-comments", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ postId, body: draft.trim(), parentId: replyTo }),
+    });
+    setBusy(false); setDraft(""); setReplyTo(null); setComposing(false); load();
+  };
+
+  const roots = comments.filter(c => !c.parent_id);
+  const repliesOf = (id: number) => comments.filter(c => c.parent_id === id);
+
+  const bubble = (c: PostCommentRow) => {
+    const agency = c.author_role === "agency";
+    return (
+      <div style={{
+        padding: "10px 13px", borderRadius: "8px",
+        background: agency ? "rgba(227,0,0,0.05)" : "#F5F5F5",
+        border: `1px solid ${agency ? "rgba(227,0,0,0.18)" : "#E5E5E5"}`,
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "5px", flexWrap: "wrap" }}>
+          <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", fontWeight: 600, color: agency ? accentColor : "#0A0A0A" }}>
+            {agency ? "Linkwright" : c.author_name}
+          </span>
+          <span style={{ marginLeft: "auto", fontFamily: "Helvetica, Arial, sans-serif", fontSize: "10px", color: "#999999" }}>{formatDateTime(c.created_at)}</span>
+        </div>
+        <p style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "13px", lineHeight: 1.6, color: "#0A0A0A", whiteSpace: "pre-wrap", margin: 0 }}>{c.body}</p>
+      </div>
+    );
+  };
+
+  const linkBtn: React.CSSProperties = {
+    fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", color: accentColor,
+    background: "none", border: "none", cursor: "pointer", padding: 0,
+    letterSpacing: "0.06em", textTransform: "uppercase", fontWeight: 500,
+  };
+
+  return (
+    <div style={{ marginTop: "20px", borderTop: "1px solid #E5E5E5", paddingTop: "16px" }}>
+      <div style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", fontWeight: 400, letterSpacing: "0.18em", textTransform: "uppercase", color: "#999999", marginBottom: comments.length ? "12px" : "8px" }}>
+        Comments{comments.length ? ` (${comments.length})` : ""}
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+        {roots.map(c => (
+          <div key={c.id}>
+            {bubble(c)}
+            {repliesOf(c.id).map(r => (
+              <div key={r.id} style={{ marginLeft: "20px", marginTop: "8px" }}>{bubble(r)}</div>
+            ))}
+            <button onClick={() => { setReplyTo(c.id); setComposing(true); setDraft(""); }} style={{ ...linkBtn, marginLeft: "20px", marginTop: "7px" }}>Reply</button>
+          </div>
+        ))}
+      </div>
+
+      {composing ? (
+        <div style={{ marginTop: "12px" }}>
+          <textarea value={draft} onChange={e => setDraft(e.target.value)} rows={3} autoFocus
+            placeholder={replyTo ? "Write your reply" : "Add a comment for your Linkwright team"}
+            style={{ width: "100%", background: "#FFFFFF", border: "1px solid #E5E5E5", borderRadius: "8px", padding: "11px 14px", fontSize: "14px", color: "#0A0A0A", outline: "none", fontFamily: "Helvetica, Arial, sans-serif", lineHeight: 1.6, resize: "none", boxSizing: "border-box" }}
+            onFocus={e => e.target.style.borderColor = "#0A0A0A"}
+            onBlur={e => e.target.style.borderColor = "#E5E5E5"}
+          />
+          <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+            <button onClick={send} disabled={busy || !draft.trim()}
+              style={{ padding: "8px 18px", background: accentColor, border: `1px solid ${accentColor}`, borderRadius: "8px", fontSize: "13px", color: "#FFFFFF", cursor: busy || !draft.trim() ? "not-allowed" : "pointer", opacity: busy || !draft.trim() ? 0.5 : 1, fontFamily: "Helvetica, Arial, sans-serif" }}>
+              {busy ? "Sending…" : "Send"}
+            </button>
+            <button onClick={() => { setComposing(false); setReplyTo(null); setDraft(""); }}
+              style={{ padding: "8px 18px", background: "#FFFFFF", border: "1px solid #E5E5E5", borderRadius: "8px", fontSize: "13px", color: "#666666", cursor: "pointer", fontFamily: "Helvetica, Arial, sans-serif" }}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button onClick={() => { setComposing(true); setReplyTo(null); }} style={{ ...linkBtn, marginTop: comments.length ? "12px" : 0 }}>
+          {comments.length ? "Add a comment" : "Leave a comment"}
+        </button>
+      )}
     </div>
   );
 }
@@ -295,14 +433,46 @@ function ApprovalTab({ client, pendingPosts, accentColor, onRefresh, onToast }: 
             <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", fontWeight: 400, padding: "4px 12px", background: "rgba(227,0,0,0.10)", border: `1px solid rgba(227,0,0,0.30)`, color: accentColor, borderRadius: "999px", letterSpacing: "0.02em" }}>
               {p.post_type}
             </span>
-            <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: "#666666" }}>{p.scheduled_day}</span>
+            {p.scheduled_at ? (
+              <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: "#0A0A0A", fontWeight: 500 }}>
+                Goes live {formatScheduled(p.scheduled_at, p.timezone)}
+              </span>
+            ) : (
+              <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: "#666666" }}>{p.scheduled_day}</span>
+            )}
             <span style={{ marginLeft: "auto", fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: "#999999" }}>{formatDate(p.created_at)}</span>
           </div>
 
-          {/* Content */}
-          <div style={{ padding: "24px" }}>
-            <PostVisuals post={p} />
-            <p style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "15px", lineHeight: 1.6, color: "#0A0A0A", whiteSpace: "pre-wrap" }}>{p.content}</p>
+          {/* Post content on the left, whole creative on the right.
+              Collapses to a single column on narrow screens. */}
+          <div className="review-split" style={{ padding: "24px" }}>
+            <div>
+              <div style={sectionLabel}>Post</div>
+              <p style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "15px", lineHeight: 1.6, color: "#0A0A0A", whiteSpace: "pre-wrap", margin: 0 }}>{p.content}</p>
+
+              <dl style={{ margin: "20px 0 0", display: "grid", gridTemplateColumns: "auto 1fr", gap: "8px 16px", alignItems: "baseline" }}>
+                <dt style={metaLabel}>Pillar</dt>
+                <dd style={metaValue}>{p.post_type}</dd>
+                <dt style={metaLabel}>Status</dt>
+                <dd style={{ margin: 0 }}><StatusPill status={p.status} /></dd>
+                <dt style={metaLabel}>Scheduled</dt>
+                <dd style={metaValue}>
+                  {p.scheduled_at ? formatScheduled(p.scheduled_at, p.timezone) : `${p.scheduled_day}, time to be confirmed`}
+                </dd>
+              </dl>
+
+              <PostThread postId={p.id} accentColor={accentColor} />
+            </div>
+            <div>
+              <div style={sectionLabel}>Creative</div>
+              {(p.image_url || (p.assets && p.assets.length)) ? (
+                <PostVisuals post={p} maxHeight={420} />
+              ) : (
+                <div style={{ border: "1px dashed #E5E5E5", borderRadius: "8px", padding: "40px 16px", textAlign: "center", fontFamily: "Helvetica, Arial, sans-serif", fontSize: "13px", color: "#999999" }}>
+                  Text only post
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Actions */}
@@ -468,6 +638,7 @@ function HistoryTab({ posts, analytics, accentColor }: {
                 </div>
                 {has && (
                   <>
+                    <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "9px", fontWeight: 600, color: accentColor }}>{dayPosts[0].posted_at ? formatTimeOnly(dayPosts[0].posted_at) : formatScheduledTime(dayPosts[0].scheduled_at, dayPosts[0].timezone)}</span>
                     <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "8px", fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase", color: accentColor, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{dayPosts[0].post_type}</span>
                     <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "10px", lineHeight: 1.25, color: "#444444", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{title}</span>
                   </>
@@ -487,7 +658,9 @@ function HistoryTab({ posts, analytics, accentColor }: {
             <div style={{ padding: "14px 24px", borderBottom: "1px solid #E5E5E5", display: "flex", alignItems: "center", gap: "10px", background: "#F5F5F5", flexWrap: "wrap" }}>
               <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", fontWeight: 400, padding: "4px 12px", background: "rgba(227,0,0,0.10)", border: `1px solid rgba(227,0,0,0.30)`, color: accentColor, borderRadius: "999px", letterSpacing: "0.02em" }}>{p.post_type}</span>
               <StatusPill status={p.status} />
-              <span style={{ marginLeft: "auto", fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: "#999999" }}>{formatDate(postWhen(p))}</span>
+              <span style={{ marginLeft: "auto", fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: "#999999" }}>
+                {p.status === "posted" ? formatDateTime(postWhen(p)) : `Goes live ${formatScheduled(p.scheduled_at, p.timezone)}`}
+              </span>
             </div>
             <div style={{ padding: "20px 24px" }}>
               <p style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "15px", lineHeight: 1.6, color: "#0A0A0A", whiteSpace: "pre-wrap", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden", marginBottom: "8px" }}>
@@ -506,12 +679,15 @@ function HistoryTab({ posts, analytics, accentColor }: {
             <div style={{ padding: "16px 24px", borderBottom: "1px solid #E5E5E5", display: "flex", alignItems: "center", gap: "10px", background: "#F5F5F5", flexWrap: "wrap" }}>
               <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", fontWeight: 400, padding: "4px 12px", background: "rgba(227,0,0,0.10)", border: `1px solid rgba(227,0,0,0.30)`, color: accentColor, borderRadius: "999px" }}>{selected.post_type}</span>
               <StatusPill status={selected.status} />
-              <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: "#999999" }}>{formatDate(postWhen(selected))}</span>
+              <span style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px", color: "#999999" }}>
+                {selected.status === "posted" ? formatDateTime(postWhen(selected)) : `Goes live ${formatScheduled(selected.scheduled_at, selected.timezone)}`}
+              </span>
               <button onClick={() => setSelected(null)} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "#666666", fontSize: "22px", lineHeight: 1 }} aria-label="Close">×</button>
             </div>
             <div style={{ padding: "24px" }}>
-              <PostVisuals post={selected} />
+              <PostVisuals post={selected} maxHeight={320} />
               <p style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "15px", lineHeight: 1.7, color: "#0A0A0A", whiteSpace: "pre-wrap" }}>{selected.content}</p>
+              <PostThread postId={selected.id} accentColor={accentColor} />
             </div>
             {an && (
               <div style={{ padding: "12px 24px 24px", borderTop: "1px solid #E5E5E5", display: "flex", gap: "24px", flexWrap: "wrap" }}>
@@ -1707,6 +1883,16 @@ export default function PortalPage() {
         @keyframes toastIn {
           from { opacity: 0; transform: translateX(20px) scale(0.95); }
           to   { opacity: 1; transform: translateX(0) scale(1); }
+        }
+        /* Review layout: creative beside the post text, stacking on narrow screens */
+        .review-split {
+          display: grid;
+          grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+          gap: 28px;
+          align-items: start;
+        }
+        @media (max-width: 860px) {
+          .review-split { grid-template-columns: 1fr; gap: 20px; }
         }
         @media print {
           header { display: none !important; }

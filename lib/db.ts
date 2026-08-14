@@ -193,6 +193,18 @@ async function initialize(): Promise<void> {
         updated_at  TEXT    DEFAULT (datetime('now'))
       );
 
+      CREATE TABLE IF NOT EXISTS post_comments (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        post_id     INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+        parent_id   INTEGER REFERENCES post_comments(id) ON DELETE CASCADE,
+        author_role TEXT    NOT NULL,          -- client | agency
+        author_name TEXT    NOT NULL,
+        author_id   INTEGER,                   -- client_users.id when author_role = 'client'
+        body        TEXT    NOT NULL,
+        created_at  TEXT    DEFAULT (datetime('now')),
+        read_at     TEXT
+      );
+
       CREATE TABLE IF NOT EXISTS report_uploads (
         id         INTEGER PRIMARY KEY AUTOINCREMENT,
         client_id  TEXT NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
@@ -234,10 +246,35 @@ async function initialize(): Promise<void> {
       `ALTER TABLE clients ADD COLUMN description TEXT`,
       // Keep report_uploads.updated_at for older databases created before this column.
       `ALTER TABLE report_uploads ADD COLUMN updated_at TEXT DEFAULT (datetime('now'))`,
+      // Pillars are renameable per client, so a post points at the pillar record
+      // rather than only carrying its name. post_type stays as the name captured
+      // at write time, which keeps every existing post readable either way.
+      `ALTER TABLE posts ADD COLUMN pillar_id INTEGER`,
+      // Timezone the scheduled_at wall-clock time was chosen in (IANA name).
+      `ALTER TABLE posts ADD COLUMN timezone TEXT`,
+      // The real instant that wall clock refers to, so the publisher fires at the
+      // intended moment. Null on rows scheduled before timezones were captured;
+      // the publisher falls back to comparing scheduled_at for those.
+      `ALTER TABLE posts ADD COLUMN scheduled_at_utc TEXT`,
+      // Retiring a pillar hides it from new posts without touching history.
+      `ALTER TABLE pillars ADD COLUMN active INTEGER NOT NULL DEFAULT 1`,
     ];
     for (const m of migrations) {
       try { await c.execute(m); } catch { /* column already exists */ }
     }
+
+    // Link existing posts to their pillar record by matching the stored name.
+    // Only fills blanks, so it is safe on every boot and never reassigns a post.
+    try {
+      await c.execute(`
+        UPDATE posts SET pillar_id = (
+          SELECT p.id FROM pillars p
+           WHERE p.client_id = posts.company_id AND p.type = posts.post_type
+           LIMIT 1
+        )
+        WHERE pillar_id IS NULL AND post_type IS NOT NULL
+      `);
+    } catch { /* nothing to backfill */ }
 
     // Seed admin user if no users exist.
     const seedRow = (await c.execute("SELECT COUNT(*) as n FROM users")).rows[0] as Record<string, unknown> | undefined;
@@ -301,6 +338,7 @@ export interface Post {
   company_id: string;
   company_name: string;
   post_type: string;
+  pillar_id: number | null;
   scheduled_day: string;
   content: string;
   status: "draft" | "pending_approval" | "approved" | "scheduled" | "posted";
@@ -312,6 +350,8 @@ export interface Post {
   scheduled_at: string | null;
   posted_at: string | null;
   linkedin_post_id: string | null;
+  timezone: string | null;
+  scheduled_at_utc: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -361,6 +401,19 @@ export interface Pillar {
   color: string | null;
   example: string | null;
   sort_order: number;
+  active: number;
+}
+
+export interface PostComment {
+  id: number;
+  post_id: number;
+  parent_id: number | null;
+  author_role: "client" | "agency";
+  author_name: string;
+  author_id: number | null;
+  body: string;
+  created_at: string;
+  read_at: string | null;
 }
 
 export interface Invoice {

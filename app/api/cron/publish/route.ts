@@ -75,11 +75,14 @@ export async function GET(req: NextRequest) {
     JOIN clients c ON c.id = p.company_id
     WHERE p.status = 'scheduled'
       AND p.scheduled_at IS NOT NULL
-      AND p.scheduled_at <= ?
+      -- Rows with a captured timezone are compared as real instants; older rows
+      -- keep the original naive comparison so their behaviour does not change.
+      AND ((p.scheduled_at_utc IS NOT NULL AND p.scheduled_at_utc <= ?)
+        OR (p.scheduled_at_utc IS NULL AND p.scheduled_at <= ?))
       AND p.linkedin_post_id IS NULL
       AND c.linkedin_access_token IS NOT NULL
       AND c.linkedin_urn IS NOT NULL
-  `).all(now) as Array<Record<string, unknown>>;
+  `).all(now, now) as Array<Record<string, unknown>>;
 
   console.log(`[cron/publish] ${due.length} posts due at ${now}`);
 

@@ -8,6 +8,7 @@ import {
   tierIncludesSignal, type Tier,
 } from "@/lib/tiers";
 import { buildSeries, yearsIn, type Granularity } from "@/lib/report-series";
+import { TIMEZONES, toIanaZone, formatScheduled, formatScheduledTime, splitWall, joinWall } from "@/lib/schedule";
 import ComposeCanvas, { type ComposeCanvasHandle } from "./ComposeCanvas";
 import PdfStudio, { type GeneratedAsset } from "./PdfStudio";
 import {
@@ -65,6 +66,7 @@ type Post = {
   company_id: string;
   company_name: string;
   post_type: string;
+  pillar_id: number | null;
   scheduled_day: string;
   content: string;
   status: "draft" | "pending_approval" | "approved" | "scheduled" | "posted";
@@ -76,8 +78,13 @@ type Post = {
   scheduled_at: string | null;
   posted_at: string | null;
   linkedin_post_id: string | null;
+  timezone: string | null;
   created_at: string;
   updated_at: string;
+};
+// A schedule chosen in Compose, in the same shape the Library scheduler edits.
+export type ComposeSchedule = {
+  date: string; hour: number; minute: number; ampm: "AM" | "PM"; zone: string;
 };
 type Tab = "overview" | "compose" | "library" | "assets" | "calendar" | "reports" | "invoices" | "clients" | "clientusers";
 
@@ -195,6 +202,28 @@ function CompanyLogo({ company, overlay }: { company: Company; overlay?: boolean
       />
     </div>
   );
+}
+
+// ── Scheduling helpers ────────────────────────────────────────────────────────
+// Timestamps arrive either as a datetime-local value ("2026-08-12T09:00") or as
+// SQLite text ("2026-08-12 09:00:00"). Both need the same treatment.
+function parseWhen(v: string | null | undefined): Date | null {
+  if (!v) return null;
+  const d = new Date(v.replace(" ", "T"));
+  return isNaN(d.getTime()) ? null : d;
+}
+function fmtWhen(v: string | null | undefined): string {
+  const d = parseWhen(v);
+  return d ? d.toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "";
+}
+function fmtTimeOnly(v: string | null | undefined): string {
+  const d = parseWhen(v);
+  return d ? d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }) : "";
+}
+// The date a post sits on in a calendar: when it went live, else when it is set
+// to go live. Posts with neither are not placed on the calendar at all.
+function postDate(p: Post): Date | null {
+  return parseWhen(p.posted_at) ?? parseWhen(p.scheduled_at);
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -814,7 +843,7 @@ function ComposeTab({
   svgRefineRequest, setSvgRefineRequest,
   imgUrl, imgProvider, imgPrompt, isImgGen, clearImgUrl,
   generate, generateVisual, generateAiImage, refinePost, refineVisual, savePost, sendForApproval, copy, downloadSvg, notify,
-  assets, setAssets, activeAssetId, setActiveAssetId,
+  assets, setAssets, activeAssetId, setActiveAssetId, refreshClients, schedule, setSchedule,
 }: {
   ac: Company; ap: Pillar; setAp: (p: Pillar) => void;
   post: string; setPost: (s: string) => void;
@@ -830,8 +859,25 @@ function ComposeTab({
   copy: (t: string) => void; downloadSvg: () => void; notify: (m: string, t?: "default" | "success" | "error") => void;
   assets: ComposeAsset[]; setAssets: React.Dispatch<React.SetStateAction<ComposeAsset[]>>;
   activeAssetId: string | null; setActiveAssetId: React.Dispatch<React.SetStateAction<string | null>>;
+  refreshClients: () => void;
+  schedule: ComposeSchedule; setSchedule: React.Dispatch<React.SetStateAction<ComposeSchedule>>;
 }) {
+  const [editingPillars, setEditingPillars] = useState(false);
+  // Follow the selected client's timezone until the user picks one explicitly.
+  useEffect(() => {
+    const zone = toIanaZone(ac.timezone);
+    if (zone) setSchedule(s => (s.date ? s : { ...s, zone }));
+  }, [ac.id, ac.timezone, setSchedule]);
   const [imageMode, setImageMode] = useState<"ai" | "svg">("ai");
+  // Whichever visual is currently in play: the selected bundled asset, the
+  // generated raster, or the SVG rendered as a data URL for preview.
+  const previewCreative = (() => {
+    const active = assets.find(a => a.id === activeAssetId) ?? assets[0];
+    if (active?.previewUrl) return active.previewUrl;
+    if (imageMode === "ai" && imgUrl) return imgUrl;
+    if (imageMode === "svg" && svg) return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+    return imgUrl || null;
+  })();
   const [imgEditRequest, setImgEditRequest] = useState("");
   const [genMode, setGenMode] = useState<"post" | "standalone">("post");
   const [standaloneBrief, setStandaloneBrief] = useState("");
@@ -1052,8 +1098,12 @@ function ComposeTab({
 
         {/* Pillars */}
         <div style={glass()}>
-          <div style={{ padding: "14px 16px", borderBottom: "1px solid #E5E5E5" }}>
+          <div style={{ padding: "14px 16px", borderBottom: "1px solid #E5E5E5", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
             <div className="label">Content pillars</div>
+            <button onClick={() => setEditingPillars(true)}
+              style={{ fontSize: "10px", color: GOLD, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.06em", textTransform: "uppercase" as const, padding: 0 }}>
+              Edit
+            </button>
           </div>
           <div style={{ padding: "8px" }}>
             {ac.pillars.map(p => (
@@ -1075,12 +1125,86 @@ function ComposeTab({
                 <div style={{ fontSize: "12px", fontWeight: 400, color: ap.type === p.type ? T : T2, marginBottom: "2px", paddingLeft: ap.type === p.type ? "10px" : "0", transition: "padding 0.15s" }}>
                   {p.day} · {p.type}
                 </div>
-                <div style={{ fontSize: "11px", color: T3, lineHeight: 1.5, paddingLeft: ap.type === p.type ? "10px" : "0", transition: "padding 0.15s" }}>{p.example.slice(0, 72)}…</div>
+                <div style={{ fontSize: "11px", color: T3, lineHeight: 1.5, paddingLeft: ap.type === p.type ? "10px" : "0", transition: "padding 0.15s" }}>{(p.example || "").slice(0, 72)}{(p.example || "").length > 72 ? "…" : ""}</div>
               </button>
             ))}
           </div>
         </div>
+
+        {/* Schedule, optional at compose time. Writes the same scheduled_at and
+            timezone the Library scheduler edits, so the two stay in step. */}
+        <div style={glass()}>
+          <div style={{ padding: "14px 16px", borderBottom: "1px solid #E5E5E5", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
+            <div className="label">Schedule (optional)</div>
+            {schedule.date && (
+              <button onClick={() => setSchedule(s => ({ ...s, date: "" }))}
+                style={{ fontSize: "10px", color: T3, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.06em", textTransform: "uppercase" as const, padding: 0 }}>
+                Clear
+              </button>
+            )}
+          </div>
+          <div style={{ padding: "14px 16px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <div>
+                <div style={{ fontSize: "10px", color: T3, letterSpacing: "0.06em", textTransform: "uppercase" as const, marginBottom: "5px" }}>Date</div>
+                <input type="date" value={schedule.date} onChange={e => setSchedule(s => ({ ...s, date: e.target.value }))}
+                  style={{ ...INPUT, padding: "7px 10px", fontSize: "12px" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "10px", color: T3, letterSpacing: "0.06em", textTransform: "uppercase" as const, marginBottom: "5px" }}>Time</div>
+                <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
+                  <select value={schedule.hour} onChange={e => setSchedule(s => ({ ...s, hour: Number(e.target.value) }))}
+                    style={{ ...INPUT, width: "auto", flex: "none", padding: "7px 8px", fontSize: "12px" }}>
+                    {Array.from({ length: 12 }, (_, i) => i + 1).map(h => <option key={h} value={h}>{h}</option>)}
+                  </select>
+                  <span style={{ color: T3 }}>:</span>
+                  <select value={schedule.minute} onChange={e => setSchedule(s => ({ ...s, minute: Number(e.target.value) }))}
+                    style={{ ...INPUT, width: "auto", flex: "none", padding: "7px 8px", fontSize: "12px" }}>
+                    {Array.from({ length: 12 }, (_, i) => i * 5).map(m => <option key={m} value={m}>{String(m).padStart(2, "0")}</option>)}
+                  </select>
+                  <select value={schedule.ampm} onChange={e => setSchedule(s => ({ ...s, ampm: e.target.value as "AM" | "PM" }))}
+                    style={{ ...INPUT, width: "auto", flex: "none", padding: "7px 8px", fontSize: "12px" }}>
+                    <option value="AM">AM</option>
+                    <option value="PM">PM</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: "10px", color: T3, letterSpacing: "0.06em", textTransform: "uppercase" as const, marginBottom: "5px" }}>Time zone</div>
+                <select value={schedule.zone} onChange={e => setSchedule(s => ({ ...s, zone: e.target.value }))}
+                  style={{ ...INPUT, padding: "7px 10px", fontSize: "12px" }}>
+                  {TIMEZONES.map(z => <option key={z.value} value={z.value}>{z.label} ({z.abbr})</option>)}
+                </select>
+              </div>
+            </div>
+            <p style={{ fontSize: "10px", color: schedule.date ? T2 : T3, marginTop: "12px", lineHeight: 1.5 }}>
+              {schedule.date
+                ? `Goes live ${formatScheduled(joinWall(schedule.date, schedule.hour, schedule.minute, schedule.ampm), schedule.zone)}. Change it any time in Library.`
+                : "Leave the date empty to save without a schedule. You can set one later in Library."}
+            </p>
+          </div>
+        </div>
       </div>
+
+      {/* Pillar editor, reached from the compose panel. Same manager the Clients
+          tab uses, so there is one implementation of pillar editing. */}
+      {editingPillars && (
+        <div onClick={() => setEditingPillars(false)}
+          style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(10,10,10,0.45)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "60px 24px", overflowY: "auto" }}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ width: "100%", maxWidth: "620px", background: "#FFFFFF", border: "1px solid #E5E5E5", borderRadius: "12px", padding: "28px 32px 32px", boxShadow: "0 10px 40px rgba(0,0,0,0.2)" }}>
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px" }}>
+              <div>
+                <div className="label" style={{ marginBottom: "4px" }}>{ac.name}</div>
+                <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "20px", fontWeight: 300, color: T }}>Edit content pillars</div>
+              </div>
+              <button onClick={() => setEditingPillars(false)}
+                style={{ background: "none", border: "none", cursor: "pointer", color: T3, fontSize: "22px", lineHeight: 1 }} aria-label="Close">×</button>
+            </div>
+            <PillarManager client={ac} notify={notify} onChanged={refreshClients} />
+          </div>
+        </div>
+      )}
 
       {/* ── Right panels ── */}
       <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -1198,7 +1322,7 @@ function ComposeTab({
 
           <div style={{ padding: "20px 24px" }}>
             {post ? (
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: "16px", alignItems: "start" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.15fr) minmax(0, 1fr)", gap: "20px", alignItems: "start" }}>
                 {/* Editor */}
                 <div>
                   {/* Copy source toggle */}
@@ -1261,7 +1385,25 @@ function ComposeTab({
                   </div>
                 </div>
 
-                {/* LinkedIn Preview */}
+                {/* Creative + LinkedIn preview */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+
+                {/* The creative at full size: contained, never cropped, so the
+                    agency sees exactly what the client will see. */}
+                <div>
+                  <div className="label" style={{ marginBottom: "8px" }}>Creative</div>
+                  <div style={{ border: "1px solid #E5E5E5", borderRadius: "10px", background: "#F5F5F5", padding: "10px", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "160px" }}>
+                    {previewCreative ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={previewCreative} alt="Post creative" style={{ maxWidth: "100%", maxHeight: "340px", width: "auto", height: "auto", objectFit: "contain", display: "block", borderRadius: "6px" }} />
+                    ) : (
+                      <span style={{ fontSize: "11px", color: T3, textAlign: "center", lineHeight: 1.6 }}>
+                        No creative yet.<br />Generate an image or attach one below.
+                      </span>
+                    )}
+                  </div>
+                </div>
+
                 <div style={{ background: "#f3f2ef", borderRadius: "12px", overflow: "hidden", border: "1px solid #E5E5E5" }}>
                   <div style={{ padding: "16px", background: "#fff" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
@@ -1281,6 +1423,7 @@ function ComposeTab({
                       <div key={action} style={{ flex: 1, textAlign: "center", fontSize: "10px", color: "#666", padding: "6px 2px", borderRadius: "4px" }}>{action}</div>
                     ))}
                   </div>
+                </div>
                 </div>
               </div>
             ) : isGen ? (
@@ -1627,6 +1770,115 @@ function ComposeTab({
 }
 
 // ── Library Tab ───────────────────────────────────────────────────────────────
+// ── Post comment thread (agency side) ─────────────────────────────────────────
+type PostCommentRow = {
+  id: number; post_id: number; parent_id: number | null;
+  author_role: "client" | "agency"; author_name: string;
+  body: string; created_at: string; read_at: string | null;
+};
+
+function PostThread({ postId, notify }: { postId: number; notify: (m: string, t?: "default" | "success" | "error") => void }) {
+  const [comments, setComments] = useState<PostCommentRow[]>([]);
+  const [open, setOpen] = useState(false);
+  const [replyTo, setReplyTo] = useState<number | null>(null);
+  const [draft, setDraft] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const load = useCallback(async (markRead = false) => {
+    const res = await fetch(`/api/post-comments?postId=${postId}${markRead ? "&markRead=1" : ""}`);
+    if (res.ok) setComments((await res.json()).comments || []);
+  }, [postId]);
+  useEffect(() => { load(); }, [load]);
+
+  const send = async () => {
+    if (!draft.trim()) return;
+    setBusy(true);
+    const res = await fetch("/api/post-comments", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ postId, body: draft.trim(), parentId: replyTo }),
+    });
+    const d = await res.json().catch(() => ({}));
+    setBusy(false);
+    if (!res.ok) { notify(d.error || "Could not send reply", "error"); return; }
+    setDraft(""); setReplyTo(null); load();
+    notify(d.notified?.length ? `Reply sent. Client emailed.` : "Reply sent", "success");
+  };
+
+  const unreadFromClient = comments.filter(c => c.author_role === "client" && !c.read_at).length;
+  const roots = comments.filter(c => !c.parent_id);
+  const repliesOf = (id: number) => comments.filter(c => c.parent_id === id);
+
+  if (!comments.length && !open) {
+    return (
+      <button onClick={() => setOpen(true)} style={{ marginTop: "12px", fontSize: "11px", color: T3, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.06em", textTransform: "uppercase" as const, padding: 0 }}>
+        Add a comment
+      </button>
+    );
+  }
+
+  return (
+    <div style={{ marginTop: "14px", borderTop: "1px solid #E5E5E5", paddingTop: "12px" }}>
+      <button onClick={() => { const next = !open; setOpen(next); if (next) load(true); }}
+        style={{ display: "flex", alignItems: "center", gap: "8px", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "inherit" }}>
+        <span style={{ fontSize: "11px", color: T2, letterSpacing: "0.06em", textTransform: "uppercase" as const }}>
+          Conversation ({comments.length})
+        </span>
+        {unreadFromClient > 0 && (
+          <span style={{ fontSize: "9px", fontWeight: 600, background: "#E30000", color: "#FFFFFF", borderRadius: "999px", padding: "1px 7px" }}>
+            {unreadFromClient} new
+          </span>
+        )}
+        <span style={{ fontSize: "11px", color: T3 }}>{open ? "▲" : "▼"}</span>
+      </button>
+
+      {open && (
+        <div style={{ marginTop: "12px", display: "flex", flexDirection: "column", gap: "10px" }}>
+          {roots.map(c => (
+            <div key={c.id}>
+              <CommentBubble c={c} />
+              {repliesOf(c.id).map(r => (
+                <div key={r.id} style={{ marginLeft: "24px", marginTop: "8px" }}><CommentBubble c={r} /></div>
+              ))}
+              <button onClick={() => { setReplyTo(c.id); setDraft(""); }}
+                style={{ marginLeft: "24px", marginTop: "6px", fontSize: "10px", color: GOLD, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.06em", textTransform: "uppercase" as const, padding: 0 }}>
+                Reply
+              </button>
+            </div>
+          ))}
+
+          <div style={{ display: "flex", gap: "8px", alignItems: "flex-start", marginTop: "4px" }}>
+            <textarea value={draft} onChange={e => setDraft(e.target.value)} rows={2}
+              placeholder={replyTo ? "Write a reply. The client is emailed a link to this post." : "Add a comment for the client"}
+              style={{ ...INPUT, resize: "none", fontSize: "12px", padding: "9px 11px" }} />
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <GlassBtn onClick={send} disabled={busy || !draft.trim()} variant="teal">{busy ? "Sending…" : "Send"}</GlassBtn>
+              {replyTo && <GlassBtn onClick={() => setReplyTo(null)}>Cancel</GlassBtn>}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CommentBubble({ c }: { c: PostCommentRow }) {
+  const agency = c.author_role === "agency";
+  return (
+    <div style={{
+      padding: "9px 12px", borderRadius: "8px",
+      background: agency ? "rgba(227,0,0,0.05)" : "#F5F5F5",
+      border: `1px solid ${agency ? "rgba(227,0,0,0.18)" : "#E5E5E5"}`,
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+        <span style={{ fontSize: "10px", fontWeight: 600, color: agency ? "#E30000" : T2, letterSpacing: "0.04em" }}>{c.author_name}</span>
+        <span style={{ fontSize: "9px", color: T3, letterSpacing: "0.06em", textTransform: "uppercase" as const }}>{agency ? "Linkwright" : "Client"}</span>
+        <span style={{ marginLeft: "auto", fontSize: "10px", color: T3 }}>{fmtWhen(c.created_at)}</span>
+      </div>
+      <p style={{ fontSize: "12px", lineHeight: 1.6, color: "#0A0A0A", whiteSpace: "pre-wrap", margin: 0 }}>{c.body}</p>
+    </div>
+  );
+}
+
 function LibraryTab({
   ac, posts, filterStatus, setFilterStatus,
   fetchPosts, notify, copy,
@@ -1636,9 +1888,38 @@ function LibraryTab({
 }) {
   const [editPost, setEditPost] = useState<Post | null>(null);
   const [editContent, setEditContent] = useState("");
+  const [editImage, setEditImage] = useState<string | null>(null);
+  const [editPillar, setEditPillar] = useState<number | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [schedulingId, setSchedulingId] = useState<number | null>(null);
-  const [scheduleAt, setScheduleAt] = useState("");
+  const [schedDate, setSchedDate]       = useState("");
+  const [schedHour, setSchedHour]       = useState(9);
+  const [schedMinute, setSchedMinute]   = useState(0);
+  const [schedAmPm, setSchedAmPm]       = useState<"AM" | "PM">("AM");
+  const [schedZone, setSchedZone]       = useState(toIanaZone(ac.timezone) || "America/New_York");
   const [postingToLinkedIn, setPostingToLinkedIn] = useState<number | null>(null);
+
+  const livePillars = ((ac.pillars || []) as PillarWithId[]).filter(p => p.id != null);
+
+  const openEdit = (p: Post) => {
+    setEditPost(p);
+    setEditContent(p.content);
+    setEditImage(p.image_url);
+    setEditPillar(p.pillar_id ?? livePillars.find(pl => pl.type === p.post_type)?.id ?? null);
+  };
+
+  const uploadCreative = async (file: File) => {
+    setUploadingImage(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      const d = await res.json();
+      if (d.url) { setEditImage(d.url); notify("Image uploaded", "success"); }
+      else notify(d.error || "Upload failed", "error");
+    } catch { notify("Upload failed", "error"); }
+    setUploadingImage(false);
+  };
 
   const updateStatus = async (p: Post, s: Post["status"]) => {
     await fetch("/api/posts", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: p.id, status: s }) });
@@ -1650,15 +1931,69 @@ function LibraryTab({
     if (!confirm("Delete this post?")) return;
     await fetch(`/api/posts?id=${id}`, { method: "DELETE" }); fetchPosts(); notify("Post deleted");
   };
+  // Saves text, creative, and pillar together against the same post record, so
+  // replacing an image never creates a second post or resets the approval state.
   const saveEdit = async () => {
     if (!editPost) return;
-    await fetch("/api/posts", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: editPost.id, content: editContent }) });
-    setEditPost(null); fetchPosts(); notify("Post updated", "success");
+    await fetch("/api/posts", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: editPost.id,
+        content: editContent,
+        image_url: editImage,
+        pillar_id: editPillar,
+      }),
+    });
+    setEditPost(null); setEditImage(null); fetchPosts(); notify("Post updated", "success");
   };
+  // The chosen wall clock and its zone travel together; the API derives the real
+  // instant from the pair so the post fires at the intended moment.
   const schedulePost = async (p: Post) => {
-    if (!scheduleAt) return;
-    await fetch("/api/posts", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: p.id, scheduled_at: scheduleAt }) });
-    setSchedulingId(null); setScheduleAt(""); fetchPosts(); notify("Post scheduled ✓", "success");
+    if (!schedDate) return;
+    const wall = joinWall(schedDate, schedHour, schedMinute, schedAmPm);
+    await fetch("/api/posts", {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: p.id, scheduled_at: wall, timezone: schedZone }),
+    });
+    setSchedulingId(null); fetchPosts();
+    notify(`Scheduled for ${formatScheduled(wall, schedZone)}`, "success");
+  };
+  const clearSchedule = async (p: Post) => {
+    await fetch("/api/posts", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: p.id, scheduled_at: null, timezone: null }) });
+    setSchedulingId(null); fetchPosts(); notify("Date cleared");
+  };
+
+  // Open the picker on the post's existing schedule, or the next occurrence of
+  // its pillar day at this client's best posting time.
+  const openScheduler = (p: Post) => {
+    const wall = p.scheduled_at || defaultSlot(p);
+    const parts = splitWall(wall);
+    setSchedDate(parts.date); setSchedHour(parts.hour); setSchedMinute(Math.round(parts.minute / 5) * 5 % 60); setSchedAmPm(parts.ampm);
+    setSchedZone(toIanaZone(p.timezone) || toIanaZone(ac.timezone) || "America/New_York");
+    setSchedulingId(p.id);
+  };
+
+  // Pre-fills the picker with the next occurrence of the post's pillar day at
+  // this client's best posting time for that day, so the common case is one click.
+  const defaultSlot = (p: Post): string => {
+    const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const d = new Date();
+    d.setSeconds(0, 0);
+    const target = DAYS.indexOf(p.scheduled_day);
+    d.setDate(d.getDate() + (target >= 0 ? ((target - d.getDay() + 7) % 7 || 7) : 1));
+
+    const times = ((ac as Record<string, unknown>).best_post_times ?? ac.bestPostTimes) as Record<string, string> | undefined;
+    const m = (times?.[p.scheduled_day] || "").match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+    let hh = 9, mm = 0;
+    if (m) {
+      hh = Number(m[1]) % 12;
+      mm = Number(m[2]);
+      if (/PM/i.test(m[3] || "")) hh += 12;
+    }
+    d.setHours(hh, mm);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   };
   const postToLinkedIn = async (p: Post) => {
     setPostingToLinkedIn(p.id);
@@ -1712,15 +2047,56 @@ function LibraryTab({
               padding: "20px",
             }}>
               {editPost?.id === p.id ? (
-                <div style={{ padding: "20px 0" }}>
-                  <textarea value={editContent} onChange={e => setEditContent(e.target.value)} rows={10}
-                    style={{ ...INPUT, resize: "none" }}
-                    onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
-                    onBlur={e => e.target.style.borderColor = "#E5E5E5"}
-                  />
-                  <div style={{ display: "flex", gap: "8px", marginTop: "12px" }}>
-                    <GlassBtn onClick={saveEdit} variant="teal">Save changes</GlassBtn>
-                    <GlassBtn onClick={() => setEditPost(null)}>Cancel</GlassBtn>
+                <div style={{ padding: "20px 0", display: "grid", gridTemplateColumns: "260px 1fr", gap: "20px", alignItems: "start" }}>
+                  {/* Creative: replaceable without touching the text or the post record */}
+                  <div>
+                    <div className="label" style={{ marginBottom: "8px" }}>Creative {editImage !== (editPost?.image_url ?? null) && <span style={{ color: GOLD }}>· changed, not saved</span>}</div>
+                    <div style={{ border: "1px solid #E5E5E5", borderRadius: "10px", background: "#F5F5F5", padding: "10px", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "150px" }}>
+                      {editImage ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={editImage} alt="Post creative" style={{ maxWidth: "100%", maxHeight: "220px", objectFit: "contain", display: "block", borderRadius: "6px" }} />
+                      ) : (
+                        <span style={{ fontSize: "11px", color: T3 }}>No image on this post</span>
+                      )}
+                    </div>
+                    <div style={{ display: "flex", gap: "8px", marginTop: "10px", flexWrap: "wrap" }}>
+                      <label style={{ fontSize: "11px", color: GOLD, cursor: uploadingImage ? "default" : "pointer", letterSpacing: "0.06em", textTransform: "uppercase" as const, display: "inline-flex", alignItems: "center", gap: "5px" }}>
+                        {uploadingImage ? <><Spinner /> Uploading…</> : (editImage ? "Replace image" : "Add image")}
+                        <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" style={{ display: "none" }} disabled={uploadingImage}
+                          onChange={e => { const f = e.target.files?.[0]; if (f) uploadCreative(f); e.target.value = ""; }} />
+                      </label>
+                      {editImage && (
+                        <button onClick={() => setEditImage(null)} style={{ fontSize: "11px", color: "rgba(204,68,68,0.8)", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>
+                          Remove image
+                        </button>
+                      )}
+                    </div>
+                    <p style={{ fontSize: "10px", color: T3, marginTop: "8px", lineHeight: 1.5 }}>
+                      Text and creative are edited independently. Change either one, or both, and the client
+                      portal shows the saved version on this same post. Approval state and comments are kept.
+                    </p>
+                  </div>
+
+                  {/* Text + pillar */}
+                  <div>
+                    <div className="label" style={{ marginBottom: "8px" }}>Post text {editContent !== (editPost?.content ?? "") && <span style={{ color: GOLD }}>· changed, not saved</span>}</div>
+                    <textarea value={editContent} onChange={e => setEditContent(e.target.value)} rows={12}
+                      style={{ ...INPUT, resize: "none" }}
+                      onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
+                      onBlur={e => e.target.style.borderColor = "#E5E5E5"}
+                    />
+                    <div style={{ display: "flex", gap: "10px", marginTop: "12px", alignItems: "center", flexWrap: "wrap" }}>
+                      <span className="label">Pillar</span>
+                      <select value={editPillar ?? ""} onChange={e => setEditPillar(e.target.value ? Number(e.target.value) : null)}
+                        style={{ ...INPUT, width: "auto", flex: "none", padding: "7px 10px", fontSize: "12px" }}>
+                        <option value="">Unassigned</option>
+                        {livePillars.map(pl => <option key={pl.id} value={pl.id}>{pl.type}</option>)}
+                      </select>
+                    </div>
+                    <div style={{ display: "flex", gap: "8px", marginTop: "14px" }}>
+                      <GlassBtn onClick={saveEdit} variant="teal" disabled={uploadingImage}>Save changes</GlassBtn>
+                      <GlassBtn onClick={() => setEditPost(null)}>Cancel</GlassBtn>
+                    </div>
                   </div>
                 </div>
               ) : (
@@ -1748,25 +2124,66 @@ function LibraryTab({
                     )}
                     {p.scheduled_at && (
                       <div style={{ marginTop: "10px", display: "inline-flex", alignItems: "center", gap: "6px", padding: "4px 10px", background: "#F5F5F5", border: "1px solid #E5E5E5", borderRadius: "8px" }}>
-                        <span style={{ fontSize: "10px", color: T3, letterSpacing: "0.06em", textTransform: "uppercase" as const }}>Scheduled</span>
-                        <span style={{ fontSize: "11px", color: T2, fontWeight: 500 }}>{new Date(p.scheduled_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
+                        <span style={{ fontSize: "10px", color: T3, letterSpacing: "0.06em", textTransform: "uppercase" as const }}>
+                          {p.status === "posted" ? "Published" : "Goes live"}
+                        </span>
+                        <span style={{ fontSize: "11px", color: T2, fontWeight: 500 }}>{formatScheduled(p.scheduled_at, p.timezone)}</span>
                       </div>
                     )}
                     {schedulingId === p.id ? (
-                      <div style={{ marginTop: "12px", display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
-                        <input type="datetime-local" value={scheduleAt} onChange={e => setScheduleAt(e.target.value)}
-                          style={{ ...INPUT, width: "auto", flex: "none", padding: "7px 11px", fontSize: "12px" }}
-                          onFocus={e => e.target.style.borderColor = "rgba(227,0,0,0.35)"}
-                          onBlur={e => e.target.style.borderColor = "#E5E5E5"}
-                        />
-                        <GlassBtn onClick={() => schedulePost(p)} disabled={!scheduleAt} variant="teal">Confirm</GlassBtn>
-                        <GlassBtn onClick={() => { setSchedulingId(null); setScheduleAt(""); }}>Cancel</GlassBtn>
+                      <div style={{ marginTop: "12px", padding: "14px 16px", background: "#F5F5F5", border: "1px solid #E5E5E5", borderRadius: "10px" }}>
+                        <div style={{ display: "flex", gap: "18px", alignItems: "flex-end", flexWrap: "wrap" }}>
+                          <div>
+                            <div className="label" style={{ marginBottom: "6px" }}>Date</div>
+                            <input type="date" value={schedDate} onChange={e => setSchedDate(e.target.value)}
+                              style={{ ...INPUT, width: "auto", flex: "none", padding: "7px 11px", fontSize: "12px" }} />
+                          </div>
+                          <div>
+                            <div className="label" style={{ marginBottom: "6px" }}>Time</div>
+                            <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
+                              <select value={schedHour} onChange={e => setSchedHour(Number(e.target.value))}
+                                style={{ ...INPUT, width: "auto", flex: "none", padding: "7px 8px", fontSize: "12px" }}>
+                                {Array.from({ length: 12 }, (_, i) => i + 1).map(h => <option key={h} value={h}>{h}</option>)}
+                              </select>
+                              <span style={{ color: T3 }}>:</span>
+                              <select value={schedMinute} onChange={e => setSchedMinute(Number(e.target.value))}
+                                style={{ ...INPUT, width: "auto", flex: "none", padding: "7px 8px", fontSize: "12px" }}>
+                                {Array.from({ length: 12 }, (_, i) => i * 5).map(m => <option key={m} value={m}>{String(m).padStart(2, "0")}</option>)}
+                              </select>
+                              <select value={schedAmPm} onChange={e => setSchedAmPm(e.target.value as "AM" | "PM")}
+                                style={{ ...INPUT, width: "auto", flex: "none", padding: "7px 8px", fontSize: "12px" }}>
+                                <option value="AM">AM</option>
+                                <option value="PM">PM</option>
+                              </select>
+                            </div>
+                          </div>
+                          <div>
+                            <div className="label" style={{ marginBottom: "6px" }}>Time zone</div>
+                            <select value={schedZone} onChange={e => setSchedZone(e.target.value)}
+                              style={{ ...INPUT, width: "auto", flex: "none", padding: "7px 11px", fontSize: "12px" }}>
+                              {TIMEZONES.map(z => <option key={z.value} value={z.value}>{z.label} ({z.abbr})</option>)}
+                            </select>
+                          </div>
+                        </div>
+                        {schedDate && (
+                          <div style={{ marginTop: "12px", fontSize: "12px", color: T2 }}>
+                            Scheduled for <strong style={{ color: "#0A0A0A" }}>{formatScheduled(joinWall(schedDate, schedHour, schedMinute, schedAmPm), schedZone)}</strong>
+                          </div>
+                        )}
+                        <div style={{ display: "flex", gap: "8px", marginTop: "12px", flexWrap: "wrap" }}>
+                          <GlassBtn onClick={() => schedulePost(p)} disabled={!schedDate} variant="teal">Schedule post</GlassBtn>
+                          <GlassBtn onClick={() => setSchedulingId(null)}>Cancel</GlassBtn>
+                          {p.scheduled_at && <GlassBtn onClick={() => clearSchedule(p)}>Clear date</GlassBtn>}
+                        </div>
+                        <p style={{ fontSize: "10px", color: T3, marginTop: "10px" }}>
+                          The client sees this exact date, time, and zone in their portal.
+                        </p>
                       </div>
                     ) : (
                       <div style={{ display: "flex", gap: "20px", alignItems: "center", marginTop: "12px", flexWrap: "wrap" }}>
                         {[
                           { label: "Copy", action: () => copy(p.content) },
-                          { label: "Edit", action: () => { setEditPost(p); setEditContent(p.content); } },
+                          { label: "Edit", action: () => openEdit(p) },
                         ].map(a => (
                           <button key={a.label} onClick={a.action}
                             style={{ fontSize: "11px", color: T3, background: "none", border: "none", cursor: "pointer", letterSpacing: "0.06em", fontFamily: "inherit", textTransform: "uppercase" as const, transition: "color 0.15s" }}
@@ -1778,9 +2195,9 @@ function LibraryTab({
                         {p.status === "draft"    && <button onClick={() => updateStatus(p,"pending_approval")} style={{ fontSize: "11px", color: GOLD, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>Submit for Approval</button>}
                         {p.status === "draft"    && <button onClick={() => updateStatus(p,"approved")} style={{ fontSize: "11px", color: "#0A0A0A", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>Approve</button>}
                         {p.status === "pending_approval" && <button onClick={() => updateStatus(p,"approved")} style={{ fontSize: "11px", color: "#0A0A0A", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>Approve</button>}
-                        {(p.status === "approved" || p.status === "scheduled") && (
-                          <button onClick={() => { setSchedulingId(p.id); setScheduleAt(p.scheduled_at?.slice(0,16) || ""); }} style={{ fontSize: "11px", color: GOLD, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>
-                            {p.scheduled_at ? "Reschedule" : "Schedule"}
+                        {p.status !== "posted" && (
+                          <button onClick={() => openScheduler(p)} style={{ fontSize: "11px", color: GOLD, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>
+                            {p.scheduled_at ? "Change date" : "Set date & time"}
                           </button>
                         )}
                         {(p.status === "approved" || p.status === "scheduled") && (
@@ -1793,6 +2210,7 @@ function LibraryTab({
                         <button onClick={() => deletePost(p.id)} style={{ fontSize: "11px", color: "rgba(204,68,68,0.5)", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", marginLeft: "auto", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>Delete</button>
                       </div>
                     )}
+                    <PostThread postId={p.id} notify={notify} />
                   </div>
                 </>
               )}
@@ -1820,6 +2238,38 @@ function CalendarTab({ ac, clients, allPosts }: { ac: Company; clients: Company[
 
   // Derive unique active posting days sorted by weekday order
   const activeDays = DAY_ORDER.filter(d => clients.some(c => getPostingDays(c).includes(d)));
+
+  // ── Month calendar ──────────────────────────────────────────────────────────
+  // Posts are placed on the date they went live, or the date they are set to go
+  // live. Anything with no date yet is counted separately rather than guessed at.
+  const [monthOffset, setMonthOffset] = useState(0);
+  const now = new Date();
+  const viewMonth = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
+  const yy = viewMonth.getFullYear();
+  const mm = viewMonth.getMonth();
+  const monthLabel = viewMonth.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  const daysInMonth = new Date(yy, mm + 1, 0).getDate();
+  const cells: (number | null)[] = [
+    ...Array(new Date(yy, mm, 1).getDay()).fill(null),
+    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
+  ];
+  const todayDay = now.getDate();
+
+  const datedPosts = allPosts.filter(p => postDate(p));
+  const byDay: Record<number, Post[]> = {};
+  datedPosts.forEach(p => {
+    const d = postDate(p)!;
+    if (d.getFullYear() === yy && d.getMonth() === mm) (byDay[d.getDate()] ||= []).push(p);
+  });
+  Object.values(byDay).forEach(list => list.sort((a, b) => postDate(a)!.getTime() - postDate(b)!.getTime()));
+
+  const undated = allPosts.filter(p => !postDate(p) && p.status !== "draft");
+
+  const navBtn: React.CSSProperties = {
+    width: "30px", height: "30px", borderRadius: "8px", border: "1px solid #E5E5E5",
+    background: "#FFFFFF", color: "#0A0A0A", cursor: "pointer", fontSize: "15px",
+    lineHeight: 1, fontFamily: "Helvetica, Arial, sans-serif",
+  };
 
   // Build strategy cards dynamically from pillar data
   const strategyCards = activeDays.slice(0, 4).map(day => {
@@ -1856,20 +2306,83 @@ function CalendarTab({ ac, clients, allPosts }: { ac: Company; clients: Company[
         ))}
       </div>
 
-      {/* Calendar grid */}
+      {/* Month calendar — posts sit on the actual date and time they are set for */}
       <div style={glass()}>
+        <div style={{ padding: "16px 20px", borderBottom: "1px solid #E5E5E5", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
+          <div>
+            <div className="label" style={{ marginBottom: "4px" }}>All clients</div>
+            <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "22px", fontWeight: 300, color: T, lineHeight: 1 }}>{monthLabel}</div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <button onClick={() => setMonthOffset(o => o - 1)} style={navBtn} aria-label="Previous month">‹</button>
+            <button onClick={() => setMonthOffset(0)} style={{ ...navBtn, width: "auto", padding: "0 12px", fontSize: "11px", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>Today</button>
+            <button onClick={() => setMonthOffset(o => o + 1)} style={navBtn} aria-label="Next month">›</button>
+          </div>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", borderBottom: "1px solid #E5E5E5" }}>
+          {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(d => (
+            <div key={d} style={{ textAlign: "center", fontSize: "10px", fontWeight: 400, letterSpacing: "0.1em", textTransform: "uppercase", color: "#999999", padding: "12px 0", borderRight: "1px solid #E5E5E5" }}>{d}</div>
+          ))}
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)" }}>
+          {cells.map((day, i) => {
+            if (!day) return <div key={i} style={{ minHeight: "120px", borderRight: "1px solid #E5E5E5", borderBottom: "1px solid #E5E5E5", background: "#FAFAFA" }} />;
+            const dayPosts = byDay[day] || [];
+            const isToday = day === todayDay && monthOffset === 0;
+            return (
+              <div key={i} style={{ minHeight: "120px", padding: "8px 8px 10px", borderRight: "1px solid #E5E5E5", borderBottom: "1px solid #E5E5E5", background: isToday ? "rgba(227,0,0,0.03)" : "transparent" }}>
+                <div style={{ fontSize: "11px", fontWeight: dayPosts.length ? 700 : 400, color: isToday ? "#E30000" : dayPosts.length ? "#0A0A0A" : "#BBBBBB", marginBottom: "6px" }}>{day}</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+                  {dayPosts.map(p => {
+                    const c = clients.find(x => x.id === p.company_id);
+                    const color = c?.color || T3;
+                    return (
+                      <div key={p.id} title={`${c?.name || p.company_name} · ${p.post_type} · ${p.posted_at ? fmtWhen(p.posted_at) : formatScheduled(p.scheduled_at, p.timezone)}`}
+                        style={{ padding: "5px 7px", background: `${color}12`, border: `1px solid ${color}33`, borderLeft: `3px solid ${color}`, borderRadius: "6px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "5px", marginBottom: "2px" }}>
+                          <span style={{ fontSize: "9px", fontWeight: 600, color, letterSpacing: "0.02em" }}>{p.posted_at ? fmtTimeOnly(p.posted_at) : formatScheduledTime(p.scheduled_at, p.timezone)}</span>
+                          <span style={{ fontSize: "9px", color: T3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{(c?.name || p.company_name).split(" ")[0]}</span>
+                          <span style={{ marginLeft: "auto", width: "5px", height: "5px", borderRadius: "50%", flexShrink: 0, background: p.status === "posted" ? "#E30000" : p.status === "scheduled" ? GOLD : "#BBBBBB" }} />
+                        </div>
+                        <div style={{ fontSize: "10px", color: T2, lineHeight: 1.35, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const }}>{p.content.slice(0, 60)}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div style={{ padding: "12px 20px", display: "flex", alignItems: "center", gap: "18px", flexWrap: "wrap", fontSize: "10px", color: T3, letterSpacing: "0.04em" }}>
+          {[["Posted", "#E30000"], ["Scheduled", GOLD], ["No status yet", "#BBBBBB"]].map(([l, c]) => (
+            <span key={l} style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+              <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: c }} /> {l}
+            </span>
+          ))}
+          {undated.length > 0 && (
+            <span style={{ marginLeft: "auto", color: "#E30000" }}>
+              {undated.length} post{undated.length === 1 ? "" : "s"} with no date set. Open Library and use Set date and time.
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Weekday template: which pillar each client posts on each day */}
+      <div style={glass()}>
+        <div style={{ padding: "16px 20px", borderBottom: "1px solid #E5E5E5" }}>
+          <div className="label" style={{ marginBottom: "4px" }}>Template</div>
+          <div style={{ fontFamily: "var(--font-raleway), sans-serif", fontSize: "18px", fontWeight: 300, color: T, lineHeight: 1 }}>Weekly pillar pattern</div>
+        </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", borderBottom: "1px solid #E5E5E5" }}>
           {DAY_ORDER.map(d => (
-            <div key={d} style={{ textAlign: "center", fontSize: "10px", fontWeight: 400, letterSpacing: "0.1em", textTransform: "uppercase", color: activeDays.includes(d) ? "#666666" : "#999999", padding: "14px 0", borderRight: "1px solid #E5E5E5" }}>{d.slice(0,3)}</div>
+            <div key={d} style={{ textAlign: "center", fontSize: "10px", fontWeight: 400, letterSpacing: "0.1em", textTransform: "uppercase", color: activeDays.includes(d) ? "#666666" : "#999999", padding: "12px 0", borderRight: "1px solid #E5E5E5" }}>{d.slice(0,3)}</div>
           ))}
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)" }}>
           {DAY_ORDER.map(day => {
             const dayCompanies = clients.filter(c => getPostingDays(c).includes(day));
-            const dayPosts = allPosts.filter(p => p.scheduled_day === day && (p.status === "scheduled" || p.status === "approved" || p.status === "posted"));
-            const postStatusColor: Record<string, string> = { approved: "#0A0A0A", scheduled: GOLD, posted: "#E30000" };
             return (
-              <div key={day} style={{ minHeight: "160px", padding: "12px 10px", borderRight: "1px solid #E5E5E5", borderBottom: "1px solid #E5E5E5", background: !activeDays.includes(day) ? "#F5F5F5" : "transparent" }}>
+              <div key={day} style={{ minHeight: "110px", padding: "12px 10px", borderRight: "1px solid #E5E5E5", background: !activeDays.includes(day) ? "#F5F5F5" : "transparent" }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                   {dayCompanies.map(c => {
                     const pil = (Array.isArray(c.pillars) ? c.pillars : []).find((p: Record<string,unknown>) => p.day === day) as Record<string,unknown> | undefined;
@@ -1889,18 +2402,6 @@ function CalendarTab({ ac, clients, allPosts }: { ac: Company; clients: Company[
                       </div>
                     );
                   })}
-                  {dayPosts.map(p => (
-                    <div key={p.id} style={{
-                      padding: "6px 8px",
-                      background: `${postStatusColor[p.status] || T3}10`,
-                      border: `1px solid ${postStatusColor[p.status] || T3}30`,
-                      borderLeft: `3px solid ${postStatusColor[p.status] || T3}`,
-                      borderRadius: "8px",
-                    }}>
-                      <div style={{ fontSize: "9px", fontWeight: 400, color: postStatusColor[p.status] || T3, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "2px" }}>{p.status}</div>
-                      <div style={{ fontSize: "10px", color: T2, lineHeight: 1.4, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const }}>{p.content.slice(0, 60)}</div>
-                    </div>
-                  ))}
                 </div>
               </div>
             );
@@ -3253,6 +3754,135 @@ function RegisterCompanyModal({ onClose, onDone, notify }: {
   );
 }
 
+// ── Content pillar manager ────────────────────────────────────────────────────
+// Pillar names belong to the client, not the platform. Renaming one updates the
+// label everywhere while every historical post stays attached to the same
+// record. A pillar that has posts is retired rather than deleted.
+type ManagedPillar = { id: number; client_id: string; day: string; type: string; color: string | null; example: string | null; sort_order: number; active: number; post_count: number };
+
+function PillarManager({ client, notify, onChanged }: {
+  client: Company;
+  notify: (m: string, t?: "default" | "success" | "error") => void;
+  onChanged?: () => void;
+}) {
+  const [pillars, setPillars] = useState<ManagedPillar[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [draftName, setDraftName] = useState("");
+  const [newName, setNewName] = useState("");
+  const [newDay, setNewDay] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const DAYS = ["", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const res = await fetch(`/api/pillars?clientId=${client.id}&includeInactive=1`);
+    if (res.ok) setPillars((await res.json()).pillars || []);
+    setLoading(false);
+  }, [client.id]);
+  useEffect(() => { load(); }, [load]);
+
+  const patch = async (id: number, body: Record<string, unknown>, msg: string) => {
+    setBusy(true);
+    const res = await fetch("/api/pillars", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, ...body }) });
+    setBusy(false);
+    if (res.ok) { notify(msg, "success"); setEditingId(null); load(); onChanged?.(); }
+    else notify((await res.json().catch(() => ({}))).error || "Could not save", "error");
+  };
+
+  const add = async () => {
+    if (!newName.trim()) return;
+    setBusy(true);
+    const res = await fetch("/api/pillars", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ clientId: client.id, type: newName.trim(), day: newDay, color: client.color }),
+    });
+    setBusy(false);
+    if (res.ok) { setNewName(""); setNewDay(""); notify("Pillar added", "success"); load(); onChanged?.(); }
+    else notify("Could not add pillar", "error");
+  };
+
+  const remove = async (p: ManagedPillar) => {
+    const warn = p.post_count > 0
+      ? `"${p.type}" has ${p.post_count} post${p.post_count === 1 ? "" : "s"}. It will be retired and hidden from new posts. Existing posts keep it. Continue?`
+      : `Delete "${p.type}"? It has no posts.`;
+    if (!confirm(warn)) return;
+    const res = await fetch(`/api/pillars?id=${p.id}`, { method: "DELETE" });
+    const d = await res.json().catch(() => ({}));
+    notify(d.archived ? `"${p.type}" retired. ${d.postCount} posts kept.` : `"${p.type}" deleted`, "success");
+    load(); onChanged?.();
+  };
+
+  return (
+    <div style={{ marginTop: "24px", borderTop: "1px solid #E5E5E5", paddingTop: "24px" }}>
+      <div className="label" style={{ marginBottom: "4px" }}>Content pillars</div>
+      <p style={{ fontSize: "11px", color: T3, marginBottom: "14px", lineHeight: 1.6 }}>
+        These names are specific to {client.name} and appear when composing for them. Renaming one keeps every post that already uses it.
+      </p>
+
+      {loading ? <Spinner /> : (
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          {pillars.map(p => (
+            <div key={p.id} style={{
+              display: "flex", alignItems: "center", gap: "10px", padding: "10px 12px",
+              background: p.active ? "#FFFFFF" : "#F5F5F5",
+              border: `1px solid ${p.active ? "#E5E5E5" : "#EDEDED"}`,
+              borderLeft: `3px solid ${p.active ? (p.color || client.color) : "#CCCCCC"}`,
+              borderRadius: "8px", opacity: p.active ? 1 : 0.7, flexWrap: "wrap",
+            }}>
+              {editingId === p.id ? (
+                <>
+                  <input value={draftName} onChange={e => setDraftName(e.target.value)} autoFocus
+                    onKeyDown={e => { if (e.key === "Enter") patch(p.id, { type: draftName }, "Pillar renamed"); }}
+                    style={{ ...INPUT, width: "auto", flex: "1 1 200px", padding: "6px 10px", fontSize: "13px" }} />
+                  <select value={p.day || ""} onChange={e => patch(p.id, { day: e.target.value }, "Day updated")}
+                    style={{ ...INPUT, width: "auto", flex: "none", padding: "6px 10px", fontSize: "12px" }}>
+                    {DAYS.map(d => <option key={d} value={d}>{d || "No fixed day"}</option>)}
+                  </select>
+                  <GlassBtn onClick={() => patch(p.id, { type: draftName }, "Pillar renamed")} disabled={busy || !draftName.trim()} variant="teal">Save</GlassBtn>
+                  <GlassBtn onClick={() => setEditingId(null)}>Cancel</GlassBtn>
+                </>
+              ) : (
+                <>
+                  <span style={{ fontSize: "13px", fontWeight: 500, color: "#0A0A0A" }}>{p.type}</span>
+                  {p.day && <span style={{ fontSize: "10px", color: T3, letterSpacing: "0.06em", textTransform: "uppercase" as const }}>{p.day}</span>}
+                  <span style={{ fontSize: "10px", color: T3 }}>{p.post_count} post{p.post_count === 1 ? "" : "s"}</span>
+                  {!p.active && <span style={{ fontSize: "9px", padding: "2px 8px", background: "#EDEDED", color: "#666666", borderRadius: "4px", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>Retired</span>}
+                  <div style={{ marginLeft: "auto", display: "flex", gap: "14px" }}>
+                    <button onClick={() => { setEditingId(p.id); setDraftName(p.type); }}
+                      style={{ fontSize: "10px", color: GOLD, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.06em", textTransform: "uppercase" as const, padding: 0 }}>Rename</button>
+                    {p.active ? (
+                      <button onClick={() => remove(p)}
+                        style={{ fontSize: "10px", color: "rgba(204,68,68,0.7)", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.06em", textTransform: "uppercase" as const, padding: 0 }}>
+                        {p.post_count > 0 ? "Retire" : "Delete"}
+                      </button>
+                    ) : (
+                      <button onClick={() => patch(p.id, { active: true }, "Pillar restored")}
+                        style={{ fontSize: "10px", color: "#0A0A0A", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.06em", textTransform: "uppercase" as const, padding: 0 }}>Restore</button>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          ))}
+
+          <div style={{ display: "flex", gap: "8px", alignItems: "center", marginTop: "6px", flexWrap: "wrap" }}>
+            <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="New pillar name"
+              onKeyDown={e => { if (e.key === "Enter") add(); }}
+              style={{ ...INPUT, width: "auto", flex: "1 1 220px", padding: "8px 11px", fontSize: "13px" }} />
+            <select value={newDay} onChange={e => setNewDay(e.target.value)}
+              style={{ ...INPUT, width: "auto", flex: "none", padding: "8px 11px", fontSize: "12px" }}>
+              {DAYS.map(d => <option key={d} value={d}>{d || "No fixed day"}</option>)}
+            </select>
+            <GlassBtn onClick={add} disabled={busy || !newName.trim()} variant="teal">Add pillar</GlassBtn>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ClientsTab({ clients, notify, onClientAdded }: {
   clients: Company[];
   notify: (m: string, t?: "default" | "success" | "error") => void;
@@ -3779,8 +4409,11 @@ function ClientsTab({ clients, notify, onClientAdded }: {
             </div>
           </div>
 
+          {/* Content pillars, specific to this client */}
+          <PillarManager client={selectedClient} notify={notify} />
+
           {/* LinkedIn connection */}
-          <div style={{ marginBottom: "24px", padding: "16px 20px", background: "rgba(10,102,194,0.04)", border: "1px solid rgba(10,102,194,0.15)", borderRadius: "8px" }}>
+          <div style={{ marginTop: "24px", marginBottom: "24px", padding: "16px 20px", background: "rgba(10,102,194,0.04)", border: "1px solid rgba(10,102,194,0.15)", borderRadius: "8px" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", flexWrap: "wrap" }}>
               <div>
                 <div style={{ fontSize: "11px", fontWeight: 400, letterSpacing: "0.08em", textTransform: "uppercase" as const, color: "#0A66C2", marginBottom: "4px" }}>LinkedIn Account</div>
@@ -5261,6 +5894,9 @@ const [loadingClients, setLoadingClients] = useState(true);
   const [isSave, setIsSave]           = useState(false);
   const [posts, setPosts]             = useState<Post[]>([]);
   const [allPosts, setAllPosts]       = useState<Post[]>([]);
+  const [composeSchedule, setComposeSchedule] = useState<ComposeSchedule>({
+    date: "", hour: 9, minute: 0, ampm: "AM", zone: "America/New_York",
+  });
   const [filterStatus, setFilterStatus] = useState("all");
   const [note, setNote]               = useState("");
   const [noteType, setNoteType]       = useState<"default"|"success"|"error">("default");
@@ -5312,6 +5948,25 @@ useEffect(() => {
       setLoadingClients(false);
     });
 }, []);
+
+  // Re-reads clients and their pillars after a pillar edit, keeping whichever
+  // client and pillar are currently selected rather than resetting to the first.
+  const refreshClients = useCallback(async () => {
+    const d = await (await fetch("/api/clients")).json();
+    if (!d.clients?.length) return;
+    setClients(d.clients);
+    setAc(prev => {
+      const match = d.clients.find((c: Company) => c.id === prev?.id) || d.clients[0];
+      setAp(prevAp => {
+        const pillars = (match.pillars || []) as Pillar[];
+        return pillars.find(x => (x as { id?: number }).id === (prevAp as { id?: number })?.id)
+          || pillars.find(x => x.type === prevAp?.type)
+          || pillars[0]
+          || prevAp;
+      });
+      return match;
+    });
+  }, []);
   useEffect(() => { fetchPosts(); }, [fetchPosts]);
   useEffect(() => { fetchAllPosts(); }, [fetchAllPosts]);
 
@@ -5413,24 +6068,43 @@ useEffect(() => {
 
   const bundledAssets = () => assets.map(a => ({ url: a.blobUrl || a.previewUrl, kind: a.kind, source: a.source, mime: a.mime, canvas_json: a.canvasJson ?? null, asset_title: a.assetTitle ?? null }));
 
+  // Optional schedule chosen while composing. Written to the same
+  // scheduled_at / timezone fields the Library scheduler uses, so a post
+  // scheduled here shows the identical value there and in the client portal.
+  const scheduleBody = () =>
+    composeSchedule.date
+      ? {
+          scheduled_at: joinWall(composeSchedule.date, composeSchedule.hour, composeSchedule.minute, composeSchedule.ampm),
+          timezone: composeSchedule.zone,
+        }
+      : {};
+
   const savePost = async (status: "draft" | "approved", imageUrl?: string) => {
     if (!post && assets.length === 0) return;
     setIsSave(true);
-    const body: Record<string, unknown> = { company_id: ac!.id, company_name: ac!.name, post_type: ap!.type, scheduled_day: ap!.day, content: post, status };
+    const body: Record<string, unknown> = { company_id: ac!.id, company_name: ac!.name, post_type: ap!.type, scheduled_day: ap!.day, content: post, status , ...scheduleBody() };
     if (assets.length > 0) body.assets = bundledAssets();
     else body.image_url = imageUrl || null;
     await fetch("/api/posts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-    setIsSave(false); notify(`Saved as ${status}`, "success"); setAssets([]); setActiveAssetId(null); fetchPosts(); fetchAllPosts();
+    setIsSave(false);
+    notify(composeSchedule.date
+      ? `Saved as ${status}, scheduled for ${formatScheduled(joinWall(composeSchedule.date, composeSchedule.hour, composeSchedule.minute, composeSchedule.ampm), composeSchedule.zone)}`
+      : `Saved as ${status}`, "success");
+    setAssets([]); setActiveAssetId(null); fetchPosts(); fetchAllPosts();
   };
 
   const sendForApproval = async (imageUrl?: string) => {
     if (!post && assets.length === 0) return;
     setIsSave(true);
-    const body: Record<string, unknown> = { company_id: ac!.id, company_name: ac!.name, post_type: ap!.type, scheduled_day: ap!.day, content: post, status: "pending_approval" };
+    const body: Record<string, unknown> = { company_id: ac!.id, company_name: ac!.name, post_type: ap!.type, scheduled_day: ap!.day, content: post, status: "pending_approval" , ...scheduleBody() };
     if (assets.length > 0) body.assets = bundledAssets();
     else body.image_url = imageUrl || null;
     await fetch("/api/posts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-    setIsSave(false); notify("Sent for client approval ✓", "success"); setAssets([]); setActiveAssetId(null); fetchPosts(); fetchAllPosts();
+    setIsSave(false);
+    notify(composeSchedule.date
+      ? `Sent for approval, scheduled for ${formatScheduled(joinWall(composeSchedule.date, composeSchedule.hour, composeSchedule.minute, composeSchedule.ampm), composeSchedule.zone)}`
+      : "Sent for client approval ✓", "success");
+    setAssets([]); setActiveAssetId(null); fetchPosts(); fetchAllPosts();
   };
 
   const copy = (t: string) => { navigator.clipboard.writeText(t); notify("Copied to clipboard", "success"); };
@@ -5739,6 +6413,8 @@ if (loadingClients || !ac || !ap) {
             generate={generate} generateVisual={generateVisual} generateAiImage={generateAiImage} refinePost={refinePost} refineVisual={refineVisual}
             savePost={savePost} sendForApproval={sendForApproval} copy={copy} downloadSvg={downloadSvg} notify={notify}
             assets={assets} setAssets={setAssets} activeAssetId={activeAssetId} setActiveAssetId={setActiveAssetId}
+            refreshClients={refreshClients}
+            schedule={composeSchedule} setSchedule={setComposeSchedule}
           />
         )}
         {tab === "library"   && (
