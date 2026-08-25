@@ -6,6 +6,7 @@ import { upload } from "@vercel/blob/client";
 import { LINKEDIN_METRICS, SIGNAL_METRICS, tierIncludesSignal } from "@/lib/tiers";
 import { buildSeries, yearsIn, type Granularity } from "@/lib/report-series";
 import { formatScheduled, formatScheduledTime } from "@/lib/schedule";
+import { sortPostsBySchedule } from "@/lib/post-sort";
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -1640,14 +1641,14 @@ export default function PortalPage() {
     const [pendingData, approvedData, scheduledData, postedData] = await Promise.all([
       pendingRes.json(), approvedRes.json(), scheduledRes.json(), postedRes.json(),
     ]);
-    setPendingPosts(pendingData.posts || []);
+    setPendingPosts(sortPostsBySchedule(pendingData.posts || []));
     // Post History holds everything the client has signed off on: approved,
     // scheduled, and already posted. Newest first.
-    const hist = [
+    const hist = sortPostsBySchedule([
       ...(approvedData.posts || []),
       ...(scheduledData.posts || []),
       ...(postedData.posts || []),
-    ].sort((a: Post, b: Post) => (b.updated_at || "").localeCompare(a.updated_at || ""));
+    ]);
     setHistoryPosts(hist);
 
     // Fetch analytics for posted posts

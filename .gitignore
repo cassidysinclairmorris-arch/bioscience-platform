@@ -40,5 +40,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Production database backups: real client data and password hashes, never commit
-data/backups/
+# Local SQLite database, Turso seeds, and backups. These hold real client data
+# and password hashes, so nothing under data/ is ever committed. Production
+# reads Turso, so the repo never needs a database file.
+/data/

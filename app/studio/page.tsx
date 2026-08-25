@@ -9,8 +9,10 @@ import {
 } from "@/lib/tiers";
 import { buildSeries, yearsIn, type Granularity } from "@/lib/report-series";
 import { TIMEZONES, toIanaZone, formatScheduled, formatScheduledTime, splitWall, joinWall } from "@/lib/schedule";
+import { sortPostsBySchedule } from "@/lib/post-sort";
 import ComposeCanvas, { type ComposeCanvasHandle } from "./ComposeCanvas";
 import PdfStudio, { type GeneratedAsset } from "./PdfStudio";
+import BrandCenterTab from "@/components/BrandCenterTab";
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line,
   PieChart, Pie, Cell,
@@ -86,7 +88,7 @@ type Post = {
 export type ComposeSchedule = {
   date: string; hour: number; minute: number; ampm: "AM" | "PM"; zone: string;
 };
-type Tab = "overview" | "compose" | "library" | "assets" | "calendar" | "reports" | "invoices" | "clients" | "clientusers";
+type Tab = "overview" | "brand" | "compose" | "library" | "assets" | "calendar" | "reports" | "invoices" | "clients" | "clientusers";
 
 // ── Client Users / Messages types ──────────────────────────────────────────────
 type ClientUser = {
@@ -225,6 +227,19 @@ function fmtTimeOnly(v: string | null | undefined): string {
 function postDate(p: Post): Date | null {
   return parseWhen(p.posted_at) ?? parseWhen(p.scheduled_at);
 }
+
+// Section and meta labels, matching the client portal's review layout.
+const SECTION_LABEL: React.CSSProperties = {
+  fontFamily: "var(--font-raleway), sans-serif", fontWeight: 400, fontSize: "11px",
+  letterSpacing: "0.25em", textTransform: "uppercase", color: "#999999",
+};
+const META_LABEL: React.CSSProperties = {
+  fontFamily: "Helvetica, Arial, sans-serif", fontSize: "11px", letterSpacing: "0.1em",
+  textTransform: "uppercase", color: "#999999", margin: 0, whiteSpace: "nowrap",
+};
+const META_VALUE: React.CSSProperties = {
+  fontFamily: "Helvetica, Arial, sans-serif", fontSize: "13px", color: "#0A0A0A", margin: 0, lineHeight: 1.5,
+};
 
 function StatusBadge({ status }: { status: string }) {
   const cfg: Record<string, { bg: string; color: string; border: string }> = {
@@ -1879,12 +1894,99 @@ function CommentBubble({ c }: { c: PostCommentRow }) {
   );
 }
 
+// Pillar picker: choose one of this client's existing pillars, or name a new
+// one. Anchored under the pillar badge, closes on outside click or Escape.
+function PillarPicker({ pillars, currentId, busy, newName, setNewName, onPick, onCreate, onClose }: {
+  pillars: PillarWithId[];
+  currentId: number | null;
+  busy: boolean;
+  newName: string;
+  setNewName: (s: string) => void;
+  onPick: (id: number) => void;
+  onCreate: () => void;
+  onClose: () => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const onDown = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) onClose(); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => { document.removeEventListener("mousedown", onDown); document.removeEventListener("keydown", onKey); };
+  }, [onClose]);
+
+  // Typing filters the existing list, so one field both finds and creates.
+  const q = newName.trim().toLowerCase();
+  const shown = q ? pillars.filter(p => p.type.toLowerCase().includes(q)) : pillars;
+  const exact = pillars.some(p => p.type.toLowerCase() === q);
+
+  return (
+    <div ref={ref} style={{
+      position: "absolute", top: "calc(100% + 6px)", left: 0, zIndex: 60,
+      width: "260px", background: "#FFFFFF", border: "1px solid #E5E5E5",
+      borderRadius: "10px", boxShadow: "0 8px 28px rgba(10,10,10,0.12)", overflow: "hidden",
+    }}>
+      <div style={{ padding: "10px 12px 6px" }}>
+        <div className="label">This client&apos;s pillars</div>
+      </div>
+      <div style={{ maxHeight: "190px", overflowY: "auto" }}>
+        {shown.length === 0 && (
+          <div style={{ padding: "6px 12px 10px", fontSize: "11px", color: T3, fontFamily: "Helvetica, Arial, sans-serif" }}>
+            No pillar matches that name. Save it below to create it.
+          </div>
+        )}
+        {shown.map(pl => (
+          <button
+            key={pl.id}
+            onClick={() => onPick(pl.id as number)}
+            disabled={busy}
+            style={{
+              width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: "8px",
+              padding: "8px 12px", background: pl.id === currentId ? "#F5F5F5" : "transparent",
+              border: "none", cursor: busy ? "default" : "pointer",
+              fontFamily: "Helvetica, Arial, sans-serif", fontSize: "13px", color: "#0A0A0A",
+            }}
+            onMouseEnter={e => { if (!busy) e.currentTarget.style.background = "#F5F5F5"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = pl.id === currentId ? "#F5F5F5" : "transparent"; }}
+          >
+            <span style={{ width: "8px", height: "8px", borderRadius: "50%", flexShrink: 0, background: pl.id === currentId ? "#E30000" : "#E5E5E5" }} />
+            {pl.type}
+            {pl.day && <span style={{ marginLeft: "auto", fontSize: "10px", color: T3 }}>{pl.day.slice(0, 3)}</span>}
+          </button>
+        ))}
+      </div>
+      <div style={{ borderTop: "1px solid #E5E5E5", padding: "10px 12px" }}>
+        <div className="label" style={{ marginBottom: "6px" }}>Or create new pillar</div>
+        <div style={{ display: "flex", gap: "6px" }}>
+          <input
+            value={newName}
+            onChange={e => setNewName(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter" && newName.trim() && !exact) onCreate(); }}
+            placeholder="New pillar name"
+            autoFocus
+            style={{ ...INPUT, padding: "7px 10px", fontSize: "12px" }}
+          />
+          <GlassBtn onClick={onCreate} disabled={busy || !newName.trim() || exact} variant="teal">
+            {busy ? "…" : "Save"}
+          </GlassBtn>
+        </div>
+        {exact && (
+          <div style={{ fontSize: "10px", color: T3, marginTop: "6px", fontFamily: "Helvetica, Arial, sans-serif" }}>
+            That pillar already exists. Pick it from the list above.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function LibraryTab({
   ac, posts, filterStatus, setFilterStatus,
-  fetchPosts, notify, copy,
+  fetchPosts, notify, copy, refreshClients,
 }: {
   ac: Company; posts: Post[]; filterStatus: string; setFilterStatus: (s: string) => void;
   fetchPosts: () => void; notify: (m: string, t?: "default" | "success" | "error") => void; copy: (t: string) => void;
+  refreshClients: () => void;
 }) {
   const [editPost, setEditPost] = useState<Post | null>(null);
   const [editContent, setEditContent] = useState("");
@@ -1898,6 +2000,9 @@ function LibraryTab({
   const [schedAmPm, setSchedAmPm]       = useState<"AM" | "PM">("AM");
   const [schedZone, setSchedZone]       = useState(toIanaZone(ac.timezone) || "America/New_York");
   const [postingToLinkedIn, setPostingToLinkedIn] = useState<number | null>(null);
+  const [pillarPickerId, setPillarPickerId] = useState<number | null>(null);
+  const [newPillarName, setNewPillarName] = useState("");
+  const [pillarBusy, setPillarBusy] = useState(false);
 
   const livePillars = ((ac.pillars || []) as PillarWithId[]).filter(p => p.id != null);
 
@@ -1906,6 +2011,45 @@ function LibraryTab({
     setEditContent(p.content);
     setEditImage(p.image_url);
     setEditPillar(p.pillar_id ?? livePillars.find(pl => pl.type === p.post_type)?.id ?? null);
+  };
+
+  // Move a post onto an existing pillar. The API keeps post_type in step with
+  // the pillar record, so every view that reads either one follows.
+  const assignPillar = async (p: Post, pillarId: number) => {
+    setPillarBusy(true);
+    await fetch("/api/posts", {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: p.id, pillar_id: pillarId }),
+    });
+    setPillarBusy(false); setPillarPickerId(null); setNewPillarName("");
+    fetchPosts();
+    notify("Pillar updated", "success");
+  };
+
+  // Create a pillar for this client, then put the post on it. No fixed day, so
+  // it does not silently join the weekly template; set that in Brand or Clients.
+  const createAndAssignPillar = async (p: Post) => {
+    const name = newPillarName.trim();
+    if (!name) return;
+    setPillarBusy(true);
+    const res = await fetch("/api/pillars", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ clientId: ac.id, type: name, day: "", color: ac.color }),
+    });
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok || !d.pillar) {
+      setPillarBusy(false);
+      notify(d.error || "Could not create pillar", "error");
+      return;
+    }
+    await fetch("/api/posts", {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: p.id, pillar_id: d.pillar.id }),
+    });
+    setPillarBusy(false); setPillarPickerId(null); setNewPillarName("");
+    refreshClients();
+    fetchPosts();
+    notify(`Created "${name}" and moved the post to it`, "success");
   };
 
   const uploadCreative = async (file: File) => {
@@ -2100,34 +2244,60 @@ function LibraryTab({
                   </div>
                 </div>
               ) : (
-                <>
-                  <div style={{ padding: "0 0 12px", display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
-                    <div style={{ width: "3px", height: "14px", borderRadius: "2px", background: ac.color, flexShrink: 0 }} />
-                    <span style={{ fontSize: "12px", fontWeight: 500, letterSpacing: "0.04em", color: "#999999", fontFamily: "Helvetica, Arial, sans-serif" }}>{p.post_type}</span>
-                    <span style={{ color: "#E5E5E5" }}>·</span>
-                    <span style={{ fontSize: "12px", letterSpacing: "0.02em", color: "#999999", fontFamily: "Helvetica, Arial, sans-serif" }}>{p.scheduled_day}</span>
-                    <div style={{ marginLeft: "auto" }}><StatusBadge status={p.status} /></div>
-                  </div>
+                <div className="post-split">
+                  {/* Left: the post and everything you act on */}
                   <div>
-                    {p.image_url && (
-                      <div style={{ marginBottom: "14px", borderRadius: "8px", overflow: "hidden", border: "1px solid #E5E5E5" }}>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={p.image_url} alt="Post visual" style={{ width: "100%", maxHeight: "280px", objectFit: "cover", display: "block" }} />
-                      </div>
-                    )}
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
+                      <div style={{ width: "3px", height: "14px", borderRadius: "2px", background: ac.color, flexShrink: 0 }} />
+                      <span style={SECTION_LABEL}>Post</span>
+                    </div>
                     <p style={{ fontSize: "14px", lineHeight: 1.6, color: "#0A0A0A", whiteSpace: "pre-wrap", fontFamily: "Helvetica, Arial, sans-serif" }}>{p.content}</p>
+
+                    <dl style={{ margin: "16px 0 0", display: "grid", gridTemplateColumns: "auto 1fr", gap: "8px 16px", alignItems: "baseline" }}>
+                      <dt style={META_LABEL}>Pillar</dt>
+                      <dd style={{ ...META_VALUE, position: "relative" }}>
+                        <button
+                          onClick={() => { setPillarPickerId(pillarPickerId === p.id ? null : p.id); setNewPillarName(""); }}
+                          style={{
+                            display: "inline-flex", alignItems: "center", gap: "6px",
+                            padding: "3px 10px", borderRadius: "999px",
+                            background: "#F5F5F5", border: "1px solid #E5E5E5",
+                            fontFamily: "Helvetica, Arial, sans-serif", fontSize: "12px",
+                            color: "#0A0A0A", cursor: "pointer",
+                          }}
+                          title="Change this post's pillar"
+                        >
+                          {p.post_type || "Unassigned"}
+                          <span style={{ fontSize: "9px", color: T3 }}>▼</span>
+                        </button>
+                        {pillarPickerId === p.id && (
+                          <PillarPicker
+                            pillars={livePillars}
+                            currentId={p.pillar_id ?? livePillars.find(x => x.type === p.post_type)?.id ?? null}
+                            busy={pillarBusy}
+                            newName={newPillarName}
+                            setNewName={setNewPillarName}
+                            onPick={(id: number) => assignPillar(p, id)}
+                            onCreate={() => createAndAssignPillar(p)}
+                            onClose={() => { setPillarPickerId(null); setNewPillarName(""); }}
+                          />
+                        )}
+                      </dd>
+                      <dt style={META_LABEL}>Status</dt>
+                      <dd style={{ margin: 0 }}><StatusBadge status={p.status} /></dd>
+                      <dt style={META_LABEL}>Scheduled</dt>
+                      <dd style={META_VALUE}>
+                        {p.posted_at
+                          ? `Published ${fmtWhen(p.posted_at)}`
+                          : p.scheduled_at
+                            ? formatScheduled(p.scheduled_at, p.timezone)
+                            : `${p.scheduled_day}, no date set`}
+                      </dd>
+                    </dl>
                     {p.notes && (
                       <div style={{ marginTop: "14px", padding: "10px 14px", background: "rgba(204,68,68,0.05)", border: "1px solid rgba(204,68,68,0.15)", borderRadius: "8px", display: "flex", gap: "10px", alignItems: "flex-start" }}>
                         <span style={{ fontSize: "9px", fontWeight: 400, color: "#cc3333", letterSpacing: "0.12em", textTransform: "uppercase" as const, flexShrink: 0, marginTop: "2px" }}>Change request</span>
                         <p style={{ fontSize: "12px", color: "rgba(208,112,112,0.8)", lineHeight: 1.6, margin: 0 }}>{p.notes}</p>
-                      </div>
-                    )}
-                    {p.scheduled_at && (
-                      <div style={{ marginTop: "10px", display: "inline-flex", alignItems: "center", gap: "6px", padding: "4px 10px", background: "#F5F5F5", border: "1px solid #E5E5E5", borderRadius: "8px" }}>
-                        <span style={{ fontSize: "10px", color: T3, letterSpacing: "0.06em", textTransform: "uppercase" as const }}>
-                          {p.status === "posted" ? "Published" : "Goes live"}
-                        </span>
-                        <span style={{ fontSize: "11px", color: T2, fontWeight: 500 }}>{formatScheduled(p.scheduled_at, p.timezone)}</span>
                       </div>
                     )}
                     {schedulingId === p.id ? (
@@ -2212,7 +2382,20 @@ function LibraryTab({
                     )}
                     <PostThread postId={p.id} notify={notify} />
                   </div>
-                </>
+
+                  {/* Right: the whole creative, uncropped */}
+                  <div>
+                    <div style={{ ...SECTION_LABEL, marginBottom: "10px" }}>Creative</div>
+                    <div style={{ border: "0.5px solid var(--border-line)", borderRadius: "12px", padding: "12px", background: "#F5F5F5", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "140px" }}>
+                      {p.image_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={p.image_url} alt="Post visual" style={{ width: "100%", height: "auto", maxHeight: "460px", objectFit: "contain", display: "block", borderRadius: "6px" }} />
+                      ) : (
+                        <span style={{ fontSize: "12px", color: T3, fontFamily: "Helvetica, Arial, sans-serif" }}>Text only post</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
           ))}
@@ -5928,13 +6111,13 @@ const [loadingClients, setLoadingClients] = useState(true);
   if (filterStatus !== "all") p.set("status", filterStatus);
   const r = await fetch(`/api/posts?${p}`);
   const d = await r.json();
-  setPosts(d.posts || []);
+  setPosts(sortPostsBySchedule(d.posts || []));
 }, [ac, filterStatus]);
 
   const fetchAllPosts = useCallback(async () => {
     const r = await fetch("/api/posts");
     const d = await r.json();
-    setAllPosts(d.posts || []);
+    setAllPosts(sortPostsBySchedule(d.posts || []));
   }, []);
 useEffect(() => {
   fetch("/api/clients")
@@ -6146,6 +6329,7 @@ if (loadingClients || !ac || !ap) {
 
   const TABS: { id: Tab; label: string; badge?: number }[] = [
     { id: "overview",  label: "Overview"  },
+    { id: "brand",     label: "Brand Center" },
     { id: "compose",   label: "Compose"   },
     { id: "library",   label: "Library", badge: changeRequestCount },
     { id: "assets",    label: "Assets"    },
@@ -6401,6 +6585,7 @@ if (loadingClients || !ac || !ap) {
       {/* ── Main content ── */}
       <main style={{ flex: 1, maxWidth: "1400px", width: "100%", margin: "0 auto", padding: "32px 32px 80px" }}>
         {tab === "overview"  && <OverviewTab  ac={ac} clients={clients} posts={posts} allPosts={allPosts} />}
+        {tab === "brand"     && <BrandCenterTab clientId={ac.id} />}
         {tab === "compose"   && (
           <ComposeTab
             ac={ac} ap={ap} setAp={setAp}
@@ -6421,6 +6606,7 @@ if (loadingClients || !ac || !ap) {
           <LibraryTab
             ac={ac} posts={posts} filterStatus={filterStatus} setFilterStatus={setFilterStatus}
             fetchPosts={() => { fetchPosts(); fetchAllPosts(); }} notify={notify} copy={copy}
+            refreshClients={refreshClients}
           />
         )}
         {tab === "assets"    && <AssetsTab    ac={ac} clients={clients} onSwitch={switchCompany} />}

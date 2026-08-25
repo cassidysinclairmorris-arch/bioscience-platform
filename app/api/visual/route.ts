@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { getBrandBlock, resolveFonts } from "@/lib/brand-context";
+import { brandKitBlock, loadBrandKit } from "@/lib/system-prompts";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -98,7 +99,7 @@ function googleFontsImport(headline: string, body: string): string {
 
 export async function POST(req: NextRequest) {
   try {
-    const { company, pillar, visualType, postContent } = await req.json();
+    const { company, pillar, visualType, postContent, clientId } = await req.json();
 
     const excerpt = postContent?.slice(0, 200) || pillar.example.slice(0, 200);
 
@@ -154,10 +155,19 @@ Produce a single 1080×1080 SVG that passes all four quality criteria in the mas
 
 Return ONLY the raw SVG code starting with <svg and ending with </svg>. No markdown, no explanation, no preamble.`;
 
+    // The designer framing stays; the client's Brand Center is appended so the
+    // visual carries their positioning, not just their palette. The visual brief
+    // from getBrandBlock (colours, fonts, mood) remains in the user prompt.
+    const kitBlock = brandKitBlock(await loadBrandKit((clientId as string) || (company?.id as string) || null));
+    const systemPrompt = [
+      "You are a world-class LinkedIn visual designer and brand strategist. You produce premium SVG visuals that look like they were made by a $500/hour creative director. You follow brand guidelines with precision and never compromise on visual quality.",
+      kitBlock,
+    ].filter(Boolean).join("\n\n");
+
     const message = await client.messages.create({
       model: "claude-sonnet-4-6",
       max_tokens: 4000,
-      system: "You are a world-class LinkedIn visual designer and brand strategist. You produce premium SVG visuals that look like they were made by a $500/hour creative director. You follow brand guidelines with precision and never compromise on visual quality.",
+      system: systemPrompt,
       messages: [{ role: "user", content: prompt }],
     });
 

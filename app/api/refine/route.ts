@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { getLinkedInTrends } from "@/lib/linkedin-trends";
+import { getBrandKitSystemPrompt, loadBrandKit } from "@/lib/system-prompts";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 export async function POST(req: NextRequest) {
   try {
-    const { company, pillar, currentPost, request } = await req.json();
+    const { company, pillar, currentPost, request, clientId } = await req.json();
 
     const industry = (pillar?.type as string) || "biotech";
     const audience = (company?.audience as string) || "Life science executives";
@@ -14,19 +15,26 @@ export async function POST(req: NextRequest) {
 
     const trends = await getLinkedInTrends(industry, audience, timezone);
 
+    // Who the client is and how they sound comes from their Brand Center, in the
+    // system prompt. The user message carries only the post and the edit.
+    const id = (clientId as string) || (company?.id as string) || null;
+    const systemPrompt = getBrandKitSystemPrompt(
+      { name: company?.name, tagline: company?.tagline, voice: company?.voice, audience: company?.audience },
+      await loadBrandKit(id),
+      pillar,
+    );
+
     const message = await client.messages.create({
       model: "claude-sonnet-4-6",
       max_tokens: 1024,
+      system: systemPrompt,
       messages: [{
         role: "user",
-        content: `You are an expert LinkedIn strategist editing a post for ${company.name}.
+        content: `Edit this LinkedIn post for ${company.name}.
 
 ORIGINAL POST:
 ${currentPost}
 
-BRAND VOICE: ${company.voice}
-TARGET AUDIENCE: ${company.audience}
-POST TYPE: ${pillar.type}
 KEY BRAND PHRASES: ${company.brand?.keyPhrases?.join(" / ") ?? ""}
 
 CURRENT LINKEDIN ALGORITHM CONTEXT (April 2026):
@@ -36,7 +44,7 @@ EDIT REQUEST: ${request}
 
 Instructions:
 - Apply the edit request faithfully
-- Keep the same brand voice and audience in mind
+- Keep the brand voice, guidelines, and audience from the system prompt
 - Maintain 150-220 words unless the request specifically asks for a length change
 - Keep hashtags at the end (3-4)
 - Keep the strong hook in the first 2 lines

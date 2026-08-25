@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Replicate from "replicate";
 import { getLinkedInTrends } from "@/lib/linkedin-trends";
 import { readBrand, getBrandBlock } from "@/lib/brand-context";
+import { brandKitImageNotes, loadBrandKit } from "@/lib/system-prompts";
 
 const replicate = new Replicate({ auth: process.env.REPLICATE_API_TOKEN, useFileOutput: false });
 
@@ -12,7 +13,8 @@ function buildPrompt(
   visualType: string,
   postContent: string,
   trends: string,
-  editRequest?: string
+  editRequest?: string,
+  kitNotes?: string,
 ): string {
   const { accent, dark } = readBrand(company);
   const excerpt = (postContent || String(pillar.example || "")).slice(0, 220);
@@ -28,7 +30,9 @@ function buildPrompt(
   // Shared brand block — stored brand_prompt > dynamic context (same source as SVG route)
   const brandBlock = getBrandBlock(company);
 
-  const base = `${brandBlock}
+  // Image models take one prompt string with no system channel, so the Brand
+  // Center guidance is folded in beside the visual brief.
+  const base = `${brandBlock}${kitNotes ? `\n\n${kitNotes}` : ""}
 
 VISUAL TYPE: ${(typeDir[visualType] || typeDir.brand)}
 
@@ -108,7 +112,7 @@ export const maxDuration = 60;
 // ── Route handler ─────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
   try {
-    const { company, pillar, visualType, postContent, editRequest, rawPrompt } = await req.json();
+    const { company, pillar, visualType, postContent, editRequest, rawPrompt, clientId } = await req.json();
 
     // rawPrompt bypass: skip prompt builder, try Flux first, fallback Ideogram
     if (rawPrompt) {
@@ -133,7 +137,8 @@ export async function POST(req: NextRequest) {
     const trends = await getLinkedInTrends(industry, audience, timezone);
     console.log("[image-generate] Trends snippet:", trends.slice(0, 100));
 
-    const prompt = buildPrompt(company, pillar, visualType || "brand", postContent || "", trends, editRequest);
+    const kitNotes = brandKitImageNotes(await loadBrandKit((clientId as string) || (company?.id as string) || null));
+    const prompt = buildPrompt(company, pillar, visualType || "brand", postContent || "", trends, editRequest, kitNotes);
 
     // Auto-route: science/photo → Flux first; quote/stat/brand → Ideogram first
     const fluxFirst = ["science", "photo"].includes(visualType);

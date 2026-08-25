@@ -29,6 +29,17 @@
   --danger:          #cc3333;
   --success:         #2BBFB0;
 
+  /* Studio surfaces — white/grey, matching the current Linkwright palette
+     rather than the warm tokens above, which the marketing site uses. */
+  --surface-0:       #FFFFFF;
+  --surface-1:       #F5F5F5;
+  --surface-hover:   #EDEDED;
+  --text-primary:    #0A0A0A;
+  --text-secondary:  #666666;
+  --text-tertiary:   #999999;
+  --border-line:     #E5E5E5;
+  --radius:          8px;
+
   /* Radii — restrained */
   --radius-sm:   3px;
   --radius-md:   5px;
@@ -181,3 +192,16 @@ input::placeholder, textarea::placeholder {
 /* Custom scrollbar for panels */
 .light-scroll::-webkit-scrollbar { width: 2px; }
 .light-scroll::-webkit-scrollbar-thumb { background: rgba(26,26,26,0.10); }
+
+/* ── Studio Library post card ───────────────────────────────────────────────
+   Post text and controls on the left, the whole creative on the right, the
+   same orientation as the client portal review. Stacks on narrow screens. */
+.post-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+@media (max-width: 768px) {
+  .post-split { grid-template-columns: 1fr; gap: 16px; }
+}

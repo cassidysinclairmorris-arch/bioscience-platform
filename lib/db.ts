@@ -205,6 +205,28 @@ async function initialize(): Promise<void> {
         read_at     TEXT
       );
 
+      CREATE TABLE IF NOT EXISTS brand_post_examples (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        client_id   TEXT    NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+        file_url    TEXT    NOT NULL,
+        file_name   TEXT    NOT NULL,
+        post_text   TEXT,
+        pillar      TEXT,
+        engagement_notes TEXT,
+        posted_date TEXT,
+        created_at  TEXT    DEFAULT (datetime('now'))
+      );
+
+      CREATE TABLE IF NOT EXISTS brand_materials (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        client_id  TEXT    NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+        file_url   TEXT    NOT NULL,
+        file_name  TEXT    NOT NULL,
+        file_type  TEXT,
+        file_size  INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT    DEFAULT (datetime('now'))
+      );
+
       CREATE TABLE IF NOT EXISTS report_uploads (
         id         INTEGER PRIMARY KEY AUTOINCREMENT,
         client_id  TEXT NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
@@ -258,6 +280,12 @@ async function initialize(): Promise<void> {
       `ALTER TABLE posts ADD COLUMN scheduled_at_utc TEXT`,
       // Retiring a pillar hides it from new posts without touching history.
       `ALTER TABLE pillars ADD COLUMN active INTEGER NOT NULL DEFAULT 1`,
+      // Brand Center: long-form guidance the generation routes read.
+      `ALTER TABLE brand_kits ADD COLUMN voice_guide TEXT`,
+      `ALTER TABLE brand_kits ADD COLUMN post_guidelines TEXT`,
+      `ALTER TABLE brand_kits ADD COLUMN target_audiences TEXT`,
+      `ALTER TABLE brand_kits ADD COLUMN competitor_analysis TEXT`,
+      `ALTER TABLE brand_kits ADD COLUMN messaging_priorities TEXT`,
     ];
     for (const m of migrations) {
       try { await c.execute(m); } catch { /* column already exists */ }
@@ -492,6 +520,28 @@ export interface User {
   password_hash: string;
   role: "agency" | "client";
   client_id: string | null;
+  created_at: string;
+}
+
+export interface BrandPostExample {
+  id: number;
+  client_id: string;
+  file_url: string;
+  file_name: string;
+  post_text: string | null;
+  pillar: string | null;
+  engagement_notes: string | null;
+  posted_date: string | null;
+  created_at: string;
+}
+
+export interface BrandMaterial {
+  id: number;
+  client_id: string;
+  file_url: string;
+  file_name: string;
+  file_type: string | null;
+  file_size: number;
   created_at: string;
 }
 
