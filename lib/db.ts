@@ -3,8 +3,14 @@ import path from "path";
 import fs from "fs";
 import { createHash } from "crypto";
 
+// The data directory only exists to hold the local dev file database. In
+// production we use Turso and the working directory is read-only, so creating
+// it there throws EROFS at import time and takes down every DB route. Only
+// attempt it when there is no Turso URL, and never let it throw.
 const DATA_DIR = path.join(process.cwd(), "data");
-if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
+if (!process.env.TURSO_DATABASE_URL) {
+  try { fs.mkdirSync(DATA_DIR, { recursive: true }); } catch { /* already exists, or a read-only FS we will not use */ }
+}
 
 let rawClient: LibsqlClient | null = null;
 let ready: Promise<void> | null = null;
